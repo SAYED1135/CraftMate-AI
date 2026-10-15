@@ -82,9 +82,11 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
             }
 
             case "disconnect": {
-                plugin.getConfig().set("backend.connector-token", "");
-                plugin.saveConfig();
-                sender.sendMessage(ChatColor.YELLOW + "[CraftMate AI] Connector unlinked and credentials revoked locally.");
+                sender.sendMessage(ChatColor.AQUA + "[CraftMate AI] Revoking this server token...");
+                client.revokeAsync().thenAccept(revoked ->
+                        sender.sendMessage(ChatColor.YELLOW + "[CraftMate AI] Connector unlinked. "
+                                + (revoked ? "Server token revoked in CraftMate Cloud." : "Local credentials cleared."))
+                );
                 return true;
             }
 
@@ -102,7 +104,7 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
         boolean readOnly = plugin.getConfig().getBoolean("security.read-only-mode", true);
 
         sender.sendMessage(ChatColor.DARK_GRAY + "================================================");
-        sender.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "⚡ CraftMate AI Connector v0.2.0");
+        sender.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "⚡ CraftMate AI Connector v0.3.0");
         sender.sendMessage(ChatColor.GRAY + "Host Profile: " + ChatColor.AQUA + host
                 + (host.equals("minefort") ? ChatColor.YELLOW + " (BungeeCord Guardrail Active)" : ""));
         sender.sendMessage(ChatColor.GRAY + "Connection Status: " + ChatColor.WHITE + client.getLastSyncStatus());

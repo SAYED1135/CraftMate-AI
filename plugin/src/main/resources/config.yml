@@ -1,6 +1,7 @@
 # ============================================================================
-# CraftMate Connector v0.2.0 — Configuration
-# Docs: https://esaye2312-art.github.io/CraftMate-AI/
+# CraftMate Connector v0.3.0 — Configuration
+# Dashboard: https://esaye2312-art.github.io/CraftMate-AI/app.html
+# Docs: https://github.com/esaye2312-art/CraftMate-AI
 # ============================================================================
 
 # Supported MVP Host Providers:
@@ -11,11 +12,16 @@
 #   minefort      -> minefort.com (1GB RAM, BungeeCord Proxy LOCKED to true)
 host-provider: "auto"
 
-# Backend API & Supabase Edge Function Endpoint (Outbound HTTPS Only)
 backend:
-  endpoint-url: "https://fucsztovkkilyboinhrv.supabase.co/rest/v1"
+  # CraftMate Connector API (Cloudflare Worker) base URL — NO trailing slash.
+  # The project owner deploys worker/ once and publishes this URL here and on
+  # the website. Example: https://craftmate-connector-api.example.workers.dev
+  api-url: "https://craftmate-connector-api.YOUR-SUBDOMAIN.workers.dev"
+  # Backwards-compatible fallback if api-url is removed:
+  endpoint-url: ""
   project-ref: "fucsztovkkilyboinhrv"
   # Long-lived server token (automatically populated after `/craftmate link <CODE>`)
+  # Never share this token. Revoke it anytime with `/craftmate disconnect`.
   connector-token: ""
   server-id: ""
 
@@ -26,12 +32,11 @@ polling:
   request-timeout-seconds: 10
   notify-hibernation-on-empty-shutdown: true
 
-# Security & Policy Guardrails (Section 9.1 & Section 13)
+# Security & Policy Guardrails
 security:
-  # P2 Default: Read-only mode (diagnostics, log scrubbing, capability discovery only)
-  # Set to false ONLY when enabling P4 approved config updates
+  # Default: Read-only mode (diagnostics, log scrubbing, capability discovery only)
   read-only-mode: true
   create-backup-before-edit: true
-  # Local Dual-Layer Scrubbing (strips Player IPs, RCON passwords, DB URIs before upload)
+  # Local scrubbing strips player IPs, RCON passwords and DB URIs before upload
   redact-ips-and-secrets: true
   max-log-lines-per-snapshot: 250

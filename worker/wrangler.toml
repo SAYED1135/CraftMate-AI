@@ -1,0 +1,13 @@
+name = "craftmate-connector-api"
+main = "src/index.js"
+compatibility_date = "2026-10-15"
+workers_dev = true
+
+# Public configuration only. The service-role key must NEVER be placed here.
+[vars]
+SUPABASE_URL = "https://fucsztovkkilyboinhrv.supabase.co"
+
+# Required secret, set interactively by the project owner:
+#   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+# Paste the ROTATED service_role key only into that prompt.
+# It is stored by Cloudflare as a Worker Secret and never enters this repo.

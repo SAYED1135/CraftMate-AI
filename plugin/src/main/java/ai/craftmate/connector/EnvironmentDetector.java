@@ -93,6 +93,7 @@ public final class EnvironmentDetector {
         snapshot.addProperty("max_ram_mb", maxMb);
         snapshot.addProperty("used_ram_mb", usedMb);
         snapshot.addProperty("online_players", onlinePlayersCount);
+        snapshot.addProperty("max_players", server.getMaxPlayers());
         snapshot.addProperty("bungeecord_enabled", isBungeeCordEnabled());
 
         // Read safe properties from server.properties

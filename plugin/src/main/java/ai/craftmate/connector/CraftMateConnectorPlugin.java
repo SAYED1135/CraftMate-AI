@@ -59,7 +59,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
 
         String detectedHost = environmentDetector.detectHostProvider();
         getLogger().info("========================================================");
-        getLogger().info("CraftMate Connector v0.2.0 enabled successfully!");
+        getLogger().info("CraftMate Connector v0.3.0 enabled successfully!");
         getLogger().info("Detected Host Profile : " + detectedHost);
         getLogger().info("Security Read-Only    : " + getConfig().getBoolean("security.read-only-mode", true));
         getLogger().info("Dashboard & Docs      : https://esaye2312-art.github.io/CraftMate-AI/");
@@ -78,7 +78,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
             this.connectorClient.sendCleanShutdownSignal(onlinePlayers);
         }
 
-        getLogger().info("CraftMate Connector v0.2.0 disabled cleanly.");
+        getLogger().info("CraftMate Connector v0.3.0 disabled cleanly.");
     }
 
     public AllowlistTaskExecutor getTaskExecutor() {

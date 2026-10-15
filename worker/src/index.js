@@ -1,0 +1,340 @@
+/**
+ * CraftMate Connector API v0.3
+ * Cloudflare Worker between the Minecraft plugin and Supabase.
+ *
+ * Security model:
+ * - The plugin only knows a one-time pairing code, then a long-lived server token.
+ * - The Worker is the only component that uses SUPABASE_SERVICE_ROLE_KEY.
+ * - That secret lives in Cloudflare Workers Secrets — never in this repo and
+ *   never in the Minecraft server or browser.
+ */
+
+const MAX_BODY_BYTES = 128 * 1024;
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CraftMate-Token",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+function fail(code, message, status) {
+  return json({ ok: false, error: { code, message } }, status);
+}
+
+async function readJson(request) {
+  const length = Number(request.headers.get("content-length") || 0);
+  if (length > MAX_BODY_BYTES) throw new Error("BODY_TOO_LARGE");
+  const text = await request.text();
+  if (text.length > MAX_BODY_BYTES) throw new Error("BODY_TOO_LARGE");
+  if (!text.trim()) return {};
+  return JSON.parse(text);
+}
+
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function newServerToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const encoded = btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+  return `cm_live_${encoded}`;
+}
+
+function supabase(env) {
+  const base = String(env.SUPABASE_URL || "").replace(/\/$/, "");
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!base || !key) throw new Error("WORKER_NOT_CONFIGURED");
+
+  async function request(path, options = {}) {
+    const response = await fetch(`${base}/rest/v1/${path}`, {
+      ...options,
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!response.ok) {
+      console.error("Supabase error", response.status, typeof data === "string" ? data.slice(0, 300) : data);
+      throw new Error(`SUPABASE_${response.status}`);
+    }
+    return data;
+  }
+
+  return {
+    get: (path) => request(path),
+    post: (path, body, prefer = "return=representation") =>
+      request(path, { method: "POST", headers: { Prefer: prefer }, body: JSON.stringify(body) }),
+    patch: (path, body) =>
+      request(path, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(body) }),
+  };
+}
+
+function normalizeEnvironment(input = {}, onlinePlayers = 0) {
+  const env = input && typeof input === "object" ? input : {};
+  const pluginNames = Array.isArray(env.plugins)
+    ? env.plugins.map((p) => (typeof p === "string" ? p : p?.name)).filter(Boolean)
+    : [];
+  return {
+    players: Number(env.online_players ?? onlinePlayers ?? 0) || 0,
+    maxPlayers: Number(env.max_players ?? 20) || 20,
+    ramMb: Number(env.used_ram_mb ?? 0) || 0,
+    maxRamMb: Number(env.max_ram_mb ?? 0) || 0,
+    plugins: pluginNames,
+    raw: env,
+  };
+}
+
+function classifyLog(text = "") {
+  if (/NoClassDefFoundError|ClassNotFoundException/i.test(text)) {
+    return {
+      severity: "high",
+      ar: "إضافة غير متوافقة مع إصدار السيرفر",
+      en: "Plugin incompatible with the server version",
+      steps: ["Identify the plugin from the Enabling line", "Update it to an official build for your version", "Replace the jar without deleting plugin data and restart"],
+    };
+  }
+  if (/FAILED TO BIND TO PORT|BindException|Address already in use/i.test(text)) {
+    return {
+      severity: "medium",
+      ar: "المنفذ مشغول بعملية أخرى",
+      en: "Port already in use",
+      steps: ["Stop any second server instance", "Use the host panel Restart button"],
+    };
+  }
+  if (/OutOfMemoryError|heap space/i.test(text)) {
+    return {
+      severity: "high",
+      ar: "نفاد ذاكرة السيرفر",
+      en: "Server out of memory",
+      steps: ["Do not raise -Xmx above the real plan RAM", "Lower view and simulation distance", "Review the heaviest plugins"],
+    };
+  }
+  if (/Can't keep up|overloaded/i.test(text)) {
+    return {
+      severity: "medium",
+      ar: "تأخر أداء السيرفر (Tick Lag)",
+      en: "Server performance lag",
+      steps: ["Compare TPS during dips", "Lower simulation distance and entity limits"],
+    };
+  }
+  return {
+    severity: "low",
+    ar: "لا توجد بصمة عطل معروفة في اللقطة",
+    en: "No known crash fingerprint in the snapshot",
+    steps: ["Confirm the pasted moment is the actual incident", "Compare with previous reports in the dashboard"],
+  };
+}
+
+async function findTokenByCode(db, rawCode) {
+  const code = String(rawCode || "").trim().toUpperCase();
+  if (!/^CM-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return null;
+  const rows = await db.get(
+    `connector_tokens?pairing_code=eq.${encodeURIComponent(code)}&is_revoked=eq.false&select=*&limit=1`,
+  );
+  return rows?.[0] || null;
+}
+
+async function authenticate(db, body, request) {
+  const bearer = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const token = body.connector_token || body.token || request.headers.get("X-CraftMate-Token") || bearer;
+  const serverId = body.server_id || body.serverId;
+  if (!token || !serverId) return null;
+  const hash = await sha256Hex(token);
+  const rows = await db.get(
+    `connector_tokens?server_id=eq.${encodeURIComponent(serverId)}&token_hash=eq.${hash}&is_revoked=eq.false&select=*&limit=1`,
+  );
+  return rows?.[0] || null;
+}
+
+async function touchToken(db, tokenRow) {
+  await db.patch(`connector_tokens?id=eq.${tokenRow.id}`, { last_used_at: new Date().toISOString() });
+}
+
+async function getServer(db, serverId) {
+  const rows = await db.get(`servers?id=eq.${encodeURIComponent(serverId)}&select=*&limit=1`);
+  return rows?.[0] || null;
+}
+
+async function handleClaim(db, body) {
+  const row = await findTokenByCode(db, body.pairing_code || body.code);
+  if (!row) return fail("INVALID_CODE", "Pairing code was not found or was revoked.", 404);
+  if (row.token_hash) return fail("CODE_ALREADY_USED", "This pairing code was already claimed.", 409);
+  if (row.pairing_expires_at && new Date(row.pairing_expires_at).getTime() < Date.now()) {
+    return fail("CODE_EXPIRED", "This pairing code expired. Generate a new one from your dashboard.", 410);
+  }
+
+  const server = await getServer(db, row.server_id);
+  if (!server) return fail("SERVER_NOT_FOUND", "The server for this code no longer exists.", 404);
+
+  const token = newServerToken();
+  const tokenHash = await sha256Hex(token);
+  const now = new Date().toISOString();
+  const environment = normalizeEnvironment(body.environment || {}, body.online_players || 0);
+
+  await db.patch(`connector_tokens?id=eq.${row.id}`, {
+    token_hash: tokenHash,
+    claimed_at: now,
+    last_used_at: now,
+    pairing_expires_at: now,
+  });
+
+  await db.patch(`servers?id=eq.${server.id}`, {
+    status: "ONLINE",
+    linked_at: server.linked_at || now,
+    last_heartbeat_at: now,
+    environment_snapshot: environment,
+    connector_version: body.connector_version || "0.3.0",
+    mc_version: body.environment?.bukkit_version || server.mc_version,
+  });
+
+  return json({
+    ok: true,
+    server_id: server.id,
+    connector_token: token,
+    token_type: "long_lived_server_token",
+    heartbeat_interval_seconds: 60,
+  });
+}
+
+async function handleHeartbeat(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  const status = ["ONLINE", "HIBERNATING", "OFFLINE", "CRASHED"].includes(body.status) ? body.status : "ONLINE";
+  const now = new Date().toISOString();
+  await touchToken(db, auth);
+  await db.patch(`servers?id=eq.${auth.server_id}`, {
+    status,
+    last_heartbeat_at: now,
+    environment_snapshot: normalizeEnvironment(body.environment || {}, body.online_players || 0),
+    connector_version: body.connector_version || "0.3.0",
+  });
+  return json({ ok: true, server_id: auth.server_id, status, server_time: now, tasks: [] });
+}
+
+async function handleDiagnose(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  const server = await getServer(db, auth.server_id);
+  if (!server) return fail("SERVER_NOT_FOUND", "Server not found.", 404);
+
+  const excerpt = String(body.scrubbed_log_excerpt || "").slice(0, 16000);
+  const result = classifyLog(excerpt);
+  const now = new Date().toISOString();
+  await touchToken(db, auth);
+
+  const inserted = await db.post("diagnostic_reports", {
+    server_id: server.id,
+    owner_id: server.owner_id,
+    host_provider: body.host_provider || server.host_provider || "other",
+    source: "connector_snapshot",
+    summary_ar: result.ar,
+    summary_en: result.en,
+    confidence_score: result.severity === "low" ? 0.55 : 0.88,
+    findings: result.steps.map((text) => ({ text, severity: result.severity })),
+    deduplicated_stats: {
+      redacted_secrets: Number(body.redacted_secrets || 0),
+      compressed_lines: Number(body.compressed_lines || 0),
+      excerpt_preview: excerpt.slice(0, 1200),
+    },
+    created_at: now,
+  });
+
+  await db.post("notifications", {
+    owner_id: server.owner_id,
+    server_id: server.id,
+    type: result.severity === "high" ? "danger" : "info",
+    title_ar: result.severity === "high" ? "تشخيص عالي الخطورة من سيرفرك" : "وصل تشخيص جديد من سيرفرك",
+    title_en: result.severity === "high" ? "High-severity diagnosis from your server" : "New diagnosis from your server",
+    body_ar: result.ar,
+    body_en: result.en,
+  });
+
+  return json({ ok: true, report: Array.isArray(inserted) ? inserted[0] : inserted, classification: result });
+}
+
+async function handleShutdown(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  const players = Number(body.online_players_at_shutdown ?? body.online_players ?? 0) || 0;
+  const status = players === 0 ? "HIBERNATING" : "OFFLINE";
+  const now = new Date().toISOString();
+  await touchToken(db, auth);
+  await db.patch(`servers?id=eq.${auth.server_id}`, { status, last_heartbeat_at: now });
+
+  const server = await getServer(db, auth.server_id);
+  if (server?.owner_id) {
+    await db.post("notifications", {
+      owner_id: server.owner_id,
+      server_id: server.id,
+      type: "sleep",
+      title_ar: status === "HIBERNATING" ? "سيرفرك دخل سباتاً نظيفاً" : "سيرفرك توقف",
+      title_en: status === "HIBERNATING" ? "Your server entered clean hibernation" : "Your server stopped",
+      body_ar: server.name,
+      body_en: server.name,
+    });
+  }
+  return json({ ok: true, server_id: auth.server_id, status });
+}
+
+async function handleRevoke(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  await db.patch(`connector_tokens?id=eq.${auth.id}`, { is_revoked: true });
+  await db.patch(`servers?id=eq.${auth.server_id}`, { status: "UNLINKED" });
+  return json({ ok: true, revoked: true });
+}
+
+export default {
+  async fetch(request, env) {
+    if (request.method === "OPTIONS") return json({ ok: true });
+    const url = new URL(request.url);
+
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.3.0", configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) });
+    }
+    if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
+
+    let body;
+    try {
+      body = await readJson(request);
+    } catch (error) {
+      return fail(error.message === "BODY_TOO_LARGE" ? "BODY_TOO_LARGE" : "INVALID_JSON", "Request body must be valid JSON under 128 KB.", 400);
+    }
+
+    try {
+      const db = supabase(env);
+      switch (url.pathname) {
+        case "/v1/claim": return await handleClaim(db, body);
+        case "/v1/heartbeat": return await handleHeartbeat(db, body, request);
+        case "/v1/diagnose": return await handleDiagnose(db, body, request);
+        case "/v1/shutdown": return await handleShutdown(db, body, request);
+        case "/v1/revoke": return await handleRevoke(db, body, request);
+        default: return fail("NOT_FOUND", "Route not found.", 404);
+      }
+    } catch (error) {
+      if (error.message === "WORKER_NOT_CONFIGURED") {
+        return fail("WORKER_NOT_CONFIGURED", "Connector API secrets are not configured yet.", 503);
+      }
+      console.error(error);
+      return fail("INTERNAL_ERROR", "Connector API failed safely. Please retry.", 500);
+    }
+  },
+};

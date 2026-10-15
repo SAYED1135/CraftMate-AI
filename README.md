@@ -117,3 +117,7 @@ CraftMate-AI/
 
 تم التحقق فعلياً: Auth Health = ‏200، جدول الخطط يرجع القيم الصحيحة، إدخال قائمة انتظار = ‏201 والمكرر = ‏409، والقراءة العامة للقوائم = فارغة بفضل RLS.
 ملحوظة إطلاق: تأكيد البريد مفعّل في Supabase افتراضياً — المستخدم يؤكد بريده قبل أول دخول، أو عطّل **Confirm email** من Authentication → Providers → Email لفترة البيتا لو عايز دخول فوري.
+
+## 🔌 Connector API v0.3 — الربط الحقيقي
+
+البلجن `CraftMate-Connector v0.3.0` يطالب فعلياً بكود ربط لوحتك عبر **Connector API** (Cloudflare Worker في [`worker/`](./worker/)) ويستبدله برمز سيرفر طويل العمر، ثم يرسل نبضات كل 60 ثانية وتشخيصات منقّاة وحالة سبات نظيفة. تعليمات نشر الـ Worker مرة واحدة (مع سر Supabase في Cloudflare Secrets فقط) في [`worker/README.md`](./worker/README.md)، وترحيلة الربط في [`004_connector_api_v03.sql`](./supabase/migrations/004_connector_api_v03.sql).

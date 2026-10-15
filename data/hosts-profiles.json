@@ -1,0 +1,193 @@
+{
+  "version": "0.2.0",
+  "updated_at": "2026-10-15",
+  "reference_source": "https://github.com/Myuui/Free-Minecraft-Hosts",
+  "official_mvp_hosts": [
+    {
+      "id": "play_hosting",
+      "name": "Play.hosting",
+      "domain": "play.hosting",
+      "url": "https://play.hosting",
+      "tier": "tier_1_full",
+      "badge_ar": "دعم كامل — Tier 1",
+      "badge_en": "Full Support — Tier 1",
+      "specs": {
+        "free_ram_gb": 3.0,
+        "storage_gb": 10,
+        "storage_type": "NVMe",
+        "player_slots": "Unlimited",
+        "hibernation_on_empty": true
+      },
+      "capabilities": {
+        "file_manager": "available",
+        "sftp_access": "available",
+        "custom_jar_upload": "available",
+        "extra_ports": "available",
+        "dedicated_bedrock_port_19132": "available",
+        "outbound_https_polling": "available",
+        "server_restart_via_plugin": "limited"
+      },
+      "plugin_installation": {
+        "method": "direct_jar_or_marketplace",
+        "instructions_ar": "قم بتحميل ملف CraftMate-Connector.jar من GitHub Releases وارفعه مباشرة إلى مجلد /plugins عبر File Manager أو SFTP، ثم أعد تشغيل السيرفر.",
+        "instructions_en": "Download CraftMate-Connector.jar from GitHub Releases and upload it directly to /plugins via File Manager or SFTP, then restart the server."
+      },
+      "bedrock_geyser_guide": {
+        "supported": true,
+        "strategy": "extra_port_or_one_click",
+        "instructions_ar": "تتيح Play.hosting تفعيل Crossplay بضغطة زر أو إنشاء منفذ إضافي مجاني (بما في ذلك 19132 UDP). في ملف plugins/Geyser-Spigot/config.yml اضبط bedrock.port على المنفذ الإضافي المخصص، واضبط auth-type: floodgate.",
+        "instructions_en": "Play.hosting supports one-click crossplay or creating a free extra UDP port (including 19132). Set bedrock.port in plugins/Geyser-Spigot/config.yml to the allocated port and set auth-type: floodgate."
+      },
+      "policy_rules": {
+        "forbid_disable_bungeecord": false,
+        "require_modrinth_install_on_free": false,
+        "low_ram_strict_mode": false,
+        "recommended_max_view_distance": 8,
+        "recommended_simulation_distance": 6
+      }
+    },
+    {
+      "id": "falixnodes",
+      "name": "FalixNodes",
+      "domain": "falixnodes.net",
+      "url": "https://falixnodes.net",
+      "tier": "tier_1_marketplace_plugin",
+      "badge_ar": "دعم كامل (متجر Modrinth للمجاني)",
+      "badge_en": "Full Support (Modrinth for Free Tier)",
+      "specs": {
+        "free_ram_gb": 2.5,
+        "dynamic_ram_up_to_gb": 4.5,
+        "storage_gb": 10,
+        "storage_type": "NVMe",
+        "extra_ports_limit": 5,
+        "mysql_databases_limit": 5,
+        "player_slots": "Unlimited",
+        "hibernation_on_empty": true,
+        "inactivity_deletion_days": 90
+      },
+      "capabilities": {
+        "file_manager": "available",
+        "sftp_access": "available",
+        "custom_jar_upload": "restricted_on_free_tier",
+        "plugin_marketplace_modrinth_hangar": "available",
+        "extra_ports": "available",
+        "outbound_https_polling": "available",
+        "mysql_database": "available"
+      },
+      "plugin_installation": {
+        "method": "modrinth_hangar_marketplace",
+        "instructions_ar": "تنبيه للخطة المجانية: تمنع FalixNodes رفع ملفات .jar الخارجية يدوياً في الخطة المجانية. لتثبيت بلجن CraftMate Connector مجاناً، افتح لوحة Falix -> قسم Plugins -> ابحث عن CraftMate Connector من مصدر Modrinth أو Hangar واضغط Install.",
+        "instructions_en": "Free Plan Notice: FalixNodes restricts manual custom .jar uploads on the Free tier. Open the Falix Panel -> Plugins tab -> search for 'CraftMate Connector' via Modrinth/Hangar and click Install."
+      },
+      "bedrock_geyser_guide": {
+        "supported": true,
+        "strategy": "network_extra_port_or_clone",
+        "instructions_ar": "توفر FalixNodes حتى 5 منافذ إضافية مجاناً. اذهب إلى Network -> Ports واضغط Add Port، ثم انسخ رقم المنفذ الجديد وضعه في plugins/Geyser-Spigot/config.yml تحت bedrock.port (أو فعّل clone-remote-port: true لاستخدام المنفذ الأساسي). احذر من تعارض المنفذ مع Simple Voice Chat إذا كنت تستخدمه.",
+        "instructions_en": "FalixNodes provides up to 5 extra ports. Go to Network -> Ports -> Add Port, then copy the allocated port into plugins/Geyser-Spigot/config.yml under bedrock.port (or enable clone-remote-port: true on the primary port). Avoid port conflicts with Simple Voice Chat."
+      },
+      "policy_rules": {
+        "forbid_disable_bungeecord": false,
+        "require_modrinth_install_on_free": true,
+        "low_ram_strict_mode": true,
+        "recommended_max_view_distance": 7,
+        "recommended_simulation_distance": 5
+      }
+    },
+    {
+      "id": "mcserverhost",
+      "name": "MCServerHost",
+      "domain": "mcserverhost.com",
+      "url": "https://www.mcserverhost.com",
+      "tier": "tier_1_full",
+      "badge_ar": "دعم كامل + SFTP — Tier 1",
+      "badge_en": "Full Support + SFTP — Tier 1",
+      "specs": {
+        "free_ram_gb": 4.0,
+        "storage_gb": 10,
+        "storage_type": "NVMe",
+        "cpu_model": "AMD Ryzen 9 7950X3D",
+        "player_slots": "Unlimited",
+        "hibernation_on_empty": true
+      },
+      "capabilities": {
+        "file_manager": "available",
+        "sftp_access": "available",
+        "custom_jar_upload": "available",
+        "extra_ports": "available",
+        "outbound_https_polling": "available"
+      },
+      "plugin_installation": {
+        "method": "direct_jar_or_sftp",
+        "instructions_ar": "افتح لوحة تحكم MCServerHost -> انتقل إلى File Manager -> افتح مجلد plugins -> ارفع ملف CraftMate-Connector.jar (أو استخدم برنامج FileZilla عبر SFTP)، ثم أعد تشغيل السيرفر.",
+        "instructions_en": "Open MCServerHost dashboard -> File Manager -> plugins folder -> upload CraftMate-Connector.jar (or use FileZilla via SFTP), then restart your server."
+      },
+      "bedrock_geyser_guide": {
+        "supported": true,
+        "strategy": "manual_geyser_floodgate_upload",
+        "instructions_ar": "أوقف السيرفر، ثم ارفع Geyser-Spigot.jar و Floodgate-Spigot.jar إلى مجلد plugins عبر File Manager. شغّل السيرفر لتوليد الملفات، ثم افتح plugins/Geyser-Spigot/config.yml واضبط المنفذ المخصص للسيرفر واضبط auth-type: floodgate.",
+        "instructions_en": "Stop the server, upload Geyser-Spigot.jar and Floodgate-Spigot.jar to /plugins via File Manager. Start the server to generate configs, then edit plugins/Geyser-Spigot/config.yml to set your port and auth-type: floodgate."
+      },
+      "policy_rules": {
+        "forbid_disable_bungeecord": false,
+        "require_modrinth_install_on_free": false,
+        "low_ram_strict_mode": false,
+        "recommended_max_view_distance": 8,
+        "recommended_simulation_distance": 6
+      }
+    },
+    {
+      "id": "minefort",
+      "name": "Minefort",
+      "domain": "minefort.com",
+      "url": "https://minefort.com",
+      "tier": "tier_1_managed_proxy",
+      "badge_ar": "دعم مخصص (خلف بروكسي Minefort)",
+      "badge_en": "Managed Proxy Support (Minefort Network)",
+      "specs": {
+        "free_ram_gb": 1.0,
+        "storage_gb": 10,
+        "player_slots": 20,
+        "hibernation_on_empty": true,
+        "central_proxy": "play.minefort.com (BungeeCord)"
+      },
+      "capabilities": {
+        "file_manager": "available",
+        "ftp_access": "available (ftp.minefort.com)",
+        "custom_jar_upload": "available",
+        "extra_ports": "unavailable_behind_proxy",
+        "outbound_https_polling": "available"
+      },
+      "plugin_installation": {
+        "method": "direct_jar_or_ftp",
+        "instructions_ar": "أوقف السيرفر من لوحة Minefort -> اذهب إلى قسم Files -> افتح مجلد plugins -> ارفع ملف CraftMate-Connector.jar (أو عبر FTP على العنوان ftp.minefort.com) ثم شغّل السيرفر.",
+        "instructions_en": "Stop your server in Minefort Dashboard -> Files -> plugins -> Upload CraftMate-Connector.jar (or via FTP at ftp.minefort.com), then start the server."
+      },
+      "bedrock_geyser_guide": {
+        "supported": true,
+        "strategy": "minefort_bungeecord_proxy_aware",
+        "instructions_ar": "تحذير هام جداً: يعمل سيرفر Minefort خلف شبكة BungeeCord المركزية الخاصة بهم (play.minefort.com). إياك وتعطيل bungeecord: true في ملف spigot.yml وإلا لن يتمكن أي لاعب من الدخول! لدعم إصدارات Bedrock الحديثة أو حل مشكلات الدخول، تأكد من تثبيت Floodgate و ViaVersion/ViaBackwards وعدم تغيير منفذ السيرفر الداخلي.",
+        "instructions_en": "CRITICAL WARNING: Minefort runs behind their central BungeeCord proxy (play.minefort.com). NEVER set bungeecord: false in spigot.yml or nobody will be able to join! Keep bungeecord: true and install Floodgate + ViaVersion/ViaBackwards for version compatibility."
+      },
+      "policy_rules": {
+        "forbid_disable_bungeecord": true,
+        "forbid_enable_online_mode_in_server_properties": true,
+        "require_modrinth_install_on_free": false,
+        "low_ram_strict_mode": true,
+        "recommended_max_view_distance": 5,
+        "recommended_simulation_distance": 4
+      }
+    }
+  ],
+  "fmhl_other_hosts_classification": {
+    "future_tier_2_candidates": [
+      { "name": "MineStrator", "ram": "4GB", "rating": 4.8, "notes": "WebSFTP + Custom JAR + Geyser shared port" },
+      { "name": "FreeMCServer.net", "ram": "1.5GB+", "rating": 3.9, "notes": "Supports creating UDP port in Ports tab for Geyser" },
+      { "name": "AxentHost", "ram": "2GB+", "rating": 4.4, "notes": "Standard panel, scalable via free coins" },
+      { "name": "HidenCloud", "ram": "3GB", "rating": 4.4, "notes": "Ryzen 9 7950X3D, 15GB storage" }
+    ],
+    "log_upload_only_restricted_hosts": [
+      { "name": "ScalaCube (Free)", "reason_ar": "الخطة المجانية لا تسمح بالوصول للملفات أو إضافة بلجنز (Vanilla فقط). يُدعم عبر رفع السجلات يدوياً فقط." },
+      { "name": "Aternos", "reason_ar": "لا يسمح برفع ملفات .jar خارجية أو اتصالات خارجية مفتوحة. يُدعم عبر نسخ/رفع السجل يدوياً فقط." }
+    ]
+  }
+}

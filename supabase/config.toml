@@ -1,0 +1,9 @@
+# Supabase Configuration for CraftMate AI
+project_id = "fucsztovkkilyboinhrv"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000

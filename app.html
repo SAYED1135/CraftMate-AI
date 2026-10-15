@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CraftMate AI — لوحة التحكم | Dashboard</title>
+<meta name="description" content="حساب CraftMate AI: اربط سيرفر ماينكرافت، شخّص أعطاله، وفعّل اللعب المشترك من لوحة واحدة.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2322c55e'/><text x='50' y='68' font-size='52' text-anchor='middle'>⛏️</text></svg>">
+<style>
+:root{--bg:#060a12;--bg2:#0a0f1c;--card:#0d1424;--card2:#111b31;--card3:#0a1220;--border:#1d2a44;--border2:#2a3c5f;--text:#f1f5f9;--muted:#94a3b8;--dim:#64748b;--green:#22c55e;--green2:#15803d;--glow:rgba(34,197,94,.26);--sky:#38bdf8;--skysoft:rgba(56,189,248,.12);--amber:#f59e0b;--ambersoft:rgba(245,158,11,.12);--red:#f87171;--redsoft:rgba(248,113,113,.12);--violet:#a78bfa;--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh}
+a{color:inherit;text-decoration:none}button,input,select,textarea{font-family:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-weight:800;border-radius:11px;padding:12px 24px;font-size:.94rem;transition:.2s;background:var(--green);color:#04150a;box-shadow:0 6px 22px var(--glow)}
+.btn:hover{background:#4ade80;transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--text);border:1.5px solid var(--border2);box-shadow:none}
+.btn.ghost:hover{border-color:var(--green);color:var(--green)}
+.btn.sky{background:var(--sky);color:#082f49;box-shadow:none}
+.btn.danger{background:transparent;color:#fca5a5;border:1.5px solid rgba(248,113,113,.4);box-shadow:none}
+.btn.sm{padding:9px 17px;font-size:.85rem}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+header{position:sticky;top:0;z-index:100;background:rgba(6,10,18,.85);backdrop-filter:blur(15px);border-bottom:1px solid rgba(29,42,68,.7)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:65px;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:1.05rem}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--green),var(--green2));display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 5px 16px var(--glow)}
+.navacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.langbtn,.chipbtn{background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:8px 13px;font-weight:800;font-size:.8rem;cursor:pointer}
+.modechip{font-size:.72rem;font-weight:900;border-radius:999px;padding:5px 12px;background:var(--skysoft);color:#7dd3fc;border:1px solid rgba(56,189,248,.35)}
+.modechip.cloud{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.4)}
+/* auth */
+.auth-wrap{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;padding:54px 0 70px}
+.auth-side h1{font-size:clamp(1.75rem,3.6vw,2.6rem);font-weight:900;line-height:1.32;margin-bottom:15px}
+.auth-side h1 .hl{color:var(--green)}
+.auth-side p{color:var(--muted);margin-bottom:24px;max-width:480px}
+.perk{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:15px 17px;margin-bottom:11px}
+.perk .ic{font-size:21px}
+.perk b{display:block;font-size:.95rem}.perk span{color:var(--muted);font-size:.86rem}
+.card{background:var(--card);border:1px solid var(--border2);border-radius:19px;padding:29px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.tabs{display:flex;background:var(--card3);border:1px solid var(--border);border-radius:11px;padding:5px;margin-bottom:22px}
+.tabs button{flex:1;background:none;border:none;color:var(--muted);padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:.92rem}
+.tabs button.active{background:var(--green);color:#04150a}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:.8rem;font-weight:800;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px 14px;font-size:.94rem;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green)}
+.field textarea{min-height:150px;font-family:Consolas,monospace;font-size:.76rem;direction:ltr;text-align:left;line-height:1.7;resize:vertical}
+.hint{font-size:.78rem;color:var(--dim);margin-top:5px}
+.err{display:none;background:var(--redsoft);border:1px solid rgba(248,113,113,.4);color:#fecaca;border-radius:10px;padding:11px 14px;font-size:.87rem;margin-bottom:15px}
+.ok{display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#bbf7d0;border-radius:10px;padding:11px 14px;font-size:.87rem;margin-bottom:15px}
+.divider{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:.78rem;margin:18px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.mode-row{display:flex;gap:8px;margin-bottom:18px}
+.mode-row button{flex:1;background:var(--card3);border:1px solid var(--border2);color:var(--muted);border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-size:.84rem}
+.mode-row button.active{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.07)}
+/* app shell */
+.shell{display:grid;grid-template-columns:245px 1fr;gap:22px;padding:28px 0 70px;align-items:start}
+.side{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:19px;position:sticky;top:88px}
+.profile{display:flex;gap:12px;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:15px}
+.avatar{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--green),#166534);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;color:#04150a}
+.profile b{display:block;font-size:.96rem}
+.profile span{font-size:.74rem;color:var(--muted);font-family:Consolas,monospace}
+.planpill{display:inline-block;font-size:.68rem;font-weight:900;background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.35);border-radius:999px;padding:3px 11px;margin-top:3px}
+.snav{display:flex;flex-direction:column;gap:6px}
+.snav button{background:none;border:1px solid transparent;color:var(--muted);text-align:start;padding:11px 13px;border-radius:10px;font-weight:800;cursor:pointer;font-size:.9rem}
+.snav button:hover{color:var(--text);background:var(--card2)}
+.snav button.active{color:var(--green);background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3)}
+.view{display:none}.view.active{display:block}
+.view-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}
+.view-head h2{font-size:1.45rem;font-weight:900}
+.view-head p{color:var(--muted);font-size:.92rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:17px;text-align:center}
+.stat b{display:block;font-size:1.5rem;color:var(--green)}
+.stat span{font-size:.76rem;color:var(--muted);font-weight:800}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:18px}
+.panel h3{font-size:1.02rem;margin-bottom:13px}
+.check{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--border);font-size:.92rem}
+.check:last-child{border-bottom:none}
+.check .box{width:24px;height:24px;flex-shrink:0;border-radius:8px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;color:#04150a}
+.check.done .box{background:var(--green);border-color:var(--green)}
+.check span{color:var(--muted);display:block;font-size:.83rem}
+.server-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:21px;margin-bottom:14px;display:flex;gap:17px;align-items:flex-start}
+.server-card:hover{border-color:rgba(34,197,94,.4)}
+.sicon{width:54px;height:54px;flex-shrink:0;border-radius:14px;background:var(--card2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:25px}
+.server-main{flex:1;min-width:0}
+.server-main h3{font-size:1.03rem}
+.server-main .addr{color:var(--sky);font-family:Consolas,monospace;font-size:.8rem;direction:ltr;text-align:end}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 13px}
+.tag{font-size:.72rem;font-weight:800;border-radius:999px;padding:4px 11px;background:var(--card3);border:1px solid var(--border2);color:#cbd5e1}
+.tag.on{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.4)}
+.tag.sleep{background:var(--skysoft);color:#7dd3fc;border-color:rgba(56,189,248,.35)}
+.tag.off{background:var(--card3);color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{text-align:center;padding:38px 20px;color:var(--muted)}
+.empty .big{font-size:46px;margin-bottom:12px}
+/* onboarding */
+.stepsrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.stepdot{flex:1;min-width:130px;text-align:center;background:var(--card3);border:1px solid var(--border);border-radius:11px;padding:10px;font-size:.8rem;font-weight:800;color:var(--dim)}
+.stepdot.active{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.07)}
+.host-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.host-card{background:var(--card3);border:2px solid var(--border);border-radius:13px;padding:17px 13px;text-align:center;cursor:pointer;color:var(--text);width:100%}
+.host-card.sel{border-color:var(--green);background:rgba(34,197,94,.06)}
+.host-card .ic{font-size:25px}.host-card b{display:block;font-size:.9rem;margin:6px 0 3px}
+.host-card span{font-size:.74rem;color:var(--muted)}
+.radio-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.radio-card{background:var(--card3);border:2px solid var(--border);border-radius:13px;padding:17px;cursor:pointer;text-align:center}
+.radio-card.sel{border-color:var(--green);background:rgba(34,197,94,.06)}
+.radio-card .ic{font-size:25px}.radio-card b{display:block;margin:6px 0 4px;font-size:.92rem}
+.radio-card span{font-size:.79rem;color:var(--muted)}
+.codebox{background:#05080f;border:1px dashed rgba(34,197,94,.5);border-radius:13px;padding:18px;text-align:center;margin:14px 0}
+.codebox b{font-family:Consolas,monospace;font-size:1.65rem;color:#4ade80;letter-spacing:.08em;direction:ltr;display:block}
+.codebox span{font-size:.8rem;color:var(--muted)}
+.codecmd{background:#05080f;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:Consolas,monospace;direction:ltr;text-align:center;color:#a5f3c4;font-size:.85rem;margin:10px 0;word-break:break-all}
+.limitbox{display:none;background:var(--ambersoft);border:1px solid rgba(245,158,11,.45);color:#fde68a;border-radius:12px;padding:15px 17px;font-size:.9rem;margin-bottom:16px}
+/* diagnose */
+.report{display:none;background:var(--card3);border:1px solid var(--border2);border-radius:14px;padding:20px;margin-top:16px}
+.sev{display:inline-block;font-size:.72rem;font-weight:900;border-radius:999px;padding:4px 13px;margin-bottom:11px}
+.sev-high{background:var(--redsoft);color:#fca5a5;border:1px solid rgba(248,113,113,.4)}
+.sev-med{background:var(--ambersoft);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+.sev-ok{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.4)}
+.report ol{padding-inline-start:22px;color:#cbd5e1;display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.guard{background:var(--skysoft);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:11px 14px;font-size:.85rem;color:#bae6fd}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:start;vertical-align:top}
+th{color:var(--dim);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--dim);font-size:.82rem;background:#04070d}
+.toast{position:fixed;bottom:24px;inset-inline-start:50%;transform:translate(50%,90px);background:#14532d;border:1px solid rgba(34,197,94,.5);color:#dcfce7;border-radius:12px;padding:13px 22px;font-size:.9rem;font-weight:700;z-index:400;transition:.35s;box-shadow:0 16px 40px rgba(0,0,0,.5);max-width:92vw;text-align:center}
+[dir="ltr"] .toast{transform:translate(-50%,90px)}
+.toast.show{transform:translate(50%,0)}
+[dir="ltr"] .toast.show{transform:translate(-50%,0)}
+@media(max-width:900px){.auth-wrap,.shell{grid-template-columns:1fr}.side{position:static}.stats{grid-template-columns:repeat(2,1fr)}.host-grid{grid-template-columns:repeat(2,1fr)}.radio-row{grid-template-columns:1fr}.server-card{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html"><span class="logo">⛏️</span><span>CraftMate AI</span></a>
+    <div class="navacts">
+      <span class="modechip" id="modeChip">…</span>
+      <button class="langbtn" id="langToggle" onclick="toggleLang()">EN 🌐</button>
+      <a class="chipbtn" href="index.html" data-ar="← الموقع" data-en="← Website">← الموقع</a>
+      <button class="chipbtn" id="logoutBtn" onclick="logout()" style="display:none" data-ar="خروج" data-en="Log out">خروج</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ════════ AUTH VIEW ════════ -->
+<div id="authView">
+  <div class="auth-wrap">
+    <div class="auth-side">
+      <h1><span data-ar="سيرفرك له لوحة ذكية." data-en="Your server gets a smart dashboard.">سيرفرك له لوحة ذكية.</span><br><span class="hl" data-ar="وأنت لك حسابك الخاص." data-en="And you get your own account.">وأنت لك حسابك الخاص.</span></h1>
+      <p data-ar="سجّل في ثوانٍ، اربط سيرفرك بكود واحد، وخد أول تشخيص مفهوم — كل بياناتك معزولة تماماً عن أي مستخدم تاني." data-en="Sign up in seconds, link your server with one code, and get your first clear diagnosis — your data is fully isolated from every other user.">سجّل في ثوانٍ، اربط سيرفرك بكود واحد، وخد أول تشخيص مفهوم — كل بياناتك معزولة تماماً عن أي مستخدم تاني.</p>
+      <div class="perk"><span class="ic">🩺</span><div><b data-ar="تشخيص يفهمك" data-en="Diagnosis that speaks your language">تشخيص يفهمك</b><span data-ar="10 تشخيصات ذكية شهرياً في الخطة المجانية" data-en="10 smart diagnoses monthly on the Free plan">10 تشخيصات ذكية شهرياً في الخطة المجانية</span></div></div>
+      <div class="perk"><span class="ic">🌋</span><div><b data-ar="لاعبو الجوال يدخلون" data-en="Mobile players get in">لاعبو الجوال يدخلون</b><span data-ar="معالج لعب مشترك مظبوط على استضافتك الأربع" data-en="A crossplay wizard tuned to your four hosts">معالج لعب مشترك مظبوط على استضافتك الأربع</span></div></div>
+      <div class="perk"><span class="ic">🔒</span><div><b data-ar="أمان قبل الذكاء" data-en="Safety before intelligence">أمان قبل الذكاء</b><span data-ar="تنقية أسرار، وموافقة قبل أي تعديل، ونسخ احتياطي وتراجع" data-en="Secret scrubbing, approval before any edit, backup & rollback">تنقية أسرار، وموافقة قبل أي تعديل، ونسخ احتياطي وتراجع</span></div></div>
+      <div class="perk"><span class="ic">🤖</span><div><b data-ar="بوت AFK في الطريق" data-en="AFK bot on the way">بوت AFK في الطريق</b><span data-ar="حسابك الحالي هو نفس حساب بوت البقاء عند إطلاقه" data-en="This same account runs your Stay-Alive bot at launch">حسابك الحالي هو نفس حساب بوت البقاء عند إطلاقه</span></div></div>
+    </div>
+
+    <div class="card">
+      <div class="mode-row">
+        <button id="modeLocalBtn" class="active" onclick="setAuthMode('local')" data-ar="⚡ دخول فوري" data-en="⚡ Instant access">⚡ دخول فوري</button>
+        <button id="modeCloudBtn" onclick="setAuthMode('cloud')" data-ar="☁️ Supabase سحابي" data-en="☁️ Supabase cloud">☁️ Supabase سحابي</button>
+      </div>
+      <p class="hint" id="modeHint" style="margin-bottom:16px"></p>
+      <div class="tabs">
+        <button id="tabLogin" onclick="authTab('login')" data-ar="تسجيل الدخول" data-en="Log in">تسجيل الدخول</button>
+        <button id="tabRegister" class="active" onclick="authTab('register')" data-ar="حساب جديد" data-en="New account">حساب جديد</button>
+      </div>
+      <div class="err" id="authErr"></div>
+      <div class="ok" id="authOk"></div>
+
+      <form id="registerForm" onsubmit="return doRegister(event)">
+        <div class="field"><label data-ar="اسم المستخدم" data-en="Username">اسم المستخدم</label><input id="regUser" required minlength="3" maxlength="24" autocomplete="username" data-ar-ph="مثال: ahmed_craft" data-en-ph="e.g. ahmed_craft" placeholder="مثال: ahmed_craft"></div>
+        <div class="field"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input id="regEmail" type="email" autocomplete="email" placeholder="you@example.com"><p class="hint" id="regEmailHint"></p></div>
+        <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="regPass" type="password" required minlength="6" autocomplete="new-password" data-ar-ph="6 أحرف على الأقل" data-en-ph="At least 6 characters" placeholder="6 أحرف على الأقل"></div>
+        <div class="field"><label data-ar="تأكيد كلمة السر" data-en="Confirm password">تأكيد كلمة السر</label><input id="regPass2" type="password" required autocomplete="new-password"></div>
+        <button class="btn" type="submit" style="width:100%" data-ar="🚀 إنشاء حسابي والبدء" data-en="🚀 Create my account & start">🚀 إنشاء حسابي والبدء</button>
+      </form>
+
+      <form id="loginForm" onsubmit="return doLogin(event)" style="display:none">
+        <div class="field"><label data-ar="اسم المستخدم أو البريد" data-en="Username or email">اسم المستخدم أو البريد</label><input id="loginId" required autocomplete="username"></div>
+        <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="loginPass" type="password" required autocomplete="current-password"></div>
+        <button class="btn" type="submit" style="width:100%" data-ar="دخول إلى لوحتي" data-en="Enter my dashboard">دخول إلى لوحتي</button>
+      </form>
+
+      <div class="divider"><span data-ar="أو" data-en="or">أو</span></div>
+      <button class="btn ghost" style="width:100%" onclick="demoLogin()" data-ar="🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)" data-en="🎮 Try the ready demo account (one click)">🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)</button>
+      <p class="hint" style="text-align:center;margin-top:13px" data-ar="بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات." data-en="By signing up you accept the platform is in beta launch — your data is yours and deletable anytime from Settings.">بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ APP VIEW ════════ -->
+<div id="appView" style="display:none">
+  <div class="shell">
+    <aside class="side">
+      <div class="profile">
+        <div class="avatar" id="avatarTx">C</div>
+        <div><b id="profName">—</b><span id="profCode">—</span><br><span class="planpill" id="profPlan">FREE</span></div>
+      </div>
+      <nav class="snav">
+        <button data-view="dashboard" class="active" onclick="go('dashboard')" data-ar="🏠 لوحتي" data-en="🏠 Dashboard">🏠 لوحتي</button>
+        <button data-view="onboard" onclick="go('onboard')" data-ar="➕ ربط سيرفر" data-en="➕ Link a server">➕ ربط سيرفر</button>
+        <button data-view="servers" onclick="go('servers')" data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفرتي</button>
+        <button data-view="diagnose" onclick="go('diagnose')" data-ar="🩺 تشخيص جديد" data-en="🩺 New diagnosis">🩺 تشخيص جديد</button>
+        <button data-view="history" onclick="go('history')" data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</button>
+        <button data-view="settings" onclick="go('settings')" data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</button>
+      </nav>
+      <div style="margin-top:17px;background:var(--card3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:.8rem;color:var(--muted)" id="sideModeNote"></div>
+    </aside>
+
+    <div>
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <div class="view-head"><div><h2 id="dashTitle">🏠 لوحتي</h2><p data-ar="حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة." data-en="Your servers, activation steps and latest activity — at a glance.">حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ اربط سيرفر" data-en="➕ Link a server">➕ اربط سيرفر</button></div>
+        <div class="stats">
+          <div class="stat"><b id="stServers">0/1</b><span data-ar="سيرفرات مرتبطة" data-en="Linked servers">سيرفرات مرتبطة</span></div>
+          <div class="stat"><b id="stDiag">0/10</b><span data-ar="تشخيصات الشهر" data-en="Diagnoses this month">تشخيصات الشهر</span></div>
+          <div class="stat"><b id="stOnline">0</b><span data-ar="سيرفرات حية الآن" data-en="Servers live now">سيرفرات حية الآن</span></div>
+          <div class="stat"><b id="stDays">0</b><span data-ar="أيام في التقارير" data-en="Days of report history">أيام في التقارير</span></div>
+        </div>
+        <div class="panel"><h3 data-ar="🎯 قائمة تفعيلك" data-en="🎯 Your activation checklist">🎯 قائمة تفعيلك</h3><div id="checklist"></div></div>
+        <div class="panel"><h3 data-ar="🗂️ سيرفراتك" data-en="🗂️ Your servers">🗂️ سيرفراتك</h3><div id="dashServers"></div></div>
+      </section>
+
+      <!-- ONBOARDING -->
+      <section class="view" id="view-onboard">
+        <div class="view-head"><div><h2 data-ar="➕ ربط سيرفر جديد" data-en="➕ Link a new server">➕ ربط سيرفر جديد</h2><p data-ar="أربع خطوات ويوصلك أول تشخيص — اختر استضافتك وطريقتك وسيب الباقي علينا." data-en="Four steps to your first diagnosis — pick your host and method, leave the rest to us.">أربع خطوات ويوصلك أول تشخيص — اختر استضافتك وطريقتك وسيب الباقي علينا.</p></div></div>
+        <div class="limitbox" id="limitBox"></div>
+        <div class="stepsrow">
+          <div class="stepdot active" id="sd1" data-ar="1 · الاستضافة" data-en="1 · Host">1 · الاستضافة</div>
+          <div class="stepdot" id="sd2" data-ar="2 · بيانات السيرفر" data-en="2 · Server details">2 · بيانات السيرفر</div>
+          <div class="stepdot" id="sd3" data-ar="3 · طريقة الربط" data-en="3 · Link method">3 · طريقة الربط</div>
+          <div class="stepdot" id="sd4" data-ar="4 · الاتصال" data-en="4 · Connection">4 · الاتصال</div>
+        </div>
+
+        <div class="panel" id="obStep1">
+          <h3 data-ar="أولاً: سيرفرك مستضاف فين؟" data-en="First: where is your server hosted?">أولاً: سيرفرك مستضاف فين؟</h3>
+          <div class="host-grid" id="obHosts"></div>
+          <p class="hint" id="obHostNote"></p>
+        </div>
+
+        <div class="panel" id="obStep2">
+          <h3 data-ar="ثانياً: بيانات سيرفرك" data-en="Second: your server details">ثانياً: بيانات سيرفرك</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+            <div class="field"><label data-ar="اسم السيرفر" data-en="Server name">اسم السيرفر</label><input id="obName" data-ar-ph="مثال: سيرفر الأصدقاء" data-en-ph="e.g. Friends Server" placeholder="مثال: سيرفر الأصدقاء"></div>
+            <div class="field"><label data-ar="عنوان السيرفر (IP:Port)" data-en="Server address (IP:Port)">عنوان السيرفر (IP:Port)</label><input id="obAddr" placeholder="play.example.net:25565" style="direction:ltr;text-align:left"></div>
+            <div class="field"><label data-ar="برنامج السيرفر" data-en="Server software">برنامج السيرفر</label><select id="obSoft"><option>Paper</option><option>Purpur</option><option>Spigot</option></select></div>
+            <div class="field"><label data-ar="إصدار ماينكرافت" data-en="Minecraft version">إصدار ماينكرافت</label><select id="obVer"><option>1.21.4</option><option>1.21.1</option><option>1.21</option><option>1.20.6</option><option>1.20.4</option><option>1.20.1</option></select></div>
+          </div>
+        </div>
+
+        <div class="panel" id="obStep3">
+          <h3 data-ar="ثالثاً: هتوصلنا بسيرفرك إزاي؟" data-en="Third: how will you connect us?">ثالثاً: هتوصلنا بسيرفرك إزاي؟</h3>
+          <div class="radio-row">
+            <div class="radio-card sel" id="mPlugin" onclick="setMethod('plugin')"><div class="ic">🔌</div><b data-ar="بالبلجن (الأقوى)" data-en="Plugin (strongest)">بالبلجن (الأقوى)</b><span data-ar="ربط حي كل 60 ثانية وتشخيص تلقائي" data-en="Live 60s link & automatic diagnosis">ربط حي كل 60 ثانية وتشخيص تلقائي</span></div>
+            <div class="radio-card" id="mManual" onclick="setMethod('manual')"><div class="ic">📄</div><b data-ar="برفع السجل" data-en="Log upload">برفع السجل</b><span data-ar="من غير أي تثبيت — للاستضافات المقيدة" data-en="Zero install — for restricted hosts">من غير أي تثبيت — للاستضافات المقيدة</span></div>
+            <div class="radio-card" id="mLater" onclick="setMethod('later')"><div class="ic">🕐</div><b data-ar="سجّله دلوقتي واربط بعدين" data-en="Save now, link later">سجّله دلوقتي واربط بعدين</b><span data-ar="هيظهر في لوحتك بحالة غير مرتبط" data-en="Appears in your dashboard as unlinked">هيظهر في لوحتك بحالة غير مرتبط</span></div>
+          </div>
+          <button class="btn" id="createServerBtn" onclick="createServer()" data-ar="إنشاء السيرفر وتوليد الربط ←" data-en="Create server & generate link →">إنشاء السيرفر وتوليد الربط ←</button>
+        </div>
+
+        <div class="panel" id="obStep4" style="display:none">
+          <h3 data-ar="رابعاً: لحظة الاتصال" data-en="Fourth: the connection moment">رابعاً: لحظة الاتصال</h3>
+          <div id="obConnect"></div>
+        </div>
+      </section>
+
+      <!-- SERVERS -->
+      <section class="view" id="view-servers">
+        <div class="view-head"><div><h2 data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفراتي</h2><p data-ar="كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع." data-en="Every server with its status, environment and latest diagnosis — manage, unlink, delete.">كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ سيرفر جديد" data-en="➕ New server">➕ سيرفر جديد</button></div>
+        <div id="serversList"></div>
+        <div class="panel" id="serverDetail" style="display:none"></div>
+      </section>
+
+      <!-- DIAGNOSE -->
+      <section class="view" id="view-diagnose">
+        <div class="view-head"><div><h2 data-ar="🩺 تشخيص جديد" data-en="🩺 New diagnosis">🩺 تشخيص جديد</h2><p data-ar="ارفع ملف سجل أو الصق نصه — التنقية بتحصل قبل أي تحليل، والتقرير بيتحفظ في حسابك." data-en="Upload a log file or paste its text — scrubbing happens before any analysis, and the report saves to your account.">ارفع ملف سجل أو الصق نصه — التنقية بتحصل قبل أي تحليل، والتقرير بيتحفظ في حسابك.</p></div></div>
+        <div class="panel">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+            <div class="field"><label data-ar="السيرفر" data-en="Server">السيرفر</label><select id="dgServer"></select></div>
+            <div class="field"><label data-ar="أو ارفع ملف سجل (.log / .txt)" data-en="Or upload a log file (.log / .txt)">أو ارفع ملف سجل (.log / .txt)</label><input type="file" id="dgFile" accept=".log,.txt" onchange="readLogFile(event)"></div>
+          </div>
+          <div class="field"><label data-ar="نص السجل (آخر 250 سطر بيكفوا)" data-en="Log text (last 250 lines are enough)">نص السجل (آخر 250 سطر بيكفوا)</label><textarea id="dgText" placeholder="[12:00:03] [Server thread/ERROR]: ..."></textarea></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn" onclick="runDiagnosis()" data-ar="🩺 شخّص واحفظ التقرير" data-en="🩺 Diagnose & save report">🩺 شخّص واحفظ التقرير</button>
+            <button class="btn ghost sm" onclick="document.getElementById('dgText').value=window.CM_SAMPLE||''" data-ar="جرّب بسجل عينة" data-en="Try a sample log">جرّب بسجل عينة</button>
+          </div>
+          <p class="hint" id="diagUsage"></p>
+          <div class="report" id="dgReport">
+            <span class="sev" id="dgSev"></span><h3 id="dgTitle" style="margin-bottom:7px"></h3><p id="dgCause" style="color:var(--muted)"></p>
+            <ol id="dgSteps"></ol><div class="guard" id="dgGuard"></div>
+            <p class="hint" id="dgScrub" style="margin-top:11px"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="view" id="view-history">
+        <div class="view-head"><div><h2 data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</h2><p data-ar="كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام." data-en="Every diagnosis saved in your account — reopen or delete it. Free retention is 7 days.">كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام.</p></div></div>
+        <div class="panel"><div id="historyList"></div></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <div class="view-head"><div><h2 data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</h2><p data-ar="حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه." data-en="Your account, plan and data — plus the Supabase cloud connection when its keys are ready.">حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه.</p></div></div>
+        <div class="panel"><h3 data-ar="👤 حسابي" data-en="👤 My account">👤 حسابي</h3><div id="settingsProfile"></div></div>
+        <div class="panel">
+          <h3 data-ar="☁️ اتصال Supabase (المشروع fucsztovkkilyboinhrv)" data-en="☁️ Supabase connection (project fucsztovkkilyboinhrv)">☁️ اتصال Supabase (المشروع fucsztovkkilyboinhrv)</h3>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:14px" data-ar="للتفعيل السحابي الكامل: شغّل ملفي الترحيل 001 و002 في Supabase SQL Editor، وبعدين الصق مفتاح anon public (من Project Settings → API) هنا للاختبار على جهازك — وللنشر لكل الزوار بيتحط نفس المفتاح الآمن في إعدادات الموقع مرة واحدة. بدونه الحسابات شغالة فورياً على جهاز المستخدم بنفس العزل والحدود." data-en="For full cloud activation: run migration files 001 and 002 in the Supabase SQL Editor, then paste the anon public key (Project Settings → API) here to test on your device — for all visitors the same safe key goes into the site config once. Without it, accounts run instantly on the user's device with the same isolation and limits.">للتفعيل السحابي الكامل: شغّل ملفي الترحيل 001 و002 في Supabase SQL Editor، وبعدين الصق مفتاح anon public (من Project Settings → API) هنا للاختبار على جهازك — وللنشر لكل الزوار بيتحط نفس المفتاح الآمن في إعدادات الموقع مرة واحدة. بدونه الحسابات شغالة فورياً على جهاز المستخدم بنفس العزل والحدود.</p>
+          <div class="field"><label>Supabase URL</label><input id="sbUrl" value="https://fucsztovkkilyboinhrv.supabase.co" style="direction:ltr;text-align:left"></div>
+          <div class="field"><label>anon public key</label><input id="sbKey" type="password" placeholder="eyJhbGciOi..." style="direction:ltr;text-align:left"></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn sm" onclick="saveCloud()" data-ar="حفظ واختبار الاتصال" data-en="Save & test connection">حفظ واختبار الاتصال</button><button class="btn ghost sm" onclick="clearCloud()" data-ar="إيقاف الوضع السحابي" data-en="Disable cloud mode">إيقاف الوضع السحابي</button></div>
+          <p class="hint" id="sbStatus" style="margin-top:11px"></p>
+        </div>
+        <div class="panel"><h3 data-ar="💾 بياناتي" data-en="💾 My data">💾 بياناتي</h3>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn ghost sm" onclick="exportData()" data-ar="⬇️ تصدير بياناتي (JSON)" data-en="⬇️ Export my data (JSON)">⬇️ تصدير بياناتي (JSON)</button>
+            <button class="btn danger sm" onclick="deleteAccount()" data-ar="🗑️ حذف حسابي وبياناته" data-en="🗑️ Delete my account & data">🗑️ حذف حسابي وبياناته</button>
+          </div>
+          <p class="hint" style="margin-top:11px" data-ar="الحذف نهائي: الحساب والسيرفرات والتقارير وأكواد الربط بتتمسح من هذا الجهاز فوراً." data-en="Deletion is final: account, servers, reports and link codes are wiped from this device immediately.">الحذف نهائي: الحساب والسيرفرات والتقارير وأكواد الربط بتتمسح من هذا الجهاز فوراً.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer><div class="wrap" data-ar="© 2026 CraftMate AI — إطلاق تجريبي. حسابك وبيانات سيرفرك معزولة ومشفرة كلمات سرها، ولا تعديل بيتنفذ من غير موافقتك أبداً." data-en="© 2026 CraftMate AI — beta launch. Your account and server data are isolated with hashed passwords, and nothing is ever edited without your approval.">© 2026 CraftMate AI — إطلاق تجريبي. حسابك وبيانات سيرفرك معزولة ومشفرة كلمات سرها، ولا تعديل بيتنفذ من غير موافقتك أبداً.</div></footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════ CraftMate Phase B — Accounts, Onboarding, Dashboard ════════════ */
+const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
+const SUPABASE_ANON_KEY_DEFAULT = ''; // Owner: paste the public anon key here for site-wide cloud auth (safe with RLS).
+const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
+const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
+window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
+
+let LANG=localStorage.getItem('cm_lang')||'ar';
+let db=loadDB(), session=loadSession(), authMode=localStorage.getItem('cm_auth_mode')||'local';
+let obHost='play_hosting', obMethod='plugin', activeServerId=null;
+
+const HOSTS={
+ play_hosting:{icon:'🟣',ar:'Play Hosting',en:'Play Hosting',noteAr:'3GB رام وبورت Bedrock جاهز — رفع JAR يدوي متاح',noteEn:'3GB RAM & ready Bedrock port — manual JAR allowed',map:'play_hosting'},
+ falixnodes:{icon:'🟠',ar:'FalixNodes',en:'FalixNodes',noteAr:'الخطة المجانية: البلجنات من المتجر الداخلي فقط — أو ارفع سجل من غير بلجن',noteEn:'Free plan: plugins from built-in store only — or upload logs plugin-free',map:'falixnodes'},
+ mcserverhost:{icon:'🔵',ar:'MCServerHost',en:'MCServerHost',noteAr:'4GB رام وتحكم ملفات كامل + FTP',noteEn:'4GB RAM with full file control + FTP',map:'mcserverhost'},
+ minefort:{icon:'⛏️',ar:'Minefort',en:'Minefort',noteAr:'مهم: إعداد BungeeCord يفضل true دائماً (بروكسي مركزي)',noteEn:'Important: BungeeCord setting must stay true (central proxy)',map:'minefort'}};
+
+function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY))||{users:[],servers:[],codes:[],diagnoses:[],audits:[]}; }catch(e){ return {users:[],servers:[],codes:[],diagnoses:[],audits:[]}; } }
+function saveDB(){ localStorage.setItem(DB_KEY,JSON.stringify(db)); }
+function loadSession(){ try{ const s=JSON.parse(localStorage.getItem(SESSION_KEY)); if(s && s.at && (Date.now()-s.at) > 7*24*60*60*1000){ localStorage.removeItem(SESSION_KEY); return null; } return s; }catch(e){ return null; } }
+function saveSession(){ session?localStorage.setItem(SESSION_KEY,JSON.stringify(session)):localStorage.removeItem(SESSION_KEY); }
+function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function displayCode(){ return 'CM-'+Math.random().toString(36).slice(2,8).toUpperCase(); }
+function user(){ return session?db.users.find(u=>u.id===session.userId):null; }
+function t(ar,en){ return LANG==='ar'?ar:en; }
+function fmtDate(iso){ try{ return new Date(iso).toLocaleString(LANG==='ar'?'ar-EG':'en-GB'); }catch(e){ return iso; } }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3600); }
+async function hashPw(salt,pw){
+  try{ const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pw)); return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  catch(e){ let h=0; const s=salt+pw; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return 'fnv'+h.toString(16); }
+}
+function cloudKey(){ return localStorage.getItem('cm_sb_anon_key')||SUPABASE_ANON_KEY_DEFAULT; }
+function cloudURL(){ return localStorage.getItem('cm_sb_url')||SUPABASE_URL_DEFAULT; }
+function audit(action,detail){ const u=user(); if(!u) return; db.audits.push({id:uid(),ownerId:u.id,action,detail:detail||'',at:new Date().toISOString()}); saveDB(); }
+
+/* ── i18n ── */
+function applyLang(){
+  const ar=LANG==='ar';
+  document.documentElement.lang=LANG; document.documentElement.dir=ar?'rtl':'ltr';
+  document.querySelectorAll('[data-ar]').forEach(el=>{ const v=ar?el.getAttribute('data-ar'):el.getAttribute('data-en'); if(v!==null) el.innerHTML=v; });
+  document.querySelectorAll('[data-ar-ph]').forEach(el=>{ el.placeholder=ar?el.getAttribute('data-ar-ph'):el.getAttribute('data-en-ph'); });
+  document.getElementById('langToggle').textContent=ar?'EN 🌐':'عربي 🌐';
+  renderAll();
+}
+function toggleLang(){ LANG=LANG==='ar'?'en':'ar'; localStorage.setItem('cm_lang',LANG); applyLang(); }
+
+/* ── auth mode ── */
+function setAuthMode(m){
+  authMode=m; localStorage.setItem('cm_auth_mode',m);
+  document.getElementById('modeLocalBtn').classList.toggle('active',m==='local');
+  document.getElementById('modeCloudBtn').classList.toggle('active',m==='cloud');
+  document.getElementById('regEmailHint').textContent = m==='cloud' ? t('مطلوب في الوضع السحابي (Supabase Auth)','Required in cloud mode (Supabase Auth)') : t('اختياري في الدخول الفوري — اسم المستخدم يكفي','Optional in instant mode — username is enough');
+  document.getElementById('modeHint').textContent = m==='cloud'
+    ? (cloudKey()? t('☁️ الوضع السحابي مفعّل بمفتاح محفوظ على هذا الجهاز. الدخول عبر Supabase Auth، والبيانات بتتمزامن كنسخة حساب على هذا الجهاز لحد اكتمال طبقة المزامنة.','☁️ Cloud mode active with a key saved on this device. Sign-in goes through Supabase Auth; data mirrors to this account on this device until the sync layer completes.')
+                 : t('☁️ الوضع السحابي محتاج مفتاح anon public — الصقه من الإعدادات بعد أول دخول فوري، أو ضيفه في كود الموقع للنشر العام. دلوقتي الدخول الفوري شغال فوراً.','☁️ Cloud mode needs the anon public key — paste it in Settings after your first instant login, or add it to the site config for public launch. Instant access works right now.'))
+    : t('⚡ حسابك بيتحفظ على جهازك فوراً: كلمة سر مشفرة، جلسة آمنة، وعزل كامل بين الحسابات — ونفس الحساب بيترقى للسحابة من غير ما تخسر سيرفراتك.','⚡ Your account is created instantly on your device: hashed password, safe session, full account isolation — and the same account upgrades to cloud without losing your servers.');
+  updateModeChip();
+}
+function updateModeChip(){
+  const chip=document.getElementById('modeChip');
+  const cloud = authMode==='cloud' && cloudKey();
+  chip.className='modechip'+(cloud?' cloud':'');
+  chip.textContent = cloud ? t('☁️ Supabase متصل','☁️ Supabase connected') : t('⚡ وضع فوري — جاهز للسحابة','⚡ Instant mode — cloud ready');
+  const note=document.getElementById('sideModeNote');
+  if(note) note.textContent = cloud ? t('☁️ دخولك سحابي عبر Supabase. راجع الإعدادات لحالة المزامنة.','☁️ Your sign-in is via Supabase. See Settings for sync status.') : t('⚡ وضع الدخول الفوري على هذا الجهاز. فعّل Supabase من الإعدادات لنقل حسابك للسحابة.','⚡ Instant mode on this device. Enable Supabase in Settings to take your account to the cloud.');
+}
+function authTab(which){
+  document.getElementById('tabLogin').classList.toggle('active',which==='login');
+  document.getElementById('tabRegister').classList.toggle('active',which==='register');
+  document.getElementById('loginForm').style.display=which==='login'?'block':'none';
+  document.getElementById('registerForm').style.display=which==='register'?'block':'none';
+  hideAuthMsgs();
+}
+function authErr(msg){ const e=document.getElementById('authErr'); e.textContent=msg; e.style.display='block'; document.getElementById('authOk').style.display='none'; }
+function authOk(msg){ const e=document.getElementById('authOk'); e.textContent=msg; e.style.display='block'; document.getElementById('authErr').style.display='none'; }
+function hideAuthMsgs(){ document.getElementById('authErr').style.display='none'; document.getElementById('authOk').style.display='none'; }
+
+async function doRegister(ev){
+  ev.preventDefault(); hideAuthMsgs();
+  const username=document.getElementById('regUser').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  const pw=document.getElementById('regPass').value, pw2=document.getElementById('regPass2').value;
+  if(username.length<3) return authErr(t('اسم المستخدم لازم 3 أحرف على الأقل','Username needs at least 3 characters')),false;
+  if(pw.length<6) return authErr(t('كلمة السر لازم 6 أحرف على الأقل','Password needs at least 6 characters')),false;
+  if(pw!==pw2) return authErr(t('كلمتا السر مش متطابقين','Passwords do not match')),false;
+  if(authMode==='cloud'){
+    if(!cloudKey()) return authErr(t('الوضع السحابي محتاج مفتاح Supabase الأول — ادخل فورياً دلوقتي وفعّل السحابة من الإعدادات، أو الصق المفتاح من جهاز سبق تفعيله.','Cloud mode needs the Supabase key first — sign in instantly now and enable cloud from Settings.')),false;
+    if(!email) return authErr(t('الوضع السحابي محتاج بريد إلكتروني','Cloud mode requires an email')),false;
+    try{
+      const r=await fetch(cloudURL()+'/auth/v1/signup',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,data:{username}})});
+      const d=await r.json();
+      if(!r.ok) return authErr(d.msg||d.message||t('فشل التسجيل السحابي','Cloud signup failed')),false;
+      const cloudId=(d.user&&d.user.id)||uid();
+      let u=db.users.find(x=>x.id===cloudId);
+      if(!u){ u={id:cloudId,username,email,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
+      if(d.access_token){ session={userId:u.id,mode:'cloud',at:Date.now()}; saveSession(); enterApp(); toast(t('☁️ أهلاً بيك! حسابك السحابي جاهز','☁️ Welcome! Your cloud account is ready')); }
+      else authOk(t('☁️ اتبعت لك تأكيد على البريد — أكّد حسابك وبعدين سجّل دخولك.','☁️ A confirmation was sent to your email — confirm, then log in.'));
+      return false;
+    }catch(e){ return authErr(t('تعذر الوصول لـ Supabase — تأكد من المفتاح والاتصال','Could not reach Supabase — check the key and connection')),false; }
+  }
+  if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase())) return authErr(t('اسم المستخدم ده مستخدم بالفعل','That username is taken')),false;
+  if(email && db.users.some(u=>u.email===email)) return authErr(t('البريد ده مسجل بالفعل — سجّل دخولك','That email is registered — log in instead')),false;
+  const salt=uid(); const passHash=await hashPw(salt,pw);
+  const u={id:uid(),username,email,salt,passHash,displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString()};
+  db.users.push(u); saveDB();
+  session={userId:u.id,mode:'local',at:Date.now()}; saveSession();
+  audit('REGISTER','display '+u.displayCode);
+  enterApp(); go('onboard');
+  toast(t('🎉 أهلاً بيك يا '+username+'! اختر استضافتك واربط أول سيرفر','🎉 Welcome, '+username+'! Pick your host and link your first server'));
+  return false;
+}
+async function doLogin(ev){
+  ev.preventDefault(); hideAuthMsgs();
+  const id=document.getElementById('loginId').value.trim().toLowerCase();
+  const pw=document.getElementById('loginPass').value;
+  if(authMode==='cloud' && cloudKey()){
+    try{
+      const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email:id,password:pw})});
+      const d=await r.json();
+      if(!r.ok||!d.access_token) return authErr(t('بيانات الدخول غير صحيحة','Invalid login credentials')),false;
+      let u=db.users.find(x=>x.id===d.user.id);
+      if(!u){ u={id:d.user.id,username:(d.user.email||id).split('@')[0],email:d.user.email||id,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
+      session={userId:u.id,mode:'cloud',at:Date.now()}; saveSession(); enterApp();
+      toast(t('☁️ أهلاً بعودتك!','☁️ Welcome back!')); return false;
+    }catch(e){ return authErr(t('تعذر الوصول لـ Supabase','Could not reach Supabase')),false; }
+  }
+  const u=db.users.find(x=>x.username.toLowerCase()===id||(x.email&&x.email===id));
+  if(!u) return authErr(t('لا يوجد حساب بالبيانات دي — أنشئ حساباً جديداً','No account with those details — create a new account')),false;
+  if(u.passHash==='supabase') return authErr(t('هذا حساب سحابي — فعّل وضع «Supabase سحابي» وسجّل دخولك من هناك','This is a cloud account — enable “Supabase cloud” mode and log in there')),false;
+  if((await hashPw(u.salt,pw))!==u.passHash) return authErr(t('كلمة السر غير صحيحة','Wrong password')),false;
+  session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
+  toast(t('👋 أهلاً بعودتك يا '+u.username,'👋 Welcome back, '+u.username));
+  return false;
+}
+async function demoLogin(){
+  let u=db.users.find(x=>x.email==='demo@craftmate.ai');
+  if(!u){
+    const salt=uid();
+    u={id:uid(),username:'CraftMateDemo',email:'demo@craftmate.ai',salt,passHash:await hashPw(salt,'Demo1234'),displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),demo:true};
+    db.users.push(u);
+    const sv={id:uid(),ownerId:u.id,name:t('سيرفر تجريبي — Survival','Demo Server — Survival'),address:'play.example.net:25565',host:'play_hosting',software:'Paper',version:'1.21.4',status:'ONLINE',method:'plugin',env:{players:8,maxPlayers:20,ramMb:1536,maxRamMb:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion']},linkedAt:new Date().toISOString(),lastHeartbeat:new Date().toISOString()};
+    db.servers.push(sv);
+    db.diagnoses.push({id:uid(),ownerId:u.id,serverId:sv.id,title:t('إضافة قديمة كسرت التحميل','Outdated plugin broke loading'),sev:'high',cause:t('نسخة تجريبية محفوظة من حساب العرض','Saved sample from the demo account'),steps:[t('حدّث الإضافة','Update the plugin')],guard:'🛡️ Demo',ips:1,secrets:0,at:new Date().toISOString()});
+    saveDB();
+  }
+  session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
+  toast(t('🎮 دخلت بالحساب التجريبي — جرّب كل حاجة بحرية','🎮 You are in the demo account — try everything freely'));
+}
+function logout(){ session=null; saveSession(); location.hash=''; renderAll(); toast(t('تم تسجيل الخروج','Logged out')); }
+
+/* ── app shell ── */
+function enterApp(){ renderAll(); }
+function go(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
+  document.querySelectorAll('.snav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  renderAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function myServers(){ const u=user(); return u?db.servers.filter(s=>s.ownerId===u.id):[]; }
+function myDiagnoses(){ const u=user(); return u?db.diagnoses.filter(d=>d.ownerId===u.id).sort((a,b)=>new Date(b.at)-new Date(a.at)):[]; }
+function monthDiagnoses(){ const now=new Date(); return myDiagnoses().filter(d=>{ const x=new Date(d.at); return x.getMonth()===now.getMonth()&&x.getFullYear()===now.getFullYear(); }).length; }
+function plan(){ const u=user(); return PLANS[(u&&u.plan)||'free']; }
+
+function renderAll(){
+  updateModeChip();
+  const u=user();
+  document.getElementById('authView').style.display=u?'none':'block';
+  document.getElementById('appView').style.display=u?'block':'none';
+  document.getElementById('logoutBtn').style.display=u?'inline-block':'none';
+  if(!u) return;
+  document.getElementById('profName').textContent=u.username;
+  document.getElementById('profCode').textContent=u.displayCode+(u.cloud?' · ☁️':'');
+  document.getElementById('profPlan').textContent=plan().label+' · '+t('مجاني أثناء الإطلاق','Free during launch');
+  document.getElementById('avatarTx').textContent=(u.username||'C').slice(0,1).toUpperCase();
+  document.getElementById('dashTitle').textContent='🏠 '+t('لوحة ','Dashboard of ')+u.username;
+  const servers=myServers(), diags=monthDiagnoses(), online=servers.filter(s=>s.status==='ONLINE').length;
+  document.getElementById('stServers').textContent=servers.length+'/'+plan().servers;
+  document.getElementById('stDiag').textContent=diags+'/'+(plan().diagnoses>9000?'∞':plan().diagnoses);
+  document.getElementById('stOnline').textContent=online;
+  document.getElementById('stDays').textContent=plan().retention>9000?'∞':plan().retention;
+  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderSettings();
+}
+function renderChecklist(servers){
+  const hasServer=servers.length>0;
+  const hasLinked=servers.some(s=>s.status==='ONLINE'||s.linkedAt);
+  const hasDiag=myDiagnoses().length>0;
+  const item=(done,title,sub)=>'<div class="check'+(done?' done':'')+'"><span class="box">'+(done?'✓':'')+'</span><div><b>'+title+'</b><span>'+sub+'</span></div></div>';
+  document.getElementById('checklist').innerHTML=
+    item(true,t('إنشاء الحساب','Create your account'),t('اتعملت — أهلاً بيك في CraftMate','Done — welcome to CraftMate'))+
+    item(hasServer,t('تسجيل أول سيرفر','Register your first server'),hasServer?t('عندك '+servers.length+' سيرفر مسجل','You have '+servers.length+' registered server(s)'):t('من «ربط سيرفر» اختر استضافتك وسمّي سيرفرك','From “Link a server”, pick your host and name your server'))+
+    item(hasLinked,t('ربط حقيقي بالبلجن أو رفع سجل','Real link via plugin or a log upload'),hasLinked?t('سيرفرك متصل وبيتكلم مع لوحتك','Your server is connected and talking to your dashboard'):t('ولّد كود ربط واكتبه في اللعبة، أو شخّص برفع سجل','Generate a link code and type it in-game, or diagnose via log upload'))+
+    item(hasDiag,t('أول تشخيص مفهوم','Your first clear diagnosis'),hasDiag?t('تقاريرك محفوظة في «تقاريري»','Your reports live under “My reports”'):t('من «تشخيص جديد» الصق أي سجل وشوف تقرير الطبيب','From “New diagnosis”, paste any log and see the Doctor report'));
+}
+function statusTag(s){
+  if(s.status==='ONLINE') return '<span class="tag on">🟢 '+t('متصل حي','Live')+'</span>';
+  if(s.status==='HIBERNATING') return '<span class="tag sleep">💤 '+t('سبات نظيف','Hibernating')+'</span>';
+  return '<span class="tag off">⚫ '+t('غير مرتبط','Unlinked')+'</span>';
+}
+function serverCard(s,withActions){
+  const host=HOSTS[s.host]||HOSTS.play_hosting;
+  return '<div class="server-card"><div class="sicon">⛏️</div><div class="server-main"><h3>'+escapeHtml(s.name)+'</h3>'+
+   '<div class="addr">'+escapeHtml(s.address||'—')+'</div><div class="meta">'+statusTag(s)+
+   '<span class="tag">'+host.icon+' '+(LANG==='ar'?host.ar:host.en)+'</span><span class="tag">'+escapeHtml(s.software)+' '+escapeHtml(s.version)+'</span>'+
+   (s.env?'<span class="tag">👥 '+s.env.players+'/'+s.env.maxPlayers+'</span><span class="tag">🧠 '+Math.round(s.env.ramMb/1024*10)/10+'/'+Math.round(s.env.maxRamMb/1024*10)/10+' GB</span>':'')+
+   '</div>'+(withActions?'<div class="actions"><button class="btn sm" onclick="openServer(\''+s.id+'\')">'+t('🎛️ إدارة','🎛️ Manage')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status!=='ONLINE'?'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 كود ربط','🔗 Link code')+'</button>':'')+'</div>':'')+
+   '</div></div>';
+}
+function renderServerLists(servers){
+  const empty='<div class="empty"><div class="big">🗂️</div><p>'+t('لسه مفيش سيرفرات — اربط أول سيرفر وخد أول تشخيص في دقائق.','No servers yet — link your first server and get your first diagnosis in minutes.')+'</p><br><button class="btn sm" onclick="go(\'onboard\')">'+t('➕ ربط سيرفر','➕ Link a server')+'</button></div>';
+  document.getElementById('dashServers').innerHTML=servers.length?servers.map(s=>serverCard(s,true)).join(''):empty;
+  document.getElementById('serversList').innerHTML=servers.length?servers.map(s=>serverCard(s,true)).join(''):empty;
+}
+function escapeHtml(x){ return String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ── onboarding ── */
+function renderOnboard(){
+  const u=user(); if(!u) return;
+  document.getElementById('obHosts').innerHTML=Object.entries(HOSTS).map(([id,h])=>'<button class="host-card'+(obHost===id?' sel':'')+'" onclick="pickHost(\''+id+'\')"><div class="ic">'+h.icon+'</div><b>'+(LANG==='ar'?h.ar:h.en)+'</b><span>'+(LANG==='ar'?h.noteAr:h.noteEn)+'</span></button>').join('');
+  const h=HOSTS[obHost];
+  document.getElementById('obHostNote').textContent=(LANG==='ar'?h.noteAr:h.noteEn);
+  const atLimit=myServers().length>=plan().servers;
+  const box=document.getElementById('limitBox');
+  box.style.display=atLimit?'block':'none';
+  if(atLimit) box.innerHTML='⚠️ '+t('وصلت لحد الخطة المجانية (سيرفر واحد). سيرفرات أكتر جاية مع Pro — سجل اهتمامك من موقعنا الرئيسي، أو احذف سيرفراً من «سيرفراتي» لو حابب تبدل.','You reached the Free plan limit (1 server). More servers come with Pro — join its interest list on the main site, or delete a server under “My servers” to swap.');
+  document.getElementById('createServerBtn').disabled=atLimit;
+}
+function pickHost(id){ obHost=id; renderOnboard(); }
+function setMethod(m){
+  obMethod=m;
+  ['plugin','manual','later'].forEach(x=>document.getElementById('m'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('sel',x===m));
+}
+function newLinkCode(serverId){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const p=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const code={id:uid(),ownerId:user().id,serverId,code:'CM-'+p()+'-'+p(),expiresAt:Date.now()+15*60*1000,usedAt:null};
+  db.codes.push(code); saveDB(); return code;
+}
+function activeCode(serverId){
+  const now=Date.now();
+  return db.codes.filter(c=>c.serverId===serverId&&!c.usedAt&&c.expiresAt>now).sort((a,b)=>b.expiresAt-a.expiresAt)[0];
+}
+function createServer(){
+  const u=user(); if(!u) return;
+  if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
+  const name=document.getElementById('obName').value.trim()||t('سيرفري','My Server');
+  const s={id:uid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:obMethod,env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
+  db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
+  activeServerId=s.id;
+  showConnectPanel(s,true);
+  toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step'));
+  renderAll(); showConnectPanel(s,true);
+}
+function showConnectPanel(s,fresh){
+  const panel=document.getElementById('obStep4'); panel.style.display='block';
+  ['1','2','3','4'].forEach(i=>document.getElementById('sd'+i).classList.toggle('active',i==='4'));
+  const box=document.getElementById('obConnect');
+  if(s.method==='manual'){
+    box.innerHTML='<p style="color:var(--muted)">'+t('اخترت مسار رفع السجل — من غير أي بلجن. سيرفرك اتسجل وهيظهر في لوحتك، وأول تشخيص برفع ملف هيحوّله لسيرفر نشط في حسابك.','You chose the log-upload route — zero plugins. Your server is registered in your dashboard, and your first uploaded diagnosis activates it in your account.')+'</p><br><button class="btn" onclick="diagnoseFor(\''+s.id+'\')">'+t('📄 ارفع أول سجل دلوقتي','📄 Upload your first log now')+'</button>';
+    return;
+  }
+  if(s.method==='later'){
+    box.innerHTML='<p style="color:var(--muted)">'+t('تمام — سيرفرك محفوظ بحالة «غير مرتبط». ارجع له في أي وقت من «سيرفراتي» وولّد كود ربط لما تجهز.','Done — your server is saved as “Unlinked”. Return anytime under “My servers” and generate a link code when ready.')+'</p><br><button class="btn" onclick="go(\'servers\')">'+t('🗂️ افتح سيرفراتي','🗂️ Open my servers')+'</button>';
+    return;
+  }
+  const code=activeCode(s.id)||newLinkCode(s.id);
+  const jar='https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar';
+  box.innerHTML=
+   '<p style="color:var(--muted)">'+t('حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Download the plugin, drop it in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
+   '<div class="codebox"><b>'+code.code+'</b><span>'+t('صالح 15 دقيقة ولمرة واحدة — بينتهي في ','Valid 15 minutes, single use — expires at ')+new Date(code.expiresAt).toLocaleTimeString()+'</span></div>'+
+   '<div class="codecmd">/craftmate link '+code.code+'</div>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap"><a class="btn sm" href="'+jar+'" target="_blank" rel="noopener">'+t('⬇️ تحميل البلجن','⬇️ Download plugin')+'</a><button class="btn ghost sm" onclick="copyText(\'/craftmate link '+code.code+'\')">'+t('📋 انسخ الأمر','📋 Copy command')+'</button><button class="btn ghost sm" onclick="regenCode(\''+s.id+'\')">'+t('🔄 كود جديد','🔄 New code')+'</button></div>'+
+   '<div style="margin-top:20px;border-top:1px dashed var(--border);padding-top:18px"><h4 style="margin-bottom:8px">'+t('🧪 معاينة الاتصال هنا (لتجربة اللوحة من غير سيرفر ماينكرافت)','🧪 Preview the connection here (test the dashboard without a Minecraft server)')+'</h4>'+
+   '<p class="hint" style="margin-bottom:11px">'+t('الصق نفس الكود واضغط اتصال — هيتسجل نبض بيئة تجريبي زي ما البلجن الحقيقي هيبعت بالضبط.','Paste the same code and connect — a sample environment heartbeat is recorded exactly as the real plugin will send.')+'</p>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap"><input id="simCode" placeholder="CM-XXXX-XXXX" style="flex:1;min-width:200px;background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px;direction:ltr"><button class="btn sm" onclick="simulateLink(\''+s.id+'\')">'+t('🔌 اتصال تجريبي','🔌 Simulate link')+'</button></div></div>';
+}
+function regenCode(serverId){ db.codes.push({id:uid(),ownerId:user().id,serverId,code:'X',expiresAt:0,usedAt:Date.now()}); const s=myServers().find(x=>x.id===serverId); const c=newLinkCode(serverId); saveDB(); showConnectPanel(s,true); toast(t('🔄 اتولد كود جديد','🔄 A new code was generated')); }
+function showLinkFor(serverId){ const s=myServers().find(x=>x.id===serverId); if(!s) return; activeServerId=s.id; go('onboard'); setTimeout(()=>showConnectPanel(s,true),60); }
+function copyText(txt){ if(navigator.clipboard) navigator.clipboard.writeText(txt); toast(t('📋 اتنسخ','📋 Copied')); }
+function simulateLink(serverId){
+  const val=(document.getElementById('simCode')||{}).value||'';
+  const code=db.codes.find(c=>c.serverId===serverId&&c.code===val.trim().toUpperCase());
+  if(!code) return toast(t('❌ الكود غير صحيح لهذا السيرفر','❌ That code is not valid for this server'));
+  if(code.usedAt) return toast(t('❌ الكود اتستخدم قبل كده','❌ That code was already used'));
+  if(code.expiresAt<Date.now()) return toast(t('❌ الكود انتهت صلاحيته — ولّد واحد جديد','❌ That code expired — generate a new one'));
+  const s=myServers().find(x=>x.id===serverId); if(!s) return;
+  code.usedAt=Date.now();
+  s.status='ONLINE'; s.linkedAt=new Date().toISOString(); s.lastHeartbeat=new Date().toISOString();
+  s.env={players:6,maxPlayers:20,ramMb:1420,maxRamMb:s.host==='minefort'?1024:s.host==='falixnodes'?2560:s.host==='mcserverhost'?4096:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion','spark']};
+  saveDB(); audit('SERVER_LINKED',s.name); renderAll();
+  toast(t('🎉 اتصل سيرفرك! بقى حي في لوحتك','🎉 Your server connected! It is live in your dashboard'));
+  go('dashboard');
+}
+
+/* ── server detail ── */
+function openServer(id){
+  const s=myServers().find(x=>x.id===id); if(!s) return;
+  const d=document.getElementById('serverDetail'); d.style.display='block';
+  const host=HOSTS[s.host]||HOSTS.play_hosting;
+  const diags=myDiagnoses().filter(x=>x.serverId===id);
+  d.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><h3 style="font-size:1.2rem">'+escapeHtml(s.name)+' '+statusTag(s)+'</h3><p style="color:var(--muted);font-size:.88rem">'+host.icon+' '+(LANG==='ar'?host.ar:host.en)+' · '+escapeHtml(s.software)+' '+escapeHtml(s.version)+' · '+escapeHtml(s.address||'—')+'</p></div>'+
+   '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="syncServer(\''+s.id+'\')">'+t('🔄 مزامنة نبضة','🔄 Sync heartbeat')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status==='ONLINE'?'<button class="btn ghost sm" onclick="hibernate(\''+s.id+'\')">'+t('💤 محاكاة سبات','💤 Simulate sleep')+'</button><button class="btn ghost sm" onclick="disconnectServer(\''+s.id+'\')">'+t('🔌 فصل','🔌 Unlink')+'</button>':'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 ربط','🔗 Link')+'</button>')+'<button class="btn danger sm" onclick="deleteServer(\''+s.id+'\')">'+t('🗑️ حذف','🗑️ Delete')+'</button></div></div>'+
+   '<div class="stats" style="margin-top:17px"><div class="stat"><b>'+(s.env?s.env.players+'/'+s.env.maxPlayers:'—')+'</b><span>'+t('لاعبون','Players')+'</span></div><div class="stat"><b>'+(s.env?Math.round(s.env.ramMb/1024*10)/10+'GB':'—')+'</b><span>'+t('رام مستخدمة','RAM used')+'</span></div><div class="stat"><b style="font-size:1rem;padding-top:8px">'+(s.lastHeartbeat?fmtDate(s.lastHeartbeat):'—')+'</b><span>'+t('آخر نبضة','Last heartbeat')+'</span></div><div class="stat"><b>'+diags.length+'</b><span>'+t('تشخيصات محفوظة','Saved diagnoses')+'</span></div></div>'+
+   (s.env?'<p style="color:var(--muted);font-size:.88rem">'+t('البلجنات المكتشفة: ','Detected plugins: ')+s.env.plugins.map(escapeHtml).join(' · ')+'</p>':'<p style="color:var(--muted);font-size:.88rem">'+t('لا توجد بيئة مكتشفة بعد — اربط البلجن لتظهر حالة سيرفرك الحية هنا.','No environment detected yet — link the plugin for live server state here.')+'</p>')+
+   (diags.length?'<h4 style="margin:16px 0 9px">'+t('آخر تشخيصات هذا السيرفر','Latest diagnoses for this server')+'</h4>'+diags.slice(0,3).map(x=>'<div class="check"><span class="box" style="background:var(--card3);border-color:var(--border2)">🩺</span><div><b>'+escapeHtml(x.title)+'</b><span>'+fmtDate(x.at)+'</span></div></div>').join(''):'');
+  d.scrollIntoView({behavior:'smooth'});
+}
+function syncServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.lastHeartbeat=new Date().toISOString(); if(s.status!=='ONLINE'){ s.status='ONLINE'; s.linkedAt=s.linkedAt||new Date().toISOString(); } if(s.env){ s.env.players=Math.max(0,Math.min(s.env.maxPlayers,s.env.players+(Math.random()>.5?1:-1))); } saveDB(); audit('HEARTBEAT',s.name); renderAll(); openServer(id); toast(t('🔄 وصلت نبضة جديدة من سيرفرك','🔄 A fresh heartbeat arrived from your server')); }
+function hibernate(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='HIBERNATING'; s.lastHeartbeat=new Date().toISOString(); if(s.env) s.env.players=0; saveDB(); audit('HIBERNATING',s.name); renderAll(); openServer(id); toast(t('💤 سيرفرك دخل سبات نظيف (مش عطل)','💤 Your server entered clean hibernation (not a crash)')); }
+function disconnectServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='UNLINKED'; s.env=null; saveDB(); audit('SERVER_UNLINKED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🔌 اتفصل السيرفر عن حسابك','🔌 Server unlinked from your account')); }
+function deleteServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; if(!confirm(t('حذف «'+s.name+'» نهائياً من حسابك؟','Delete “'+s.name+'” permanently from your account?'))) return; db.servers=db.servers.filter(x=>x.id!==id); db.codes=db.codes.filter(x=>x.serverId!==id); saveDB(); audit('SERVER_DELETED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🗑️ اتحذف السيرفر','🗑️ Server deleted')); }
+
+/* ── diagnosis ── */
+function renderDiagnoseForm(){
+  const sel=document.getElementById('dgServer'); if(!sel) return;
+  const servers=myServers();
+  sel.innerHTML='<option value="">'+t('تشخيص عام (من غير سيرفر)','General diagnosis (no server)')+'</option>'+servers.map(s=>'<option value="'+s.id+'">'+escapeHtml(s.name)+'</option>').join('');
+  if(activeServerId && servers.some(s=>s.id===activeServerId)) sel.value=activeServerId;
+  const used=monthDiagnoses();
+  document.getElementById('diagUsage').textContent=t('استخدمت '+used+' من '+plan().diagnoses+' تشخيصات هذا الشهر في خطتك المجانية.','You used '+used+' of '+plan().diagnoses+' diagnoses this month on your Free plan.');
+}
+function diagnoseFor(id){ activeServerId=id; go('diagnose'); const sel=document.getElementById('dgServer'); if(sel) sel.value=id; }
+function readLogFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ const txt=String(reader.result||''); document.getElementById('dgText').value=txt.split('\n').slice(-250).join('\n'); toast(t('📄 اتحمّل السجل (آخر 250 سطر)','📄 Log loaded (last 250 lines)')); };
+  reader.readAsText(f.slice(0,512*1024));
+}
+function scrub(text){ let ips=0,secrets=0; let out=text.replace(/\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b/g,()=>{ips++;return '[IP]';}); out=out.replace(/(password|passwd|pwd|secret|token)\s*[:=]\s*\S+/gi,m=>{secrets++;return m.split(/[:=]/)[0]+'=[REDACTED]';}); out=out.replace(/(mysql|postgres|mongodb|redis):\/\/\S+/gi,()=>{secrets++;return '[DB-URL]';}); out=out.replace(/https:\/\/discord\.com\/api\/webhooks\/\S+/gi,()=>{secrets++;return '[WEBHOOK]';}); return {text:out,ips,secrets}; }
+function analyzeText(raw){
+  const s=scrub(raw), txt=s.text;
+  let r;
+  if(/bungeecord\s*=\s*false/i.test(txt)&&/minefort/i.test(txt)) r={sev:'high',title:t('⛔ خطوة ممنوعة: إيقاف BungeeCord على Minefort','⛔ Forbidden: disabling BungeeCord on Minefort'),cause:t('اتصالات Minefort بتعدي من بروكسي مركزي ولازم الإعداد يفضل true — الطبيب بيرفض تنفيذه دائماً.','Minefort connections pass through a central proxy and the setting must stay true — the Doctor always refuses this.'),steps:[t('سيب settings.bungeecord = true','Leave settings.bungeecord = true'),t('فعّل Floodgate من إعداد Geyser نفسه','Enable Floodgate inside Geyser config')],guard:t('🛡️ قاعدة حماية صارمة خادمية — المحظور لا يتنفذ أبداً.','🛡️ Server-side hard guardrail — forbidden never runs.')};
+  else if(/NoClassDefFoundError|ClassNotFoundException/i.test(txt)) r={sev:'high',title:t('💥 إضافة غير متوافقة مع إصدار سيرفرك','💥 Plugin incompatible with your server version'),cause:t('إضافة بتحمّل مكتبة داخلية اتشالت من إصدارات أحدث — السيرفر سليم والمشكلة في توافق الإضافة.','A plugin loads an internal library removed in newer builds — your server is fine, the plugin is the issue.'),steps:[t('حدد اسم الإضافة من سطر Enabling','Identify the plugin from the Enabling line'),t('حدّثها لآخر إصدار رسمي مناسب لإصدارك','Update it to the latest official build for your version'),t('استبدل الـ jar من غير حذف بيانات الإضافة وأعد التشغيل','Replace the jar without deleting plugin data, then restart')],guard:t('🛡️ الإصلاح في حسابك بياخد نسخة .bak الأول وقابل للتراجع.','🛡️ Fixes in your account back up .bak first and roll back.')};
+  else if(/FAILED TO BIND TO PORT|BindException|Address already in use/i.test(txt)) r={sev:'med',title:t('🔌 المنفذ مشغول بنسخة تانية','🔌 Port already in use'),cause:t('عملية تانية ماسكة نفس البورت — غالباً نسخة سيرفر لم تُقفل.','Another process owns the port — usually an unclosed server instance.'),steps:[t('أقفل أي نسخة سيرفر تانية من نفس المجلد','Stop any second instance from the same folder'),t('استخدم Restart من لوحة استضافتك','Use your host panel Restart')],guard:t('🛡️ تحديث البورت لازم يشمل إعدادات اللاعبين واللعب المشترك معاً.','🛡️ Port changes must update player and crossplay settings together.')};
+  else if(/OutOfMemoryError|heap space/i.test(txt)) r={sev:'high',title:t('🧠 نفاد ذاكرة السيرفر','🧠 Server out of memory'),cause:t('السيرفر استهلك كل رامه — راجع أثقل البلجنات وتوليد العالم قبل رفع الذاكرة.','The server consumed all its RAM — review heavy plugins and world generation before raising memory.'),steps:[t('لا ترفع -Xmx فوق رام خطتك الفعلية','Never raise -Xmx above your real plan RAM'),t('قلل مسافات الرؤية والمحاكاة درجتين','Lower view and simulation distance by two')],guard:t('🛡️ الطبيب بيقارن رام خطتك الحقيقية قبل اقتراح أي رقم.','🛡️ The Doctor checks your real plan RAM before suggesting numbers.')};
+  else if(/Can't keep up|overloaded/i.test(txt)) r={sev:'med',title:t('🐢 تأخر أداء (Tick Lag)','🐢 Performance lag (tick lag)'),cause:t('السيرفر سليم لكن أبطأ من الحمل — كيانات أو توليد عالم مستمر.','Healthy server, slower than the load — entities or constant terrain generation.'),steps:[t('قارن TPS وقت الهبوط','Compare TPS at dip times'),t('قلل simulation-distance وحد الكيانات','Lower simulation-distance and entity caps')],guard:t('🛡️ كل خطوة أداء قابلة للقياس والتراجع.','🛡️ Every performance step is measurable and reversible.')};
+  else r={sev:'ok',title:t('🔎 لا بصمة عطل معروفة في هذا السجل','🔎 No known crash fingerprint in this log'),cause:t('ممكن يكون سجل تشغيل طبيعي أو مشكلة جديدة محتاجة سجل أطول وسياق سيرفرك.','It may be a normal startup log or a new issue needing more lines and your server context.'),steps:[t('اتأكد إنك لاصق لحظة الوقوع نفسها','Make sure you pasted the crash moment itself'),t('اربط البلجن للمقارنة التلقائية بتاريخ سيرفرك','Link the plugin for automatic history comparison')],guard:t('🛡️ الطبيب بيقول «مش متأكد» لما مش متأكد — لا أسباب مخترعة.','🛡️ The Doctor says “unsure” when unsure — no invented causes.')};
+  return {...r,ips:s.ips,secrets:s.secrets};
+}
+function runDiagnosis(){
+  const u=user(); if(!u) return;
+  const raw=document.getElementById('dgText').value.trim();
+  if(!raw) return toast(t('الصق سجل أو ارفع ملف الأول','Paste a log or upload a file first'));
+  if(monthDiagnoses()>=plan().diagnoses) return toast(t('⚠️ وصلت لحد تشخيصات الشهر في خطتك المجانية','⚠️ You reached this month\'s Free diagnosis limit'));
+  const serverId=document.getElementById('dgServer').value||null;
+  const r=analyzeText(raw);
+  const rec={id:uid(),ownerId:u.id,serverId,title:r.title,sev:r.sev,cause:r.cause,steps:r.steps,guard:r.guard,ips:r.ips,secrets:r.secrets,at:new Date().toISOString()};
+  db.diagnoses.push(rec);
+  if(serverId){ const s=myServers().find(x=>x.id===serverId); if(s&&s.status==='UNLINKED'&&s.method==='manual'){ s.status='HIBERNATING'; s.linkedAt=new Date().toISOString(); } }
+  saveDB(); audit('DIAGNOSIS',r.title);
+  const rep=document.getElementById('dgReport'); rep.style.display='block';
+  const sev=document.getElementById('dgSev'); sev.textContent=r.sev==='high'?t('🔴 خطورة عالية','🔴 High'):r.sev==='ok'?t('🟢 لا خطر فوري','🟢 No immediate risk'):t('🟡 خطورة متوسطة','🟡 Medium'); sev.className='sev '+(r.sev==='high'?'sev-high':r.sev==='ok'?'sev-ok':'sev-med');
+  document.getElementById('dgTitle').textContent=r.title;
+  document.getElementById('dgCause').textContent=r.cause;
+  document.getElementById('dgSteps').innerHTML=r.steps.map(x=>'<li>'+escapeHtml(x)+'</li>').join('');
+  document.getElementById('dgGuard').textContent=r.guard;
+  document.getElementById('dgScrub').textContent=t('🔒 اتنقى قبل التحليل: '+r.ips+' عنوان IP و'+r.secrets+' سر · 💾 اتحفظ التقرير في حسابك','🔒 Scrubbed before analysis: '+r.ips+' IPs, '+r.secrets+' secrets · 💾 Report saved to your account');
+  renderAll();
+  const sel=document.getElementById('dgServer'); if(serverId) sel.value=serverId;
+  rep.scrollIntoView({behavior:'smooth'});
+  toast(t('✅ اكتمل التشخيص واتحفظ في تقاريرك','✅ Diagnosis complete and saved to your reports'));
+}
+
+/* ── history & settings ── */
+function renderHistory(){
+  const list=document.getElementById('historyList'); if(!list) return;
+  const items=myDiagnoses();
+  if(!items.length){ list.innerHTML='<div class="empty"><div class="big">📜</div><p>'+t('لا تقارير محفوظة بعد — أول تشخيص لك هيظهر هنا.','No saved reports yet — your first diagnosis appears here.')+'</p></div>'; return; }
+  list.innerHTML='<table><thead><tr><th>'+t('التقرير','Report')+'</th><th>'+t('السيرفر','Server')+'</th><th>'+t('التاريخ','Date')+'</th><th></th></tr></thead><tbody>'+
+   items.map(d=>{ const s=myServers().find(x=>x.id===d.serverId); return '<tr><td><b>'+escapeHtml(d.title)+'</b><br><span style="color:var(--dim);font-size:.78rem">'+(d.sev==='high'?'🔴':d.sev==='ok'?'🟢':'🟡')+' · 🔒 '+d.ips+' IP · '+d.secrets+' '+t('سر','secrets')+'</span></td><td>'+(s?escapeHtml(s.name):t('عام','General'))+'</td><td style="white-space:nowrap">'+fmtDate(d.at)+'</td><td><button class="btn danger sm" onclick="deleteDiagnosis(\''+d.id+'\')">'+t('حذف','Delete')+'</button></td></tr>'; }).join('')+'</tbody></table>';
+}
+function deleteDiagnosis(id){ db.diagnoses=db.diagnoses.filter(d=>d.id!==id); saveDB(); renderAll(); toast(t('🗑️ اتحذف التقرير','🗑️ Report deleted')); }
+function renderSettings(){
+  const u=user(); if(!u) return;
+  document.getElementById('settingsProfile').innerHTML='<table><tbody>'+
+   '<tr><th>'+t('اسم المستخدم','Username')+'</th><td>'+escapeHtml(u.username)+'</td></tr>'+
+   '<tr><th>'+t('معرف الحساب','Account ID')+'</th><td style="font-family:Consolas,monospace">'+u.displayCode+'</td></tr>'+
+   '<tr><th>'+t('البريد','Email')+'</th><td>'+escapeHtml(u.email||t('غير مضاف','Not added'))+'</td></tr>'+
+   '<tr><th>'+t('الخطة','Plan')+'</th><td>'+plan().label+' — '+t('سيرفر '+plan().servers+' · تشخيص '+plan().diagnoses+'/شهر · احتفاظ '+plan().retention+' يوم',' '+plan().servers+' server(s) · '+plan().diagnoses+' diagnoses/mo · '+plan().retention+'d retention')+'</td></tr>'+
+   '<tr><th>'+t('تاريخ التسجيل','Registered')+'</th><td>'+fmtDate(u.createdAt)+'</td></tr>'+
+   '<tr><th>'+t('وضع الحساب','Account mode')+'</th><td>'+(u.cloud?t('☁️ Supabase سحابي','☁️ Supabase cloud'):t('⚡ فوري على هذا الجهاز','⚡ Instant on this device'))+'</td></tr></tbody></table>';
+  document.getElementById('sbUrl').value=cloudURL();
+  const k=cloudKey(); if(k) document.getElementById('sbKey').value=k;
+  document.getElementById('sbStatus').textContent=k?t('☁️ يوجد مفتاح سحابي محفوظ على هذا الجهاز — جرّب إعادة الاختبار للتأكد.','☁️ A cloud key is saved on this device — retest to verify.') : t('⚡ لا يوجد مفتاح سحابي بعد — الحسابات شغالة في الوضع الفوري.','⚡ No cloud key yet — accounts run in instant mode.');
+}
+async function saveCloud(){
+  const url=document.getElementById('sbUrl').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('sbKey').value.trim();
+  if(!key) return toast(t('الصق مفتاح anon public الأول','Paste the anon public key first'));
+  localStorage.setItem('cm_sb_url',url); localStorage.setItem('cm_sb_anon_key',key);
+  const st=document.getElementById('sbStatus'); st.textContent=t('⏳ جاري اختبار الاتصال بـ Supabase...','⏳ Testing the Supabase connection...');
+  try{
+    const r=await fetch(url+'/auth/v1/health',{headers:{'apikey':key,'Authorization':'Bearer '+key}});
+    if(r.ok){ st.textContent=t('✅ الاتصال السحابي شغال! بدّل وضع الدخول لـ «Supabase سحابي» في شاشة الدخول للحسابات السحابية. وللنشر لكل الزوار ضيف نفس المفتاح في إعدادات كود الموقع.','✅ Cloud connection works! Switch the sign-in mode to “Supabase cloud” on the login screen for cloud accounts. For all visitors, add the same key to the site config.'); setAuthMode('cloud'); toast(t('☁️ اتفعّل الوضع السحابي على هذا الجهاز','☁️ Cloud mode enabled on this device')); }
+    else st.textContent=t('⚠️ الخادم رد بـ '+r.status+' — تأكد إن المفتاح هو anon public الصحيح وإن المشروع شغال.','⚠️ Server replied '+r.status+' — verify the key is the correct anon public key and the project is live.');
+  }catch(e){ st.textContent=t('❌ تعذر الاتصال — راجع الرابط والشبكة.','❌ Could not connect — check the URL and network.'); }
+  updateModeChip();
+}
+function clearCloud(){ localStorage.removeItem('cm_sb_anon_key'); setAuthMode('local'); renderSettings(); toast(t('⚡ رجعنا للوضع الفوري على هذا الجهاز','⚡ Back to instant mode on this device')); }
+function exportData(){
+  const u=user(); if(!u) return;
+  const data={profile:{username:u.username,email:u.email,displayCode:u.displayCode,plan:u.plan,createdAt:u.createdAt},servers:myServers(),diagnoses:myDiagnoses(),exportedAt:new Date().toISOString()};
+  const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2)); a.download='craftmate-my-data.json'; a.click();
+}
+function deleteAccount(){
+  const u=user(); if(!u) return;
+  if(!confirm(t('حذف نهائي لحساب «'+u.username+'» وكل سيرفراته وتقاريره من هذا الجهاز؟','Permanently delete account “'+u.username+'” and all its servers and reports from this device?'))) return;
+  db.users=db.users.filter(x=>x.id!==u.id);
+  db.servers=db.servers.filter(x=>x.ownerId!==u.id);
+  db.diagnoses=db.diagnoses.filter(x=>x.ownerId!==u.id);
+  db.codes=db.codes.filter(x=>x.ownerId!==u.id);
+  saveDB(); logout(); toast(t('🗑️ اتحذف الحساب وبياناته','🗑️ Account and its data deleted'));
+}
+
+/* init */
+(function(){
+  const hash=location.hash.replace('#','');
+  authTab(hash==='login'?'login':'register');
+  setAuthMode(authMode);
+  applyLang();
+  if(user()) enterApp();
+})();
+</script>
+</body>
+</html>

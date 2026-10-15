@@ -288,7 +288,8 @@ footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px
     </nav>
     <div class="nav-actions">
       <button class="lang-btn" id="langToggle" onclick="toggleLang()">EN 🌐</button>
-      <a class="btn btn-green btn-sm" href="#get-started" data-ar="ابدأ مجاناً" data-en="Start Free">ابدأ مجاناً</a>
+      <a class="btn btn-ghost btn-sm" href="app.html#login" data-ar="دخول" data-en="Log in">دخول</a>
+      <a class="btn btn-green btn-sm" href="app.html#register" data-ar="ابدأ مجاناً" data-en="Start Free">ابدأ مجاناً</a>
       <button class="burger" onclick="document.getElementById('mobileMenu').classList.toggle('open')">☰</button>
     </div>
   </div>
@@ -313,7 +314,7 @@ footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px
         <h1><span data-ar="سيرفرك تعطل؟" data-en="Your server crashed?">سيرفرك تعطل؟</span><br><span class="hl" data-ar="اعرف السبب في دقيقة." data-en="Know why in a minute.">اعرف السبب في دقيقة.</span></h1>
         <p class="hero-sub" data-ar="CraftMate AI منصة متكاملة لصاحب سيرفر ماينكرافت: طبيب ذكاء اصطناعي يشخّص الأعطال بلغة مفهومة ويصلحها بموافقتك، ولعب مشترك يفتح سيرفرك للجوال، ولوحة واحدة تدير كل شيء." data-en="CraftMate AI is the all-in-one platform for Minecraft server owners: an AI doctor that explains crashes in plain language and fixes them with your approval, crossplay that opens your server to mobile, and one dashboard for everything.">CraftMate AI منصة متكاملة لصاحب سيرفر ماينكرافت: <b>طبيب ذكاء اصطناعي</b> يشخّص الأعطال بلغة مفهومة ويصلحها بموافقتك، و<b>لعب مشترك</b> يفتح سيرفرك للجوال، ولوحة واحدة تدير كل شيء.</p>
         <div class="hero-ctas">
-          <a class="btn btn-green" href="#get-started" data-ar="🚀 ابدأ مجاناً الآن" data-en="🚀 Start free now">🚀 ابدأ مجاناً الآن</a>
+          <a class="btn btn-green" href="app.html#register" data-ar="🚀 ابدأ مجاناً الآن" data-en="🚀 Start free now">🚀 ابدأ مجاناً الآن</a>
           <a class="btn btn-ghost" href="#demo" data-ar="▶ جرّب التشخيص بنفسك" data-en="▶ Try the diagnosis yourself">▶ جرّب التشخيص بنفسك</a>
         </div>
         <div class="hero-points">
@@ -503,7 +504,7 @@ footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px
       <h2 data-ar="اختار طريقك — كله بيوصل لنفس اللوحة" data-en="Choose your path — all lead to the same dashboard">اختار طريقك — كله بيوصل لنفس اللوحة</h2>
     </div>
     <div class="start-grid">
-      <div class="start-card"><div class="ic">🔗</div><h3 data-ar="عندي سيرفر شغال" data-en="I have a running server">عندي سيرفر شغال</h3><p data-ar="حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة." data-en="Download the plugin, start your server, generate a link code here and type it in-game. Your server appears in your dashboard on the first heartbeat.">حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة.</p><button class="btn btn-green btn-sm" onclick="genCode()" data-ar="ولّد كود ربط تجريبي" data-en="Generate a demo link code">ولّد كود ربط تجريبي</button><div class="link-code" id="linkCode"><b id="codeVal"></b><span id="codeHint"></span></div></div>
+      <div class="start-card"><div class="ic">🔗</div><h3 data-ar="عندي سيرفر شغال" data-en="I have a running server">عندي سيرفر شغال</h3><p data-ar="حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة." data-en="Download the plugin, start your server, generate a link code here and type it in-game. Your server appears in your dashboard on the first heartbeat.">حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة.</p><a class="btn btn-green btn-sm" href="app.html#register" data-ar="أنشئ حسابك وولّد كوداً حقيقياً" data-en="Create account & get a real code">أنشئ حسابك وولّد كوداً حقيقياً</a><div class="link-code" id="linkCode"><b id="codeVal"></b><span id="codeHint"></span></div></div>
       <div class="start-card"><div class="ic">📄</div><h3 data-ar="مش قادر أثبّت بلجنات" data-en="I can't install plugins">مش قادر أثبّت بلجنات</h3><p data-ar="بعض الخطط المجانية بتقفل رفع البلجنات. ولا يهمك: ارفع أحدث سجل عندك وهنشخصه فوراً بنفس القوة — جهّز ملفك وجرّب من غرفة التشخيص." data-en="Some free plans lock plugin uploads. No problem: upload your latest log and we diagnose it instantly with the same power — try it in the Diagnosis Room.">بعض الخطط المجانية بتقفل رفع البلجنات. ولا يهمك: ارفع أحدث سجل عندك وهنشخصه فوراً بنفس القوة — جهّز ملفك وجرّب من غرفة التشخيص.</p><a class="btn btn-ghost btn-sm" href="#demo" data-ar="افتح غرفة التشخيص" data-en="Open the Diagnosis Room">افتح غرفة التشخيص</a></div>
       <div class="start-card"><div class="ic">🤖</div><h3 data-ar="عايز سيرفري يفضل حي" data-en="I want my server alive">عايز سيرفري يفضل حي</h3><p data-ar="بوت البقاء AFK بيتبني دلوقتي على بنية Workers موزعة. سجّل في قائمة الانتظار وهنبدأ بيك قبل الإطلاق العام." data-en="The Stay-Alive AFK bot is being built now on a distributed worker fleet. Join the waitlist and you start before the public launch.">بوت البقاء AFK بيتبني دلوقتي على بنية Workers موزعة. سجّل في قائمة الانتظار وهنبدأ بيك قبل الإطلاق العام.</p><a class="btn btn-ghost btn-sm" href="#waitlist" data-ar="انضم لقائمة AFK" data-en="Join the AFK waitlist">انضم لقائمة AFK</a></div>
     </div>
@@ -549,7 +550,7 @@ footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px
           <li data-ar="تنبيهات توقف أساسية داخل اللوحة" data-en="Basic in-dashboard downtime alerts">تنبيهات توقف أساسية داخل اللوحة</li>
           <li class="no" data-ar="بوت AFK — بينضم لقائمة الانتظار" data-en="AFK bot — waitlist only">بوت AFK — بينضم لقائمة الانتظار</li>
         </ul>
-        <a class="btn btn-green" href="#get-started" data-ar="ابدأ مجاناً" data-en="Start free">ابدأ مجاناً</a>
+        <a class="btn btn-green" href="app.html#register" data-ar="ابدأ مجاناً" data-en="Start free">ابدأ مجاناً</a>
       </div>
       <div class="price-card">
         <h3 data-ar="🚀 Pro — للي بيكبر" data-en="🚀 Pro — for growing servers">🚀 Pro — للي بيكبر</h3>

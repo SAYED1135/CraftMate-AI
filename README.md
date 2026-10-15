@@ -75,3 +75,19 @@ CraftMate-AI/
 1. افتح لوحة تحكم مشروعك في Supabase: `https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/sql/new`
 2. انسخ محتوى ملف [`supabase/migrations/001_craftmate_schema.sql`](./supabase/migrations/001_craftmate_schema.sql) وشغّله (Run) لإنشاء الجداول وتفعيل سياسات العزل (RLS).
 3. من قسم **Project Settings -> API**، انسخ مفتاح `anon public` وضعه داخل إعدادات لوحة التحكم لتفعيل الحفظ السحابي الفوري.
+
+## 🚀 المرحلة B — الحسابات ولوحة التحكم (`app.html`)
+
+تطبيق الحسابات والرحلة الحقيقية متاح الآن في [`app.html`](./app.html) ومرتبط من الموقع الرئيسي:
+
+- **تسجيل ودخول فوريين** باسم مستخدم وكلمة سر مشفرة (SHA-256 + Salt) وجلسة 7 أيام، مع **حساب تجريبي بنقرة واحدة**.
+- **وضع Supabase سحابي جاهز**: الدخول عبر Supabase Auth يُفعَّل بلصق مفتاح `anon public` العام (آمن مع RLS) من الإعدادات، أو بوضعه مرة واحدة في `SUPABASE_ANON_KEY_DEFAULT` داخل `app.html` للنشر العام — المشروع: `fucsztovkkilyboinhrv`.
+- **Onboarding كامل**: اختيار الاستضافة (Play Hosting / FalixNodes / MCServerHost / Minefort) → بيانات السيرفر → طريقة الربط (بلجن / رفع سجل / لاحقاً).
+- **أكواد ربط حقيقية** `CM-XXXX-XXXX` صالحة 15 دقيقة ولمرة واحدة، مع أمر `/craftmate link` ومعاينة اتصال تجريبية داخل اللوحة.
+- **لوحة سيرفرات** بحالة حية/سبات/غير مرتبط، ومزامنة نبضات، وفصل وحذف — و**حدود الخطة المجانية مفروضة** (سيرفر واحد، 10 تشخيصات/شهر، احتفاظ 7 أيام).
+- **تشخيصات محفوظة** في حساب كل مستخدم معزولة عنه غيره، وتصدير بيانات وحذف حساب كامل.
+
+### تفعيل قاعدة البيانات السحابية
+1. افتح Supabase SQL Editor لمشروعك `fucsztovkkilyboinhrv`.
+2. شغّل [`supabase/migrations/001_craftmate_schema.sql`](./supabase/migrations/001_craftmate_schema.sql) ثم [`supabase/migrations/002_phase_b_commercial.sql`](./supabase/migrations/002_phase_b_commercial.sql).
+3. من **Project Settings → API** انسخ `anon public` والصقه في إعدادات `app.html` للاختبار، أو في ثابت `SUPABASE_ANON_KEY_DEFAULT` للنشر العام.

@@ -1,1788 +1,891 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CraftMate AI — مساعد تشخيص وإدارة سيرفرات Minecraft الذكي (v0.2)</title>
-  <style>
-    :root {
-      --bg-base: #0b0f17;
-      --bg-surface: #111827;
-      --bg-card: #161f33;
-      --bg-card-hover: #1e293b;
-      --bg-code: #090d16;
-      --border: #26334d;
-      --border-light: #334155;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --primary: #10b981;
-      --primary-hover: #059669;
-      --primary-soft: rgba(16, 185, 129, 0.14);
-      --accent: #3b82f6;
-      --accent-soft: rgba(59, 130, 246, 0.15);
-      --warning: #f59e0b;
-      --warning-soft: rgba(245, 158, 11, 0.15);
-      --danger: #ef4444;
-      --danger-soft: rgba(239, 68, 68, 0.15);
-      --purple: #8b5cf6;
-      --purple-soft: rgba(139, 92, 246, 0.15);
-      --radius: 12px;
-      --radius-sm: 8px;
-      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
-      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-base);
-      color: var(--text-main);
-      font-family: var(--font-sans);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Top Header */
-    .topbar {
-      background: rgba(17, 24, 39, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0.75rem 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.25rem;
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-    }
-
-    .brand-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.2rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .badge-primary { background: var(--primary-soft); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-    .badge-accent { background: var(--accent-soft); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-    .badge-warning { background: var(--warning-soft); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-    .badge-danger { background: var(--danger-soft); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-    .badge-purple { background: var(--purple-soft); color: #c084fc; border: 1px solid rgba(139,92,246,0.3); }
-
-    .topbar-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex-wrap: wrap;
-    }
-
-    /* Buttons & Inputs */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.18s ease;
-      font-family: inherit;
-      color: var(--text-main);
-      background: var(--bg-card);
-    }
-
-    .btn:hover { background: var(--bg-card-hover); }
-    .btn-primary { background: var(--primary); color: #052e16; font-weight: 700; }
-    .btn-primary:hover { background: #34d399; }
-    .btn-accent { background: var(--accent); color: #fff; }
-    .btn-accent:hover { background: #2563eb; }
-    .btn-danger { background: var(--danger-soft); color: #fca5a5; border-color: rgba(239,68,68,0.35); }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-outline { border-color: var(--border-light); background: rgba(22, 31, 51, 0.7); }
-    .btn-outline:hover { border-color: var(--primary); }
-    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
-
-    select, input[type="text"], input[type="password"], textarea {
-      background: var(--bg-code);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 0.55rem 0.85rem;
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 0.875rem;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    select:focus, input:focus, textarea:focus {
-      border-color: var(--primary);
-    }
-
-    /* Layout Container */
-    .container {
-      max-width: 1360px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 1.25rem 1.5rem 3rem;
-      flex: 1;
-    }
-
-    /* Navigation Tabs */
-    .nav-tabs {
-      display: flex;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.75rem;
-      margin-bottom: 1.5rem;
-      overflow-x: auto;
-    }
-
-    .nav-tab {
-      padding: 0.6rem 1.1rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      background: transparent;
-      border: 1px solid transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-
-    .nav-tab:hover {
-      color: var(--text-main);
-      background: var(--bg-surface);
-    }
-
-    .nav-tab.active {
-      color: #34d399;
-      background: var(--primary-soft);
-      border-color: rgba(16, 185, 129, 0.35);
-    }
-
-    /* Grid Systems */
-    .grid-4 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    @media (max-width: 768px) {
-      .grid-2 { grid-template-columns: 1fr; }
-    }
-
-    /* Cards */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      box-shadow: var(--shadow);
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .card-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    /* Host Selector Cards */
-    .host-card {
-      background: var(--bg-surface);
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
-
-    .host-card:hover {
-      border-color: var(--border-light);
-      transform: translateY(-2px);
-    }
-
-    .host-card.selected {
-      border-color: var(--primary);
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.1), rgba(22, 31, 51, 0.95));
-      box-shadow: 0 0 0 1px var(--primary), var(--shadow);
-    }
-
-    .host-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .host-domain {
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .spec-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.25rem;
-    }
-
-    .spec-pill {
-      font-size: 0.74rem;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 0.15rem 0.5rem;
-      border-radius: 6px;
-      color: #cbd5e1;
-    }
-
-    /* Code & Log Blocks (Always LTR) */
-    .code-block {
-      direction: ltr;
-      text-align: left;
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      background: var(--bg-code);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.9rem;
-      overflow-x: auto;
-      color: #e2e8f0;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .diff-del {
-      background: rgba(239, 68, 68, 0.18);
-      color: #fca5a5;
-      display: block;
-      padding: 0.1rem 0.4rem;
-      border-left: 3px solid var(--danger);
-    }
-
-    .diff-add {
-      background: rgba(16, 185, 129, 0.18);
-      color: #6ee7b7;
-      display: block;
-      padding: 0.1rem 0.4rem;
-      border-left: 3px solid var(--primary);
-    }
-
-    /* Capabilities Table */
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
-
-    th, td {
-      padding: 0.7rem 0.85rem;
-      border-bottom: 1px solid var(--border);
-      text-align: start;
-    }
-
-    th {
-      color: var(--text-muted);
-      font-weight: 600;
-      background: rgba(15, 23, 42, 0.6);
-    }
-
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    /* Status Dot */
-    .status-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .dot-online { background: #10b981; box-shadow: 0 0 8px #10b981; }
-    .dot-sleep { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
-    .dot-crash { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-
-    /* Alert Boxes */
-    .alert {
-      padding: 0.9rem 1rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
-    }
-
-    .alert-warning {
-      background: rgba(245, 158, 11, 0.1);
-      border-color: rgba(245, 158, 11, 0.35);
-      color: #fde68a;
-    }
-
-    .alert-danger {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.35);
-      color: #fecaca;
-    }
-
-    .alert-info {
-      background: rgba(59, 130, 246, 0.1);
-      border-color: rgba(59, 130, 246, 0.35);
-      color: #bfdbfe;
-    }
-
-    .alert-success {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: rgba(16, 185, 129, 0.35);
-      color: #a7f3d0;
-    }
-
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    /* Modal */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.72);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 1rem;
-    }
-
-    .modal-backdrop.open { display: flex; }
-
-    .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius);
-      max-width: 640px;
-      width: 100%;
-      padding: 1.5rem;
-      box-shadow: var(--shadow);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.85rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .kpi-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.9rem 1rem;
-    }
-
-    .kpi-label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .kpi-value {
-      font-size: 1.35rem;
-      font-weight: 800;
-      margin-top: 0.2rem;
-    }
-
-    .finding-item {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      margin-bottom: 0.85rem;
-    }
-
-    .footer {
-      border-top: 1px solid var(--border);
-      padding: 1rem 1.5rem;
-      text-align: center;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      background: var(--bg-surface);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CraftMate AI — سيرفرك تعطل؟ اعرف السبب في دقيقة | Minecraft Server AI Doctor & Crossplay</title>
+<meta name="description" content="CraftMate AI منصة متكاملة لصاحب سيرفر ماينكرافت: تشخيص ذكي للأعطال، لعب مشترك Java وBedrock، إدارة آمنة — مجاني أثناء الإطلاق.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2322c55e'/><text x='50' y='68' font-size='52' text-anchor='middle'>⛏️</text></svg>">
+<style>
+:root{
+  --bg:#060a12; --bg2:#0a0f1c; --card:#0d1424; --card2:#111b31; --card3:#0a1220;
+  --border:#1d2a44; --border2:#2a3c5f;
+  --text:#f1f5f9; --muted:#94a3b8; --dim:#64748b;
+  --green:#22c55e; --green2:#16a34a; --green-glow:rgba(34,197,94,.28);
+  --sky:#38bdf8; --sky-soft:rgba(56,189,248,.13);
+  --amber:#f59e0b; --amber-soft:rgba(245,158,11,.13);
+  --red:#f87171; --red-soft:rgba(248,113,113,.12);
+  --violet:#a78bfa; --violet-soft:rgba(167,139,250,.13);
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.65}
+::selection{background:var(--green);color:#04150a}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font-family:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+section{padding:84px 0}
+.sec-head{max-width:720px;margin:0 auto 46px;text-align:center}
+.sec-tag{display:inline-block;font-size:.78rem;font-weight:800;letter-spacing:.04em;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:999px;padding:5px 16px;margin-bottom:16px}
+.sec-head h2{font-size:clamp(1.65rem,3.6vw,2.45rem);font-weight:900;line-height:1.3;margin-bottom:12px}
+.sec-head p{color:var(--muted);font-size:1.02rem}
+/* announcement */
+.announce{background:linear-gradient(90deg,#14532d,#166534,#14532d);text-align:center;font-size:.86rem;font-weight:700;padding:9px 16px}
+.announce a{color:#bbf7d0;text-decoration:underline}
+/* nav */
+header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.82);backdrop-filter:blur(16px);border-bottom:1px solid rgba(29,42,68,.7)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:66px;gap:14px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:1.08rem;white-space:nowrap}
+.brand-logo{width:39px;height:39px;border-radius:11px;background:linear-gradient(135deg,var(--green),#15803d);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 5px 18px var(--green-glow)}
+.brand small{display:block;font-size:.62rem;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.nav-links{display:flex;gap:4px;align-items:center}
+.nav-links a{padding:8px 13px;border-radius:9px;font-size:.88rem;font-weight:700;color:var(--muted);transition:.2s}
+.nav-links a:hover{color:var(--text);background:rgba(34,197,94,.09)}
+.nav-actions{display:flex;gap:9px;align-items:center}
+.lang-btn{background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:8px 14px;font-weight:800;font-size:.82rem;cursor:pointer}
+.lang-btn:hover{border-color:var(--green)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-weight:800;border-radius:11px;padding:12px 26px;font-size:.95rem;transition:.22s;text-align:center}
+.btn-green{background:var(--green);color:#04150a;box-shadow:0 6px 24px var(--green-glow)}
+.btn-green:hover{background:#4ade80;transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);transform:translateY(-2px)}
+.btn-sky{background:var(--sky);color:#082f49}
+.btn-sm{padding:9px 18px;font-size:.86rem}
+.burger{display:none;background:var(--card2);border:1px solid var(--border2);border-radius:9px;padding:9px 12px;cursor:pointer;font-size:17px;color:var(--text)}
+.mobile-menu{display:none;flex-direction:column;gap:6px;padding:12px 22px 18px;border-bottom:1px solid var(--border);background:rgba(6,10,18,.97)}
+.mobile-menu.open{display:flex}
+.mobile-menu a{padding:11px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);font-weight:700;font-size:.9rem}
+/* hero */
+.hero{position:relative;padding:78px 0 70px;background:radial-gradient(ellipse 90% 55% at 50% -10%,rgba(34,197,94,.16),transparent 65%),radial-gradient(ellipse 55% 40% at 85% 30%,rgba(56,189,248,.08),transparent 60%),var(--bg)}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(34,197,94,.09);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:999px;padding:6px 16px;font-size:.82rem;font-weight:800;margin-bottom:22px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero h1{font-size:clamp(2.05rem,4.6vw,3.35rem);font-weight:900;line-height:1.28;margin-bottom:18px}
+.hero h1 .hl{color:var(--green);position:relative;white-space:nowrap}
+.hero-sub{color:var(--muted);font-size:1.1rem;max-width:560px;margin-bottom:28px}
+.hero-sub b{color:var(--text)}
+.hero-ctas{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:26px}
+.hero-points{display:flex;flex-direction:column;gap:8px;font-size:.93rem;color:#cbd5e1}
+.hero-points span::before{content:"✓";color:var(--green);font-weight:900;margin-inline-end:9px}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:58px}
+.stat{background:rgba(13,20,36,.75);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center}
+.stat b{display:block;font-size:1.45rem;color:var(--green)}
+.stat span{font-size:.79rem;color:var(--muted);font-weight:700}
+/* dashboard mock */
+.mock{background:linear-gradient(160deg,rgba(17,27,49,.92),rgba(10,18,36,.94));border:1px solid var(--border2);border-radius:20px;box-shadow:0 30px 70px rgba(0,0,0,.5);overflow:hidden}
+.mock-bar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:rgba(6,10,18,.5)}
+.mock-bar .lights{display:flex;gap:7px}.mock-bar .lights i{width:11px;height:11px;border-radius:50%;display:block}
+.mock-status{display:inline-flex;gap:7px;align-items:center;font-size:.76rem;font-weight:800;color:#86efac;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);padding:4px 12px;border-radius:999px}
+.mock-body{padding:20px}
+.mock-server{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.mock-server h3{font-size:1.05rem}
+.mock-server p{color:var(--sky);font-size:.82rem;direction:ltr;text-align:end;font-family:Consolas,monospace}
+.mock-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--card3);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+.metric b{display:block;font-size:1.05rem}.metric span{font-size:.7rem;color:var(--muted);font-weight:700}
+.mock-log{background:#05080f;border:1px solid var(--border);border-radius:11px;padding:14px 15px;font-family:Consolas,monospace;font-size:.74rem;line-height:1.9;direction:ltr;text-align:left;margin-bottom:14px;min-height:138px}
+.mock-log .t{color:#475569}.mock-log .ok{color:#4ade80}.mock-log .warn{color:#fbbf24}.mock-log .ai{color:#7dd3fc}
+.mock-fix{display:flex;gap:10px;align-items:flex-start;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:11px;padding:13px 15px;font-size:.86rem}
+.mock-fix b{color:#86efac}
+/* trust */
+.trust{border-block:1px solid var(--border);background:var(--bg2);padding:26px 0}
+.trust p{text-align:center;color:var(--dim);font-size:.8rem;font-weight:800;letter-spacing:.05em;margin-bottom:16px}
+.trust-row{display:flex;flex-wrap:wrap;justify-content:center;gap:11px}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 18px;font-size:.87rem;font-weight:800;color:#cbd5e1}
+.chip i{font-style:normal;margin-inline-end:7px}
+/* pillars */
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.pillar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:27px 22px;position:relative;transition:.25s}
+.pillar:hover{transform:translateY(-5px);border-color:rgba(34,197,94,.45)}
+.pillar .ic{font-size:32px;margin-bottom:15px}
+.pillar h3{font-size:1.06rem;margin-bottom:9px}
+.pillar p{color:var(--muted);font-size:.9rem;margin-bottom:16px}
+.badge-now,.badge-soon{font-size:.7rem;font-weight:900;border-radius:999px;padding:4px 12px;display:inline-block}
+.badge-now{background:rgba(34,197,94,.13);color:#4ade80;border:1px solid rgba(34,197,94,.35)}
+.badge-soon{background:var(--amber-soft);color:#fbbf24;border:1px solid rgba(245,158,11,.35)}
+.pillar a.link{color:var(--green);font-weight:800;font-size:.87rem}
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.step{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;text-align:center}
+.step .num{width:52px;height:52px;margin:0 auto 16px;border-radius:50%;background:rgba(34,197,94,.12);border:2px solid rgba(34,197,94,.45);color:var(--green);font-size:1.35rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+.step h3{margin-bottom:9px}.step p{color:var(--muted);font-size:.92rem}
+/* workbench demo */
+.workbench{background:var(--card);border:1px solid var(--border2);border-radius:20px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.wb-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);background:rgba(6,10,18,.45)}
+.wb-head h3{font-size:1.02rem}
+.wb-grid{display:grid;grid-template-columns:1fr 1fr;min-height:430px}
+.wb-left{padding:20px;border-inline-end:1px solid var(--border)}
+.wb-right{padding:20px;background:rgba(6,10,18,.35)}
+.wb-label{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.samples{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.sample-btn{background:var(--card2);border:1px solid var(--border2);color:#cbd5e1;border-radius:999px;padding:7px 14px;font-size:.79rem;font-weight:700;cursor:pointer}
+.sample-btn:hover,.sample-btn.active{border-color:var(--green);color:var(--green)}
+textarea.log-in{width:100%;height:215px;background:#05080f;border:1px solid var(--border);border-radius:11px;color:#a5f3c4;padding:13px;font-family:Consolas,monospace;font-size:.75rem;line-height:1.7;direction:ltr;text-align:left;resize:vertical;outline:none}
+textarea.log-in:focus{border-color:var(--green)}
+.wb-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.privacy-note{font-size:.79rem;color:var(--dim);margin-top:11px}
+.report-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--dim);gap:12px;padding:26px}
+.report-empty .big{font-size:44px}
+.report-card{display:none}
+.sev{display:inline-block;font-size:.72rem;font-weight:900;border-radius:999px;padding:4px 13px;margin-bottom:12px}
+.sev-high{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(248,113,113,.4)}
+.sev-med{background:var(--amber-soft);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+.sev-ok{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.4)}
+.report-card h4{font-size:1.13rem;margin-bottom:8px}
+.report-card .cause{color:var(--muted);font-size:.92rem;margin-bottom:16px}
+.report-card ol{padding-inline-start:22px;color:#cbd5e1;font-size:.92rem;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.guard-note{background:var(--sky-soft);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:11px 14px;font-size:.84rem;color:#bae6fd}
+.scrub-line{display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:var(--dim);margin-top:13px}
+/* hosts + crossplay */
+.host-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.host-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:19px 16px;cursor:pointer;text-align:center;transition:.2s;color:var(--text);width:100%}
+.host-card:hover{border-color:var(--border2)}
+.host-card.sel{border-color:var(--green);background:rgba(34,197,94,.06)}
+.host-card .hic{font-size:27px;margin-bottom:8px}
+.host-card b{display:block;font-size:.95rem}
+.host-card span{font-size:.76rem;color:var(--muted)}
+.host-panel{background:var(--card);border:1px solid var(--border2);border-radius:18px;padding:26px}
+.host-panel h3{font-size:1.15rem;margin-bottom:6px}
+.host-panel .hsub{color:var(--muted);font-size:.92rem;margin-bottom:18px}
+.spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.spec{background:var(--card3);border:1px solid var(--border);border-radius:11px;padding:13px}
+.spec span{display:block;font-size:.72rem;color:var(--dim);font-weight:800;margin-bottom:4px}
+.spec b{font-size:.92rem}
+.warn-box{display:none;background:var(--amber-soft);border:1px solid rgba(245,158,11,.4);border-radius:11px;padding:13px 16px;font-size:.9rem;color:#fde68a;margin-bottom:16px}
+.codebox{background:#05080f;border:1px solid var(--border);border-radius:11px;padding:15px;font-family:Consolas,monospace;font-size:.78rem;line-height:1.8;direction:ltr;text-align:left;white-space:pre-wrap;color:#a5f3c4;margin-bottom:14px}
+/* plugin */
+.plugin-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:stretch}
+.plugin-card{background:linear-gradient(150deg,rgba(34,197,94,.12),rgba(13,20,36,.95) 55%);border:1px solid rgba(34,197,94,.35);border-radius:18px;padding:29px}
+.plugin-card h3{font-size:1.35rem;margin-bottom:8px}
+.plugin-card p{color:var(--muted);margin-bottom:20px}
+.cmd-list{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px}
+.cmd-list h3{margin-bottom:15px}
+.cmd{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--border);font-size:.9rem}
+.cmd:last-child{border-bottom:none}
+.cmd code{direction:ltr;font-family:Consolas,monospace;color:#86efac;font-size:.82rem;white-space:nowrap}
+.cmd span{color:var(--muted);text-align:end}
+/* get started */
+.start-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.start-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;text-align:center}
+.start-card .ic{font-size:32px;margin-bottom:13px}
+.start-card h3{margin-bottom:8px}
+.start-card p{color:var(--muted);font-size:.9rem;margin-bottom:18px}
+.link-code{display:none;background:#05080f;border:1px dashed rgba(34,197,94,.5);border-radius:11px;padding:14px;margin-top:15px}
+.link-code b{font-family:Consolas,monospace;font-size:1.25rem;color:#4ade80;letter-spacing:.08em;direction:ltr;display:block}
+.link-code span{font-size:.78rem;color:var(--muted)}
+/* pricing */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:29px 24px;display:flex;flex-direction:column}
+.price-card.featured{border:2px solid var(--green);background:linear-gradient(165deg,rgba(34,197,94,.1),var(--card) 60%);position:relative}
+.pop{position:absolute;top:-14px;inset-inline-start:50%;transform:translateX(50%);background:var(--green);color:#04150a;font-size:.72rem;font-weight:900;border-radius:999px;padding:5px 16px;white-space:nowrap}
+[dir="ltr"] .pop{transform:translateX(-50%)}
+.price-card h3{font-size:1.05rem;margin-bottom:5px}
+.price-now{font-size:2rem;font-weight:900}
+.price-now small{font-size:.82rem;color:var(--muted);font-weight:700}
+.price-card .pdesc{color:var(--muted);font-size:.88rem;margin-bottom:19px}
+.price-card ul{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:.9rem;color:#cbd5e1;margin-bottom:24px;flex:1}
+.price-card ul li::before{content:"✓";color:var(--green);font-weight:900;margin-inline-end:9px}
+.price-card ul li.no{color:var(--dim)}
+.price-card ul li.no::before{content:"—";color:var(--dim)}
+/* waitlist */
+.waitlist{background:linear-gradient(150deg,rgba(34,197,94,.13),rgba(56,189,248,.07));border:1px solid rgba(34,197,94,.35);border-radius:20px;padding:37px 30px;text-align:center}
+.waitlist h2{font-size:clamp(1.45rem,3vw,2rem);margin-bottom:10px}
+.waitlist p{color:var(--muted);max-width:600px;margin:0 auto 24px}
+.wl-form{display:flex;gap:10px;max-width:640px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+.wl-form select,.wl-form input{background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:11px;padding:13px 15px;font-size:.92rem;outline:none}
+.wl-form input{flex:1;min-width:230px}
+.wl-form select:focus,.wl-form input:focus{border-color:var(--green)}
+.wl-ok{display:none;margin-top:17px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#bbf7d0;border-radius:11px;padding:12px 18px;font-size:.9rem;max-width:640px;margin-inline:auto}
+.wl-fine{font-size:.78rem;color:var(--dim);margin-top:13px}
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.road-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 20px}
+.road-card .st{font-size:.7rem;font-weight:900;border-radius:999px;padding:4px 12px;display:inline-block;margin-bottom:13px}
+.st-now{background:rgba(34,197,94,.13);color:#4ade80;border:1px solid rgba(34,197,94,.4)}
+.st-next{background:var(--sky-soft);color:#7dd3fc;border:1px solid rgba(56,189,248,.35)}
+.st-later{background:var(--violet-soft);color:#c4b5fd;border:1px solid rgba(167,139,250,.35)}
+.road-card h3{font-size:1rem;margin-bottom:8px}
+.road-card p{color:var(--muted);font-size:.87rem}
+/* faq */
+.faq-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+.faq-tab{background:var(--card);border:1px solid var(--border2);color:var(--muted);border-radius:999px;padding:9px 20px;font-weight:800;font-size:.87rem;cursor:pointer}
+.faq-tab.active{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.08)}
+.faq-list{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:11px}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.faq-q{width:100%;background:none;border:none;color:var(--text);text-align:start;padding:17px 20px;font-size:.96rem;font-weight:800;cursor:pointer;display:flex;justify-content:space-between;gap:14px;align-items:center}
+.faq-q .arr{color:var(--green);transition:.25s;flex-shrink:0}
+.faq-item.open .arr{transform:rotate(180deg)}
+.faq-a{display:none;padding:0 20px 18px;color:var(--muted);font-size:.92rem}
+.faq-item.open .faq-a{display:block}
+/* testers */
+.testers{background:var(--card);border:1px dashed rgba(34,197,94,.45);border-radius:20px;padding:34px 28px;text-align:center}
+.testers h2{margin-bottom:10px}
+.testers p{color:var(--muted);max-width:640px;margin:0 auto 22px}
+.tester-perks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:25px}
+/* final cta + footer */
+.final{background:radial-gradient(ellipse 70% 90% at 50% 110%,rgba(34,197,94,.2),transparent),var(--bg2);text-align:center}
+.final h2{font-size:clamp(1.7rem,3.6vw,2.5rem);margin-bottom:13px}
+.final p{color:var(--muted);margin-bottom:27px}
+footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:28px;margin-bottom:34px}
+.foot-grid h4{font-size:.92rem;margin-bottom:14px}
+.foot-grid a{display:block;color:var(--muted);font-size:.88rem;padding:4px 0}
+.foot-grid a:hover{color:var(--green)}
+.foot-brand p{color:var(--dim);font-size:.86rem;max-width:300px;margin-top:10px}
+.copy{border-top:1px solid var(--border);padding-top:22px;text-align:center;color:var(--dim);font-size:.82rem}
+/* support widget */
+.sw-btn{position:fixed;bottom:22px;inset-inline-end:22px;z-index:300;width:58px;height:58px;border-radius:50%;border:none;background:var(--green);font-size:25px;cursor:pointer;box-shadow:0 10px 30px var(--green-glow);transition:.2s}
+.sw-btn:hover{transform:translateY(-3px)}
+.sw-panel{position:fixed;bottom:92px;inset-inline-end:22px;z-index:300;width:min(360px,calc(100vw - 32px));background:var(--card2);border:1px solid var(--border2);border-radius:17px;box-shadow:0 24px 60px rgba(0,0,0,.55);display:none;overflow:hidden}
+.sw-panel.open{display:block}
+.sw-head{background:linear-gradient(135deg,#14532d,#166534);padding:15px 17px;display:flex;justify-content:space-between;align-items:center}
+.sw-head b{font-size:.94rem}
+.sw-head span{display:block;font-size:.74rem;color:#bbf7d0;font-weight:600}
+.sw-close{background:none;border:none;color:#fff;font-size:16px;cursor:pointer}
+.sw-msgs{height:250px;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:9px}
+.sw-msg{max-width:86%;padding:10px 13px;border-radius:13px;font-size:.86rem;line-height:1.6}
+.sw-msg.bot{background:var(--card3);border:1px solid var(--border);align-self:flex-start}
+.sw-msg.user{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.3);align-self:flex-end}
+.sw-sugs{display:flex;gap:7px;flex-wrap:wrap;padding:0 15px 12px}
+.sw-sug{background:var(--card3);border:1px solid var(--border2);color:#cbd5e1;border-radius:999px;padding:6px 12px;font-size:.75rem;cursor:pointer}
+.sw-sug:hover{border-color:var(--green);color:var(--green)}
+.sw-form{display:flex;gap:8px;padding:13px;border-top:1px solid var(--border)}
+.sw-form input{flex:1;background:var(--card3);border:1px solid var(--border2);border-radius:9px;color:var(--text);padding:10px 12px;outline:none;font-size:.88rem}
+.sw-form button{background:var(--green);border:none;border-radius:9px;padding:0 17px;font-size:16px;cursor:pointer}
+.toast{position:fixed;bottom:24px;inset-inline-start:50%;transform:translate(50%,90px);background:#14532d;border:1px solid rgba(34,197,94,.5);color:#dcfce7;border-radius:12px;padding:13px 22px;font-size:.9rem;font-weight:700;z-index:400;transition:.35s;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+[dir="ltr"] .toast{transform:translate(-50%,90px)}
+.toast.show{transform:translate(50%,0)}
+[dir="ltr"] .toast.show{transform:translate(-50%,0)}
+@media(max-width:1020px){.pillars,.road{grid-template-columns:repeat(2,1fr)}.host-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:860px){
+  .nav-links{display:none}.burger{display:block}
+  .hero-grid,.wb-grid,.plugin-grid{grid-template-columns:1fr}
+  .wb-left{border-inline-end:none;border-bottom:1px solid var(--border)}
+  .hero-stats{grid-template-columns:repeat(2,1fr)}
+  .steps,.start-grid,.price-grid{grid-template-columns:1fr}
+  .spec-grid{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  section{padding:62px 0}
+}
+</style>
 </head>
 <body>
 
-  <!-- Topbar -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-icon">⚡</div>
-      <div>
-        <div class="brand-title">
-          <span>CraftMate AI</span>
-          <span class="badge badge-primary">PRD v0.2 MVP</span>
-          <span class="badge badge-accent">$0 GitHub Stack</span>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-muted);" id="subtitle-text">
-          مساعد تشخيص وإدارة سيرفرات Paper / Purpur الواعي بقيود الاستضافات
-        </div>
-      </div>
-    </div>
+<div class="announce"><span data-ar="🚀 الإطلاق التجريبي مفتوح — CraftMate مجاني 100% الآن، وبوت البقاء AFK قادم قريباً" data-en="🚀 Beta launch is open — CraftMate is 100% free now, and the Stay-Alive AFK bot is coming soon">🚀 الإطلاق التجريبي مفتوح — CraftMate مجاني 100% الآن، وبوت البقاء AFK قادم قريباً</span> · <a href="#waitlist" data-ar="احجز مكانك" data-en="Reserve your spot">احجز مكانك</a></div>
 
-    <div class="topbar-controls">
-      <!-- Active Server State Switcher (Simulates Connector / Hibernation State) -->
-      <div style="display:flex; align-items:center; gap:0.45rem; background:var(--bg-surface); padding:0.35rem 0.7rem; border-radius:8px; border:1px solid var(--border);">
-        <span class="status-dot dot-online" id="server-status-dot"></span>
-        <span style="font-size:0.8rem; color:var(--text-muted);">حالة السيرفر:</span>
-        <select id="server-state-select" onchange="updateServerStateUI()" style="padding:0.2rem 0.4rem; font-size:0.8rem; border:none; background:transparent; font-weight:700;">
-          <option value="ONLINE">🟢 متصل (ONLINE)</option>
-          <option value="HIBERNATING">💤 في وضع السبات (HIBERNATING - 0 لاعبين)</option>
-          <option value="CRASHED">🔴 متوقف بسبب خطأ (CRASHED)</option>
-        </select>
-      </div>
-
-      <button class="btn btn-outline btn-sm" onclick="openSettingsModal()">
-        🔗 إعدادات Supabase & Gemini
-      </button>
-
-      <button class="btn btn-outline btn-sm" onclick="toggleDir()" id="lang-btn">
-        🌐 LTR / RTL
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Workspace Container -->
-  <main class="container">
-
-    <!-- State Banner for Hibernation (FR-16) -->
-    <div id="hibernation-banner" class="alert alert-info" style="display:none;">
-      <strong>💤 وضع السبات الطبيعي (Server Hibernation Mode — FR-16):</strong>
-      أرسل بلجن <code>CraftMate Connector</code> إشعار إغلاق نظيف (عدد اللاعبين = 0). بما أن الاستضافة المختارة (<span id="hibernation-host-name">FalixNodes</span>) توقف السيرفرات الفارغة لتوفير الموارد، <strong>لا يعتبر النظام هذا التوقف عطلاً (Crash)</strong>. يمكنك تحليل آخر السجلات المحفوظة أو رفع <code>latest.log</code> يدوياً.
-    </div>
-
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('tab-hosts', this)">
-        🏢 1. الاستضافات الأربع والقدرات (Host Profiles)
-      </button>
-      <button class="nav-tab" onclick="switchTab('tab-doctor', this)">
-        🩺 2. مشخص السجلات الذكي (AI Log Doctor)
-      </button>
-      <button class="nav-tab" onclick="switchTab('tab-plans', this)">
-        🛡️ 3. خطة العمل ومحرك السياسات (Policy & Approvals)
-      </button>
-      <button class="nav-tab" onclick="switchTab('tab-bedrock', this)">
-        🎮 4. معالج Java & Bedrock (Geyser)
-      </button>
-      <button class="nav-tab" onclick="switchTab('tab-supabase', this)">
-        🗄️ 5. قاعدة البيانات والتدقيق (Supabase & Audit)
-      </button>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><span class="brand-logo">⛏️</span><span>CraftMate AI<small>MINECRAFT SERVER PLATFORM</small></span></a>
+    <nav class="nav-links">
+      <a href="#features" data-ar="المميزات" data-en="Features">المميزات</a>
+      <a href="#demo" data-ar="جرّب التشخيص" data-en="Try the Doctor">جرّب التشخيص</a>
+      <a href="#crossplay" data-ar="اللعب المشترك" data-en="Crossplay">اللعب المشترك</a>
+      <a href="#pricing" data-ar="الخطط" data-en="Plans">الخطط</a>
+      <a href="#roadmap" data-ar="خارطة الطريق" data-en="Roadmap">خارطة الطريق</a>
+      <a href="#faq" data-ar="الأسئلة" data-en="FAQ">الأسئلة</a>
     </nav>
+    <div class="nav-actions">
+      <button class="lang-btn" id="langToggle" onclick="toggleLang()">EN 🌐</button>
+      <a class="btn btn-green btn-sm" href="#get-started" data-ar="ابدأ مجاناً" data-en="Start Free">ابدأ مجاناً</a>
+      <button class="burger" onclick="document.getElementById('mobileMenu').classList.toggle('open')">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" data-ar="المميزات" data-en="Features">المميزات</a>
+    <a href="#demo" data-ar="جرّب التشخيص" data-en="Try the Doctor">جرّب التشخيص</a>
+    <a href="#crossplay" data-ar="اللعب المشترك" data-en="Crossplay">اللعب المشترك</a>
+    <a href="#pricing" data-ar="الخطط" data-en="Plans">الخطط</a>
+    <a href="#roadmap" data-ar="خارطة الطريق" data-en="Roadmap">خارطة الطريق</a>
+    <a href="#faq" data-ar="الأسئلة" data-en="FAQ">الأسئلة</a>
+  </div>
+</header>
 
-    <!-- ================================================================== -->
-    <!-- TAB 1: HOST PROFILES & CAPABILITY MATRIX                           -->
-    <!-- ================================================================== -->
-    <section id="tab-hosts" class="tab-panel active">
-      <div class="alert alert-success">
-        <strong>🎯 استراتيجية الاستضافات الأربع المدعومة رسمياً في الـ MVP:</strong>
-        اختر استضافة السيرفر أدناه ليقوم <strong>CraftMate AI</strong> بتكييف نموذج القدرات (Capabilities)، وطريقة تثبيت البلجن، وقواعد الأمان في محرك السياسات (Policy Engine) تلقائياً.
-      </div>
+<main id="top">
 
-      <!-- 4 Host Cards -->
-      <div class="grid-4" id="host-cards-container"></div>
-
-      <div class="grid-2">
-        <!-- Capability Matrix Card -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📊 مصفوفة القدرات المكتشفة (Capability Model — FR-04)</div>
-            <span class="badge badge-primary" id="active-host-badge">Play.hosting</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>القدرة (Capability)</th>
-                  <th>الحالة</th>
-                  <th>القيد / المصدر</th>
-                </tr>
-              </thead>
-              <tbody id="capabilities-tbody"></tbody>
-            </table>
-          </div>
+<!-- ══════════ HERO ══════════ -->
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="hero-badge"><span class="dot"></span><span data-ar="متاح الآن — مجاني أثناء الإطلاق التجريبي" data-en="Live now — free during beta launch">متاح الآن — مجاني أثناء الإطلاق التجريبي</span></span>
+        <h1><span data-ar="سيرفرك تعطل؟" data-en="Your server crashed?">سيرفرك تعطل؟</span><br><span class="hl" data-ar="اعرف السبب في دقيقة." data-en="Know why in a minute.">اعرف السبب في دقيقة.</span></h1>
+        <p class="hero-sub" data-ar="CraftMate AI منصة متكاملة لصاحب سيرفر ماينكرافت: طبيب ذكاء اصطناعي يشخّص الأعطال بلغة مفهومة ويصلحها بموافقتك، ولعب مشترك يفتح سيرفرك للجوال، ولوحة واحدة تدير كل شيء." data-en="CraftMate AI is the all-in-one platform for Minecraft server owners: an AI doctor that explains crashes in plain language and fixes them with your approval, crossplay that opens your server to mobile, and one dashboard for everything.">CraftMate AI منصة متكاملة لصاحب سيرفر ماينكرافت: <b>طبيب ذكاء اصطناعي</b> يشخّص الأعطال بلغة مفهومة ويصلحها بموافقتك، و<b>لعب مشترك</b> يفتح سيرفرك للجوال، ولوحة واحدة تدير كل شيء.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-green" href="#get-started" data-ar="🚀 ابدأ مجاناً الآن" data-en="🚀 Start free now">🚀 ابدأ مجاناً الآن</a>
+          <a class="btn btn-ghost" href="#demo" data-ar="▶ جرّب التشخيص بنفسك" data-en="▶ Try the diagnosis yourself">▶ جرّب التشخيص بنفسك</a>
         </div>
-
-        <!-- Plugin Pairing & Host-Specific Guide -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🔌 ربط بلجن CraftMate Connector (FR-02)</div>
-            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-              <a href="https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar" target="_blank" class="btn btn-accent btn-sm" style="text-decoration:none;">
-                ⬇️ تحميل البلجن (.jar)
-              </a>
-              <button class="btn btn-primary btn-sm" onclick="generateNewPairingCode()">🔄 توليد رمز ربط جديد</button>
-            </div>
-          </div>
-
-          <div id="host-install-alert" class="alert alert-warning"></div>
-
-          <div style="background:var(--bg-surface); border:1px solid var(--border); padding:0.9rem; border-radius:8px; margin-bottom:1rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-              <span style="font-size:0.82rem; color:var(--text-muted);">رمز الربط المؤقت (أحادي الاستخدام — صالح لـ 15 دقيقة):</span>
-              <span class="badge badge-accent" id="pairing-ttl">14:59</span>
-            </div>
-            <div class="code-block" style="font-size:1rem; font-weight:800; color:#34d399; display:flex; justify-content:space-between; align-items:center;">
-              <span id="pairing-code-display">/craftmate link CM-9482-X7B1</span>
-              <button class="btn btn-sm btn-outline" onclick="copyText('pairing-code-display')">📋 نسخ الأمر</button>
-            </div>
-          </div>
-
-          <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">
-            <strong>🔒 قواعد حماية محرك السياسات (Policy Engine) النشطة لهذه الاستضافة:</strong>
-          </div>
-          <ul id="host-policy-list" style="padding-inline-start:1.25rem; font-size:0.86rem; color:#cbd5e1; display:grid; gap:0.35rem;"></ul>
+        <div class="hero-points">
+          <span data-ar="إصلاح آمن فقط: نسخة احتياطية قبل أي تعديل وتراجع بضغطة" data-en="Safe fixes only: a backup before any edit, one-click rollback">إصلاح آمن فقط: نسخة احتياطية قبل أي تعديل وتراجع بضغطة</span>
+          <span data-ar="شغال مع استضافتك الحالية — من غير ما تنقل سيرفرك" data-en="Works with your current host — no migration needed">شغال مع استضافتك الحالية — من غير ما تنقل سيرفرك</span>
+          <span data-ar="بياناتك وأسرار سيرفرك بتتحذف قبل ما أي سجل يخرج" data-en="Your secrets are scrubbed before any log leaves your server">بياناتك وأسرار سيرفرك بتتحذف قبل ما أي سجل يخرج</span>
         </div>
       </div>
-
-      <!-- FMHL Reference Check -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🌐 فاحص الاستضافات الإضافية (مرجعية Myuui / Free-Minecraft-Hosts)</div>
-          <span class="badge badge-purple">FMHL Knowledge Base</span>
-        </div>
-        <p style="font-size:0.86rem; color:var(--text-muted); margin-bottom:0.85rem;">
-          إذا كان المستخدم يستخدم استضافة أخرى من قائمة <a href="https://github.com/Myuui/Free-Minecraft-Hosts" target="_blank" style="color:#60a5fa;">Free-Minecraft-Hosts</a>، يحدد النظام تلقائياً ما إذا كانت تصلح للبلجن مستقبلاً أو يجب تحويلها فوراً إلى <strong>وضع رفع السجلات اليدوي (Doctor Mode)</strong>:
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>اسم الاستضافة في قائمة FMHL</th>
-                <th>المواصفات المجانية</th>
-                <th>قرار CraftMate AI التلقائي</th>
-                <th>السبب التقني</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>MineStrator</strong></td>
-                <td>4GB RAM / 8GB NVMe (4.8⭐)</td>
-                <td><span class="badge badge-primary">مرشح توسع المرحلة P7</span></td>
-                <td>يدعم WebSFTP ورفع <code>.jar</code> مخصص ومشاركة منفذ Geyser.</td>
-              </tr>
-              <tr>
-                <td><strong>FreeMCServer.net</strong></td>
-                <td>1.5GB+ RAM / 10GB (3.9⭐)</td>
-                <td><span class="badge badge-primary">مرشح توسع المرحلة P7</span></td>
-                <td>يسمح بإنشاء منفذ UDP مخصص لـ Geyser في تبويب Ports.</td>
-              </tr>
-              <tr>
-                <td><strong>ScalaCube (Free Plan)</strong></td>
-                <td>6GB RAM (Vanilla فقط)</td>
-                <td><span class="badge badge-warning">وضع رفع السجلات يدوياً فقط</span></td>
-                <td>الخطة المجانية تمنع الوصول للملفات أو تثبيت Paper/Plugins.</td>
-              </tr>
-              <tr>
-                <td><strong>Aternos / Minehut Free</strong></td>
-                <td>2GB / 1GB RAM</td>
-                <td><span class="badge badge-warning">وضع رفع السجلات يدوياً فقط</span></td>
-                <td>قيود صارمة على رفع ملفات <code>.jar</code> الخارجية والاتصالات الصادرة.</td>
-              </tr>
-            </tbody>
-          </table>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar"><span class="lights"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#4ade80"></i></span><span class="mock-status"><span class="dot"></span><span data-ar="البوت متصل ونشط — CraftMate" data-en="Connected & healthy — CraftMate">البوت متصل ونشط — CraftMate</span></span></div>
+        <div class="mock-body">
+          <div class="mock-server"><div><h3 data-ar="سيرفر الأصدقاء — Survival" data-en="Friends Server — Survival">سيرفر الأصدقاء — Survival</h3><p style="direction:ltr">play.example.net:25565</p></div><span class="badge-now">Paper 1.21.4</span></div>
+          <div class="mock-metrics">
+            <div class="metric"><b style="color:#4ade80">19.8</b><span>TPS</span></div>
+            <div class="metric"><b>12<span style="font-size:.75rem;color:var(--muted)">/20</span></b><span data-ar="لاعبون" data-en="Players">لاعبون</span></div>
+            <div class="metric"><b style="color:#7dd3fc" data-ar="مفعّل ✓" data-en="On ✓">مفعّل ✓</b><span>Crossplay</span></div>
+          </div>
+          <div class="mock-log">
+            <div><span class="t">12:00:01</span> <span class="ok">✅ <span data-ar-t="اتصل البلجن واكتشف البيئة" data-en-t="Plugin connected, environment detected">Plugin connected, environment detected</span></span></div>
+            <div><span class="t">12:00:04</span> <span class="ai">🩺 <span data-ar-t="الطبيب: سبب التعطل إضافة قديمة" data-en-t="Doctor: crash caused by outdated plugin">Doctor: crash caused by outdated plugin</span></span></div>
+            <div><span class="t">12:00:05</span> <span class="warn">⚠️ <span data-ar-t="تم إنشاء نسخة احتياطية .bak" data-en-t="Backup .bak created before fix">Backup .bak created before fix</span></span></div>
+            <div><span class="t">12:00:07</span> <span class="ok">✅ <span data-ar-t="طُبّق الإصلاح بموافقتك — السيرفر سليم" data-en-t="Fix applied with your approval — healthy">Fix applied with your approval — healthy</span></span></div>
+          </div>
+          <div class="mock-fix"><span style="font-size:19px">🩺</span><div><b data-ar="آخر تشخيص:" data-en="Latest diagnosis:">آخر تشخيص:</b> <span data-ar="تعارض إصدار في إضافة — الإصلاح جاهز وآمن وقابل للتراجع." data-en="Plugin version conflict — a safe, reversible fix is ready.">تعارض إصدار في إضافة — الإصلاح جاهز وآمن وقابل للتراجع.</span></div></div>
         </div>
       </div>
-    </section>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><b>&lt;60s</b><span data-ar="لأول تشخيص مفهوم" data-en="to your first clear diagnosis">لأول تشخيص مفهوم</span></div>
+      <div class="stat"><b>4</b><span data-ar="استضافات مدعومة رسمياً" data-en="officially supported hosts">استضافات مدعومة رسمياً</span></div>
+      <div class="stat"><b>100%</b><span data-ar="مجاني أثناء الإطلاق" data-en="free during launch">مجاني أثناء الإطلاق</span></div>
+      <div class="stat"><b>Java + Bedrock</b><span data-ar="لعب مشترك من لوحة واحدة" data-en="crossplay from one dashboard">لعب مشترك من لوحة واحدة</span></div>
+    </div>
+  </div>
+</div>
 
-    <!-- ================================================================== -->
-    <!-- TAB 2: AI LOG DOCTOR (LOG SCRUBBER + DEDUPLICATOR + ANALYZER)      -->
-    <!-- ================================================================== -->
-    <section id="tab-doctor" class="tab-panel">
-      <div class="kpi-row">
-        <div class="kpi-box">
-          <div class="kpi-label">الاستضافة النشطة للتحليل</div>
-          <div class="kpi-value" id="doctor-host-kpi" style="color:#34d399;">Play.hosting</div>
+<!-- ══════════ TRUST ══════════ -->
+<div class="trust">
+  <div class="wrap">
+    <p data-ar="مصمم ليعمل مع بيئتك الحالية" data-en="BUILT TO WORK WITH YOUR CURRENT SETUP">مصمم ليعمل مع بيئتك الحالية</p>
+    <div class="trust-row">
+      <span class="chip"><i>🟣</i>Play Hosting</span><span class="chip"><i>🟠</i>FalixNodes</span><span class="chip"><i>🔵</i>MCServerHost</span><span class="chip"><i>⛏️</i>Minefort</span><span class="chip"><i>📄</i>Paper</span><span class="chip"><i>🟪</i>Purpur</span><span class="chip"><i>🌋</i>GeyserMC</span><span class="chip"><i>🚪</i>Floodgate</span><span class="chip"><i>🔀</i>ViaVersion</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PILLARS ══════════ -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="المنصة المتكاملة" data-en="THE ALL-IN-ONE PLATFORM">المنصة المتكاملة</span>
+      <h2 data-ar="كل ما يحتاجه سيرفرك — في مكان واحد" data-en="Everything your server needs — in one place">كل ما يحتاجه سيرفرك — في مكان واحد</h2>
+      <p data-ar="أربع أدوات كانت متفرقة ومؤلمة، جمعناها في حساب واحد ولوحة واحدة." data-en="Four tools that used to be scattered and painful, unified into one account and one dashboard.">أربع أدوات كانت متفرقة ومؤلمة، جمعناها في حساب واحد ولوحة واحدة.</p>
+    </div>
+    <div class="pillars">
+      <div class="pillar"><div class="ic">🩺</div><h3 data-ar="طبيب السجلات الذكي" data-en="AI Log Doctor">طبيب السجلات الذكي</h3><p data-ar="الصق سجل التعطل أو اربطه تلقائياً، وخد السبب الحقيقي بلغة بشرية وخطوات إصلاح مرتبة من الأسهل للأخطر." data-en="Paste a crash log or link it automatically, and get the real cause in plain language with fix steps ordered from safest to riskiest.">الصق سجل التعطل أو اربطه تلقائياً، وخد السبب الحقيقي بلغة بشرية وخطوات إصلاح مرتبة من الأسهل للأخطر.</p><span class="badge-now" data-ar="متاح الآن" data-en="Available now">متاح الآن</span> <a class="link" href="#demo" data-ar="جرّبه ↓" data-en="Try it ↓">جرّبه ↓</a></div>
+      <div class="pillar"><div class="ic">🌋</div><h3 data-ar="مركز اللعب المشترك" data-en="Crossplay Hub">مركز اللعب المشترك</h3><p data-ar="معالج Geyser وFloodgate مظبوط على استضافتك: المنافذ والمصادقة وفحص الجاهزية — لاعبو الجوال يدخلون سيرفرك الجافا." data-en="A Geyser & Floodgate wizard tuned to your host: ports, auth and readiness checks — Bedrock players join your Java server.">معالج Geyser وFloodgate مظبوط على استضافتك: المنافذ والمصادقة وفحص الجاهزية — لاعبو الجوال يدخلون سيرفرك الجافا.</p><span class="badge-now" data-ar="متاح الآن" data-en="Available now">متاح الآن</span> <a class="link" href="#crossplay" data-ar="شوف معالجك ↓" data-en="See your wizard ↓">شوف معالجك ↓</a></div>
+      <div class="pillar"><div class="ic">🎛️</div><h3 data-ar="التحكم في السيرفر" data-en="Server Control">التحكم في السيرفر</h3><p data-ar="بلجن CraftMate-Connector بيربط سيرفرك بلوحتك: حالة حية ورام وبلجنات وتنبيهات توقف — من غير منافذ مفتوحة ولا RCON." data-en="The CraftMate-Connector plugin links your server to your dashboard: live status, RAM, plugins and downtime alerts — no open ports, no RCON.">بلجن CraftMate-Connector بيربط سيرفرك بلوحتك: حالة حية ورام وبلجنات وتنبيهات توقف — من غير منافذ مفتوحة ولا RCON.</p><span class="badge-now">v0.2.0 ✓</span> <a class="link" href="#plugin" data-ar="حمّل البلجن ↓" data-en="Get the plugin ↓">حمّل البلجن ↓</a></div>
+      <div class="pillar"><div class="ic">🤖</div><h3 data-ar="بوت البقاء AFK" data-en="Stay-Alive AFK Bot">بوت البقاء AFK</h3><p data-ar="بوت سحابي يقعد داخل سيرفرك 24/7: حركة ضد الطرد وتسجيل دخول تلقائي وإعادة اتصال ذكية. سجّل في الانتظار وخد أولوية الإطلاق." data-en="A cloud bot that lives inside your server 24/7: anti-AFK motion, auto-login and smart reconnects. Join the waitlist for launch priority.">بوت سحابي يقعد داخل سيرفرك 24/7: حركة ضد الطرد وتسجيل دخول تلقائي وإعادة اتصال ذكية. سجّل في الانتظار وخد أولوية الإطلاق.</p><span class="badge-soon" data-ar="قادم قريباً" data-en="Coming soon">قادم قريباً</span> <a class="link" href="#waitlist" data-ar="انضم للانتظار ↓" data-en="Join waitlist ↓">انضم للانتظار ↓</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ HOW ══════════ -->
+<section style="background:var(--bg2);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="كيف يعمل" data-en="HOW IT WORKS">كيف يعمل</span>
+      <h2 data-ar="من سيرفر متعطل إلى سيرفر سليم — في 3 خطوات" data-en="From crashed to healthy — in 3 steps">من سيرفر متعطل إلى سيرفر سليم — في 3 خطوات</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h3 data-ar="اربط سيرفرك" data-en="Link your server">اربط سيرفرك</h3><p data-ar="ثبّت البلجن واكتب أمر ربط واحد، أو ارفع ملف السجل يدوياً لو استضافتك لا تسمح بالبلجنات الخارجية — الطريقان يوصلان لنفس النتيجة." data-en="Install the plugin and type one link command, or upload your log file if your host blocks external plugins — both paths reach the same result.">ثبّت البلجن واكتب أمر ربط واحد، أو ارفع ملف السجل يدوياً لو استضافتك لا تسمح بالبلجنات الخارجية — الطريقان يوصلان لنفس النتيجة.</p></div>
+      <div class="step"><div class="num">2</div><h3 data-ar="افهم المشكلة" data-en="Understand the problem">افهم المشكلة</h3><p data-ar="الطبيب يقرأ السجل بعد حذف الأسرار منه، ويشرح لك السبب بلغتك ويرتب خطوات الإصلاح — ويقولك صراحة إيه الآمن وإيه الممنوع." data-en="The Doctor reads your scrubbed log, explains the cause in your language, orders the fix steps — and tells you honestly what is safe and what is forbidden.">الطبيب يقرأ السجل بعد حذف الأسرار منه، ويشرح لك السبب بلغتك ويرتب خطوات الإصلاح — ويقولك صراحة إيه الآمن وإيه الممنوع.</p></div>
+      <div class="step"><div class="num">3</div><h3 data-ar="أصلح بأمان" data-en="Fix it safely">أصلح بأمان</h3><p data-ar="ولا خطوة بتتنفذ إلا بموافقتك، وقبلها نسخة احتياطية تلقائية. غلطنا؟ زر تراجع واحد بيرجع كل حاجة زي ما كانت." data-en="Nothing runs without your approval, and a backup is taken first. Something wrong? One rollback button restores everything.">ولا خطوة بتتنفذ إلا بموافقتك، وقبلها نسخة احتياطية تلقائية. غلطنا؟ زر تراجع واحد بيرجع كل حاجة زي ما كانت.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ DOCTOR DEMO ══════════ -->
+<section id="demo">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="تجربة حية — من غير تسجيل" data-en="LIVE DEMO — NO SIGNUP">تجربة حية — من غير تسجيل</span>
+      <h2 data-ar="جرّب طبيب السجلات بنفسك دلوقتي" data-en="Try the Log Doctor yourself, right now">جرّب طبيب السجلات بنفسك دلوقتي</h2>
+      <p data-ar="اختر سجل عينة جاهز أو الصق سجل سيرفرك، وشوف شكل التقرير اللي هيوصلك. دي معاينة تفاعلية لمحرك التشخيص — التقرير الكامل بييجي مع حسابك." data-en="Pick a sample log or paste your own, and see the report you would get. This is an interactive preview of the diagnosis engine — full reports come with your account.">اختر سجل عينة جاهز أو الصق سجل سيرفرك، وشوف شكل التقرير اللي هيوصلك. دي معاينة تفاعلية لمحرك التشخيص — التقرير الكامل بييجي مع حسابك.</p>
+    </div>
+    <div class="workbench">
+      <div class="wb-head"><h3 data-ar="🩺 غرفة التشخيص — CraftMate Doctor" data-en="🩺 Diagnosis Room — CraftMate Doctor">🩺 غرفة التشخيص — CraftMate Doctor</h3><span class="badge-now" data-ar="تنقية أسرار تلقائية مفعّلة" data-en="Automatic secret scrubbing on">تنقية أسرار تلقائية مفعّلة</span></div>
+      <div class="wb-grid">
+        <div class="wb-left">
+          <div class="wb-label" data-ar="1 — اختر عينة أو الصق سجلك" data-en="1 — Pick a sample or paste your log">1 — اختر عينة أو الصق سجلك</div>
+          <div class="samples">
+            <button class="sample-btn active" onclick="loadSample('crash',this)" data-ar="💥 تعطل إضافة" data-en="💥 Plugin crash">💥 تعطل إضافة</button>
+            <button class="sample-btn" onclick="loadSample('port',this)" data-ar="🔌 منفذ مشغول" data-en="🔌 Port in use">🔌 منفذ مشغول</button>
+            <button class="sample-btn" onclick="loadSample('minefort',this)" data-ar="⛏️ إعداد Minefort خطير" data-en="⛏️ Risky Minefort setting">⛏️ إعداد Minefort خطير</button>
+            <button class="sample-btn" onclick="loadSample('memory',this)" data-ar="🧠 نفاد ذاكرة" data-en="🧠 Out of memory">🧠 نفاد ذاكرة</button>
+          </div>
+          <textarea class="log-in" id="logInput" spellcheck="false"></textarea>
+          <div class="wb-actions">
+            <button class="btn btn-green" onclick="analyzeLog()" data-ar="🩺 شخّص السجل دلوقتي" data-en="🩺 Diagnose this log now">🩺 شخّص السجل دلوقتي</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logInput').value='';document.getElementById('logInput').focus()" data-ar="مسح" data-en="Clear">مسح</button>
+          </div>
+          <p class="privacy-note" data-ar="🔒 عناوين IP وكلمات السر وروابط قواعد البيانات بتتحذف من السجل قبل أي تحليل — جرّب تلصق IP وشوف بنفسك." data-en="🔒 IPs, passwords and database URLs are scrubbed before any analysis — paste an IP and see for yourself.">🔒 عناوين IP وكلمات السر وروابط قواعد البيانات بتتحذف من السجل قبل أي تحليل — جرّب تلصق IP وشوف بنفسك.</p>
         </div>
-        <div class="kpi-box">
-          <div class="kpi-label">الأسرار والـ IPs التي تم إخفاؤها</div>
-          <div class="kpi-value" id="scrubbed-count-kpi" style="color:#60a5fa;">0</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">نسبة تقليص السجل (توفير التوكنز)</div>
-          <div class="kpi-value" id="dedup-ratio-kpi" style="color:#c084fc;">0%</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">درجة ثقة التشخيص (Confidence)</div>
-          <div class="kpi-value" id="confidence-kpi" style="color:#fbbf24;">--</div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <!-- Log Input & Preset Loader -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📄 إدخال أو رفع سجل السيرفر (latest.log / Crash Report)</div>
-            <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-              📂 رفع ملف .log
-              <input type="file" accept=".log,.txt,.yml" style="display:none;" onchange="handleFileUpload(event)" />
-            </label>
+        <div class="wb-right">
+          <div class="wb-label" data-ar="2 — تقرير الطبيب" data-en="2 — Doctor report">2 — تقرير الطبيب</div>
+          <div class="report-empty" id="reportEmpty"><span class="big">🩺</span><p data-ar="لسه مستني سجل… اضغط «شخّص السجل دلوقتي» وهنا هيظهر السبب والحل بخطوات واضحة." data-en="Waiting for a log… press “Diagnose this log now” and the cause and fix will appear here in clear steps.">لسه مستني سجل… اضغط «شخّص السجل دلوقتي» وهنا هيظهر السبب والحل بخطوات واضحة.</p></div>
+          <div class="report-card" id="reportCard">
+            <span class="sev sev-high" id="repSev"></span>
+            <h4 id="repTitle"></h4>
+            <p class="cause" id="repCause"></p>
+            <div class="wb-label" data-ar="خطوات الإصلاح بالترتيب" data-en="Fix steps in order">خطوات الإصلاح بالترتيب</div>
+            <ol id="repSteps"></ol>
+            <div class="guard-note" id="repGuard"></div>
+            <div class="scrub-line"><span id="repScrub"></span><span>·</span><span data-ar="التقرير الكامل مع زرار إصلاح آمن بييجي مع الربط" data-en="Full report with safe-fix buttons comes with linking">التقرير الكامل مع زرار إصلاح آمن بييجي مع الربط</span></div>
           </div>
-
-          <div style="margin-bottom:0.75rem;">
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.4rem;">
-              ⚡ أو اختر سيناريو عطل واقعي من الاستضافات الأربع لتجربة المحلل فوراً:
-            </div>
-            <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-              <button class="btn btn-sm btn-outline" onclick="loadSampleLog('minefort_oom')">
-                🧪 عطل Minefort (1GB OOM + BungeeCord)
-              </button>
-              <button class="btn btn-sm btn-outline" onclick="loadSampleLog('falix_geyser')">
-                🧪 عطل FalixNodes (تعارض منفذ Geyser UDP)
-              </button>
-              <button class="btn btn-sm btn-outline" onclick="loadSampleLog('play_dependency')">
-                🧪 عطل Play.hosting (نقص تبعية بلجن)
-              </button>
-              <button class="btn btn-sm btn-outline" onclick="loadSampleLog('mcserverhost_lag')">
-                🧪 عطل MCServerHost (Lag + خطأ YAML)
-              </button>
-            </div>
-          </div>
-
-          <textarea id="raw-log-input" rows="11" style="width:100%; direction:ltr; text-align:left; font-family:var(--font-mono); font-size:0.78rem;" placeholder="الصق محتوى latest.log هنا أو اختر أحد السيناريوهات أعلاه..."></textarea>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.85rem; flex-wrap:wrap; gap:0.5rem;">
-            <span style="font-size:0.78rem; color:var(--text-muted);">
-              🔒 يتم تنقيح عناوين الـ IP وكلمات مرور RCON/MySQL محلياً قبل الإرسال لـ Gemini.
-            </span>
-            <button class="btn btn-primary" onclick="runLogDiagnosis()">
-              🔍 تنقيح السجل وتشخيص الأعطال الآن
-            </button>
-          </div>
-        </div>
-
-        <!-- Scrubbed & Deduplicated Output + AI Findings -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🧠 نتيجة التشخيص المدعوم بالأدلة (FR-05 & FR-06)</div>
-            <span class="badge badge-accent" id="engine-mode-badge">Deterministic + Gemini Ready</span>
-          </div>
-
-          <div id="diagnosis-results-container">
-            <div class="alert alert-info">
-              اضغط على أحد أزرار السيناريوهات الواقعية على اليمين ثم اضغط <strong>"تنقيح السجل وتشخيص الأعطال الآن"</strong> لمشاهدة التشخيص والأدلة وخطة الإصلاح.
-            </div>
-          </div>
-
-          <div style="margin-top:1rem;">
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.35rem;">
-              🛡️ السجل بعد التنقيح المزدوج وتجميع الأخطاء المتكررة (النسخة الآمنة المرسلة للنموذج):
-            </div>
-            <pre class="code-block" id="scrubbed-log-preview" style="max-height:190px; overflow-y:auto;">// سيظهر السجل المنقّح هنا (مع إخفاء الـ IPs وكلمات المرور)...</pre>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================================================================== -->
-    <!-- TAB 3: ACTION PLANS, POLICY ENGINE & APPROVALS                     -->
-    <!-- ================================================================== -->
-    <section id="tab-plans" class="tab-panel">
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📋 خطة الإجراءات المقترحة والموافقة البشرية (FR-08 & FR-09)</div>
-            <span class="badge badge-warning" id="plan-status-badge">بانتظار موافقة المشرف (PENDING_APPROVAL)</span>
-          </div>
-
-          <div id="active-plan-container"></div>
-
-          <div style="display:flex; gap:0.65rem; margin-top:1rem; flex-wrap:wrap;">
-            <button class="btn btn-primary" id="btn-approve-plan" onclick="approveAndExecutePlan()">
-              ✅ موافقة وتنفيذ الخطة (مع أخذ نسخة .bak)
-            </button>
-            <button class="btn btn-danger" onclick="rejectPlan()">
-              ✖ رفض الخطة
-            </button>
-            <button class="btn btn-outline" onclick="simulateUnsafeAction()">
-              🚨 اختبار أمني: محاولة تمرير إجراء مخالف للاستضافة
-            </button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🔍 معاينة التعديلات (Config Diff) وخطة التراجع (Rollback)</div>
-            <span class="badge badge-purple">نسخة احتياطية تلقائية (.bak)</span>
-          </div>
-
-          <div style="font-size:0.83rem; color:var(--text-muted); margin-bottom:0.4rem;">
-            الملف المتأثر: <code id="diff-target-file" style="color:#60a5fa;">spigot.yml & paper-global.yml</code>
-          </div>
-
-          <div class="code-block" id="plan-diff-view"></div>
-
-          <div id="policy-engine-verdict" class="alert alert-success" style="margin-top:1rem; margin-bottom:0;">
-            <strong>✅ فحص محرك السياسات (Policy Engine):</strong> جميع الخطوات ضمن قائمة السماح (Allowlist) ومتوافقة مع قيود الاستضافة المختارة.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================================================================== -->
-    <!-- TAB 4: JAVA & BEDROCK CROSSPLAY WIZARD (GEYSER + FLOODGATE)        -->
-    <!-- ================================================================== -->
-    <section id="tab-bedrock" class="tab-panel">
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🎮 مشخص ومعالج Java + Bedrock حسب الاستضافة (FR-13)</div>
-            <span class="badge badge-primary" id="bedrock-host-badge">Play.hosting</span>
-          </div>
-
-          <div id="bedrock-host-instructions" class="alert alert-info"></div>
-
-          <div style="display:grid; gap:0.75rem; margin-top:1rem;">
-            <div>
-              <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-                منفذ السيرفر الأساسي (Java TCP Port):
-              </label>
-              <input type="text" id="java-port-input" value="25565" oninput="updateGeyserConfigPreview()" style="width:100%; direction:ltr;" />
-            </div>
-            <div>
-              <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-                منفذ Bedrock المخصص (UDP Port — من تبويب Extra Ports أو 19132):
-              </label>
-              <input type="text" id="bedrock-port-input" value="19132" oninput="updateGeyserConfigPreview()" style="width:100%; direction:ltr;" />
-            </div>
-          </div>
-
-          <div style="margin-top:1rem;">
-            <strong style="font-size:0.86rem;">✅ قائمة التحقق الإلزامية قبل اختبار اتصال الجوال/الكونسول:</strong>
-            <ul id="bedrock-checklist" style="padding-inline-start:1.25rem; margin-top:0.5rem; font-size:0.85rem; color:#cbd5e1; display:grid; gap:0.4rem;"></ul>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">⚙️ ملف إعداد <code>plugins/Geyser-Spigot/config.yml</code> المولّد</div>
-            <button class="btn btn-sm btn-outline" onclick="copyText('geyser-config-preview')">📋 نسخ الإعدادات</button>
-          </div>
-          <pre class="code-block" id="geyser-config-preview" style="min-height:280px;"></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================================================================== -->
-    <!-- TAB 5: SUPABASE DATABASE (fucsztovkkilyboinhrv) & AUDIT LOG        -->
-    <!-- ================================================================== -->
-    <section id="tab-supabase" class="tab-panel">
-      <div class="grid-2">
-        <!-- Audit Log Table -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📜 سجل التدقيق الأمني المباشر (Audit Log — FR-12)</div>
-            <span class="badge badge-primary" id="supabase-sync-status">مخزن محلياً + جاهز للمزامنة مع Supabase</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>الوقت</th>
-                  <th>الإجراء</th>
-                  <th>الهدف / الاستضافة</th>
-                  <th>النتيجة</th>
-                </tr>
-              </thead>
-              <tbody id="audit-log-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Supabase Project fucsztovkkilyboinhrv Info & SQL Migration -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🗄️ ربط مشروع Supabase (<code>fucsztovkkilyboinhrv</code>)</div>
-            <button class="btn btn-sm btn-primary" onclick="copyText('sql-schema-box')">📋 نسخ كود SQL لـ Supabase</button>
-          </div>
-          <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:0.75rem;">
-            تم ضبط لوحة التحكم على مشروعك في Supabase (<code>https://fucsztovkkilyboinhrv.supabase.co</code>). لإنشاء الجداول الخمسة وتفعيل سياسات العزل (RLS)، انسخ مخطط SQL أدناه وشغّله في <strong>Supabase SQL Editor</strong>:
-          </p>
-          <pre class="code-block" id="sql-schema-box" style="max-height:260px; overflow-y:auto;">-- مشروع Supabase: fucsztovkkilyboinhrv
-create table if not exists public.servers (
-  id uuid primary key default gen_random_uuid(),
-  owner_id uuid references auth.users(id) on delete cascade,
-  name text not null,
-  host_provider text not null check (host_provider in ('play_hosting', 'falixnodes', 'mcserverhost', 'minefort', 'other')),
-  server_software text not null default 'Paper',
-  mc_version text default '1.21.1',
-  max_ram_mb integer default 2048,
-  status text not null default 'UNLINKED' check (status in ('ONLINE', 'HIBERNATING', 'OFFLINE', 'CRASHED', 'UNLINKED')),
-  capabilities jsonb not null default '{}'::jsonb,
-  last_heartbeat_at timestamptz,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.diagnostic_reports (
-  id uuid primary key default gen_random_uuid(),
-  host_provider text not null default 'other',
-  summary_ar text not null,
-  confidence_score numeric(3,2) not null default 0.85,
-  findings jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.audit_logs (
-  id uuid primary key default gen_random_uuid(),
-  action_type text not null,
-  target_resource text not null,
-  outcome text not null,
-  redacted_metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);</pre>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Settings Modal (Supabase & Gemini Keys stored only in localStorage) -->
-  <div class="modal-backdrop" id="settings-modal">
-    <div class="modal">
-      <div class="card-header">
-        <div class="card-title">🔗 إعدادات الاتصال (Supabase & Gemini API)</div>
-        <button class="btn btn-sm btn-outline" onclick="closeSettingsModal()">✖ إغلاق</button>
-      </div>
-
-      <div class="alert alert-info">
-        🔒 <strong>أمان 100%:</strong> تُحفظ المفاتيح محلياً في متصفحك فقط (<code>localStorage</code>) ولا يتم رفعها أبداً إلى مستودع GitHub العام.
-      </div>
-
-      <div style="display:grid; gap:0.9rem;">
-        <div>
-          <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-            عنوان مشروع Supabase (مضبوط تلقائياً من معرف مشروعك):
-          </label>
-          <input type="text" id="supabase-url-input" value="https://fucsztovkkilyboinhrv.supabase.co" style="width:100%; direction:ltr;" readonly />
-        </div>
-
-        <div>
-          <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-            مفتاح Supabase Anon Public Key (اختياري — لمزامنة التقارير وسجل التدقيق):
-          </label>
-          <input type="password" id="supabase-key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%; direction:ltr;" />
-        </div>
-
-        <div>
-          <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-            مفتاح Google Gemini API Key (اختياري — لتفعيل تحليل Gemini 2.5 Flash المباشر):
-          </label>
-          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." style="width:100%; direction:ltr;" />
-        </div>
-
-        <div id="connection-test-output" style="font-size:0.82rem;"></div>
-
-        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">
-          <button class="btn btn-outline" onclick="testSupabaseConnection()">🔌 فحص اتصال Supabase</button>
-          <button class="btn btn-primary" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         </div>
       </div>
     </div>
   </div>
+</section>
 
-  <footer class="footer">
-    CraftMate AI v0.2 — مبني لمنظومة GitHub Pages + Supabase (<code>fucsztovkkilyboinhrv</code>) + Gemini API | يدعم رسمياً: Play.hosting • FalixNodes • MCServerHost • Minefort
-  </footer>
+<!-- ══════════ CROSSPLAY ══════════ -->
+<section id="crossplay" style="background:var(--bg2);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="اللعب المشترك Java × Bedrock" data-en="CROSSPLAY JAVA × BEDROCK">اللعب المشترك Java × Bedrock</span>
+      <h2 data-ar="اختر استضافتك — وخد خطة اللعب المشترك الصح بتاعتها" data-en="Pick your host — get its correct crossplay plan">اختر استضافتك — وخد خطة اللعب المشترك الصح بتاعتها</h2>
+      <p data-ar="كل استضافة ليها طريقتها وقواعدها. ده معالج فوري بيوريك خطتك قبل ما تلمس أي ملف." data-en="Every host has its own way and its own rules. This instant wizard shows your plan before you touch a single file.">كل استضافة ليها طريقتها وقواعدها. ده معالج فوري بيوريك خطتك قبل ما تلمس أي ملف.</p>
+    </div>
+    <div class="host-grid" id="hostGrid"></div>
+    <div class="host-panel">
+      <h3 id="hostName"></h3>
+      <p class="hsub" id="hostSub"></p>
+      <div class="spec-grid">
+        <div class="spec"><span data-ar="الرام / التخزين" data-en="RAM / STORAGE">الرام / التخزين</span><b id="hostSpecs"></b></div>
+        <div class="spec"><span data-ar="تثبيت البلجنات" data-en="PLUGIN INSTALL">تثبيت البلجنات</span><b id="hostInstall"></b></div>
+        <div class="spec"><span data-ar="منفذ Bedrock" data-en="BEDROCK PORT">منفذ Bedrock</span><b id="hostPort"></b></div>
+      </div>
+      <div class="warn-box" id="hostWarn"></div>
+      <div class="wb-label" data-ar="إعداد Geyser المبدئي لاستضافتك (config.yml)" data-en="Your host's starter Geyser config (config.yml)">إعداد Geyser المبدئي لاستضافتك (config.yml)</div>
+      <div class="codebox" id="hostConfig"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-green btn-sm" onclick="copyConfig(this)" data-ar="📋 انسخ الإعداد" data-en="📋 Copy config">📋 انسخ الإعداد</button>
+        <a class="btn btn-ghost btn-sm" href="#get-started" data-ar="فعّل الخطة كاملة مع حسابي" data-en="Activate the full plan with my account">فعّل الخطة كاملة مع حسابي</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <script>
-    // ========================================================================
-    // 1. DATA: OFFICIAL 4 HOSTS PROFILES
-    // ========================================================================
-    const HOSTS_DATA = {
-      play_hosting: {
-        id: 'play_hosting',
-        name: 'Play.hosting',
-        domain: 'play.hosting',
-        badge: 'دعم كامل — Tier 1',
-        badgeClass: 'badge-primary',
-        ram: '3 GB RAM',
-        storage: '10 GB NVMe',
-        extraPorts: 'متاحة مجاناً (بما فيها 19132)',
-        defaultJavaPort: '25565',
-        defaultBedrockPort: '19132',
-        cloneRemotePort: false,
-        installNotice: '💡 طريقة تثبيت CraftMate Connector على Play.hosting: حمّل ملف الـ .jar من GitHub Releases وارفعه مباشرة إلى مجلد /plugins عبر File Manager أو SFTP.',
-        bedrockGuide: 'تتيح Play.hosting تفعيل Crossplay بضغطة زر أو إنشاء منفذ إضافي مجاني (19132 UDP). يتم ضبط bedrock.port في ملف config.yml الخاص بـ Geyser على المنفذ المخصص.',
-        capabilities: [
-          { name: 'قراءة السجلات (read_logs)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر البلجن أو File Manager' },
-          { name: 'رفع بلجن خارجي (.jar Upload)', status: 'متاحة ✅', badge: 'badge-primary', note: 'مسموح عبر اللوحة وSFTP' },
-          { name: 'منافذ إضافية لـ Bedrock (UDP Ports)', status: 'متاحة ✅', badge: 'badge-primary', note: 'يدعم إنشاء Extra Ports مجاناً' },
-          { name: 'تعديل ملفات الإعدادات (edit_config)', status: 'متاحة بموافقة ✅', badge: 'badge-accent', note: 'مع نسخ احتياطي .bak تلقائي' },
-          { name: 'إعادة تشغيل السيرفر تلقائياً', status: 'محدودة ⚠️', badge: 'badge-warning', note: 'تتم عبر لوحة الاستضافة عند توقف الـ JVM' }
-        ],
-        policies: [
-          'مسموح بتحسين إعدادات view-distance (8) و simulation-distance (6) لتناسب 3GB RAM.',
-          'مسموح بإعداد Geyser و Floodgate على منفذ UDP مستقل.',
-          'أخذ نسخة احتياطية (.bak) إلزامي قبل تعديل أي ملف YAML.'
-        ],
-        checklist: [
-          'تثبيت Geyser-Spigot.jar و Floodgate-Spigot.jar في مجلد /plugins.',
-          'إنشاء منفذ إضافي (Extra Port) من لوحة Play.hosting أو استخدام 19132.',
-          'ضبط auth-type: floodgate للسماح بدخول لاعبي Bedrock بدون حساب Java مدفوع.'
-        ]
-      },
-      falixnodes: {
-        id: 'falixnodes',
-        name: 'FalixNodes',
-        domain: 'falixnodes.net',
-        badge: 'دعم كامل (عبر Modrinth للمجاني)',
-        badgeClass: 'badge-accent',
-        ram: '2.5 - 4.5 GB RAM',
-        storage: '10 GB NVMe',
-        extraPorts: 'حتى 5 منافذ إضافية مجاناً',
-        defaultJavaPort: '25565',
-        defaultBedrockPort: '30124',
-        cloneRemotePort: false,
-        installNotice: '⚠️ قيد هام للخطة المجانية في FalixNodes: تمنع Falix رفع ملفات .jar الخارجية يدوياً في الخطة المجانية. لذلك يتم تثبيت بلجن CraftMate Connector مباشرة من داخل لوحة Falix عبر البحث عنه في متجر Modrinth / Hangar المدمج!',
-        bedrockGuide: 'توفر FalixNodes حتى 5 منافذ إضافية. انتقل في لوحة Falix إلى Network -> Ports واضغط Add Port، ثم ضع رقم المنفذ الجديد في bedrock.port داخل إعدادات Geyser.',
-        capabilities: [
-          { name: 'قراءة السجلات (read_logs)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر البلجن أو Console & Files' },
-          { name: 'رفع ملف .jar خارجي يدوياً', status: 'مقيد في المجاني ⚠️', badge: 'badge-warning', note: 'التثبيت يتم عبر Modrinth / Hangar في اللوحة' },
-          { name: 'منافذ إضافية لـ Bedrock (UDP Ports)', status: 'متاحة (5 منافذ) ✅', badge: 'badge-primary', note: 'من قسم Network -> Ports' },
-          { name: 'قواعد بيانات MySQL', status: 'متاحة (5 قواعد) ✅', badge: 'badge-primary', note: 'ممتاز لـ LuckPerms و CoreProtect' },
-          { name: 'وضع السبات التلقائي (Hibernation)', status: 'مفعل 💤', badge: 'badge-accent', note: 'ينام السيرفر عند خلوه من اللاعبين' }
-        ],
-        policies: [
-          'توجيه مستخدمي الخطة المجانية لتثبيت الإضافات من Modrinth/Hangar بدلاً من رفع .jar يدوي.',
-          'فحص عدم تعارض منفذ Geyser UDP مع منفذ Simple Voice Chat.',
-          'التعامل مع توقف السيرفر عند 0 لاعبين كحالة سبات (HIBERNATING) وليس عطل.'
-        ],
-        checklist: [
-          'فتح Network -> Ports في لوحة Falix والضغط على Add Port وتسميته "Geyser".',
-          'نسخ رقم المنفذ المخصص ووضعه في plugins/Geyser-Spigot/config.yml.',
-          'التأكد من عدم استخدام نفس المنفذ لإضافة voicechat.'
-        ]
-      },
-      mcserverhost: {
-        id: 'mcserverhost',
-        name: 'MCServerHost',
-        domain: 'mcserverhost.com',
-        badge: 'دعم كامل + SFTP — Tier 1',
-        badgeClass: 'badge-primary',
-        ram: '4 GB RAM (Ryzen 7950X3D)',
-        storage: '10 GB NVMe',
-        extraPorts: 'متاح (أو مشاركة المنفذ)',
-        defaultJavaPort: '25565',
-        defaultBedrockPort: '25565',
-        cloneRemotePort: true,
-        installNotice: '💡 طريقة تثبيت CraftMate Connector على MCServerHost: افتح File Manager -> مجلد plugins -> ارفع ملف CraftMate-Connector.jar مباشرة (أو عبر SFTP باستخدام FileZilla).',
-        bedrockGuide: 'ارفع كلاً من Geyser-Spigot.jar و Floodgate-Spigot.jar إلى مجلد plugins عبر File Manager أو SFTP، واضبط clone-remote-port: true لمشاركة منفذ السيرفر الأساسي بسهولة.',
-        capabilities: [
-          { name: 'قراءة السجلات (read_logs)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر البلجن أو SFTP' },
-          { name: 'رفع بلجن خارجي (.jar Upload)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر File Manager و SFTP' },
-          { name: 'وصول SFTP كامل (FileZilla)', status: 'متاحة ✅', badge: 'badge-primary', note: 'بيانات الاعتماد في File Manager' },
-          { name: 'تشخيص الأداء المتقدم (Spark)', status: 'متاحة ✅', badge: 'badge-primary', note: 'معالج Ryzen 9 7950X3D قوي' },
-          { name: 'تعديل ملفات الإعدادات (edit_config)', status: 'متاحة بموافقة ✅', badge: 'badge-accent', note: 'مع فحص سلامة YAML' }
-        ],
-        policies: [
-          'فحص سلامة تركيب ملفات YAML قبل تطبيق أي تعديل.',
-          'دعم مشاركة المنفذ الأساسي في Geyser (clone-remote-port: true) عند عدم تخصيص منفذ إضافي.',
-          'الاحتفاظ بنسخة احتياطية .bak يمكن استرجاعها عبر البلجن أو SFTP.'
-        ],
-        checklist: [
-          'إيقاف السيرفر قبل رفع Geyser-Spigot.jar و Floodgate-Spigot.jar إلى /plugins.',
-          'تشغيل السيرفر لتوليد مجلد Geyser-Spigot ثم ضبط clone-remote-port: true.',
-          'التأكد من وجود ملف key.pem داخل مجلد Geyser-Spigot.'
-        ]
-      },
-      minefort: {
-        id: 'minefort',
-        name: 'Minefort',
-        domain: 'minefort.com',
-        badge: 'دعم مخصص (خلف بروكسي Minefort)',
-        badgeClass: 'badge-warning',
-        ram: '1 GB RAM (مجاني)',
-        storage: '10 GB SSD',
-        extraPorts: 'غير متاح (يعمل خلف بروكسي مركزي)',
-        defaultJavaPort: '25565',
-        defaultBedrockPort: '25565',
-        cloneRemotePort: true,
-        installNotice: '💡 تثبيت البلجن على Minefort: أوقف السيرفر -> اذهب إلى Files -> مجلد plugins -> ارفع CraftMate-Connector.jar (أو عبر ftp.minefort.com). ⚠️ تحذير: يعمل السيرفر خلف بروكسي play.minefort.com!',
-        bedrockGuide: '⚠️ تحذير معماري حرج في Minefort: جميع الاتصالات تمر عبر بروكسي BungeeCord المركزي لـ Minefort (play.minefort.com). يمنع محرك السياسات تعطيل bungeecord: true في spigot.yml لأن ذلك سيفصل السيرفر عن الشبكة تماماً! لحل مشكلات إصدارات Bedrock استخدم ViaVersion و Floodgate.',
-        capabilities: [
-          { name: 'قراءة السجلات (read_logs)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر البلجن أو FTP' },
-          { name: 'رفع بلجن خارجي (.jar Upload)', status: 'متاحة ✅', badge: 'badge-primary', note: 'عبر Files أو ftp.minefort.com' },
-          { name: 'فتح منفذ UDP خارجي مستقل', status: 'غير متاحة بسبب البروكسي 🚫', badge: 'badge-danger', note: 'الاتصال يمر عبر play.minefort.com' },
-          { name: 'تعديل bungeecord في spigot.yml', status: 'محظور أمنياً 🔒', badge: 'badge-danger', note: 'تعطيله يكسر الاتصال بالسيرفر' },
-          { name: 'ملف تحسين الرام الصارم (1GB RAM)', status: 'مفعل تلقائياً ⚡', badge: 'badge-warning', note: 'حماية من OutOfMemoryError' }
-        ],
-        policies: [
-          'حظر قاطع (HARD BLOCK) لأي خطة تحاول تغيير settings.bungeecord إلى false في spigot.yml.',
-          'حظر تفعيل online-mode: true في server.properties لأن المصادقة تتم في بروكسي Minefort.',
-          'تطبيق إعدادات Low-RAM الإلزامية (view-distance: 5, simulation-distance: 4) لحماية ذاكرة 1GB.'
-        ],
-        checklist: [
-          'الإبقاء على bungeecord: true في ملف spigot.yml دون أي تغيير.',
-          'تثبيت ViaVersion و ViaBackwards لحل مشكلة اختلاف إصدارات Bedrock/Java على بروكسي Minefort.',
-          'تقليل عدد البلجنز الثقيلة لتجنب نفاد ذاكرة 1GB RAM.'
-        ]
-      }
-    };
-
-    // ========================================================================
-    // 2. SAMPLE REALISTIC LOGS FOR THE 4 HOSTS
-    // ========================================================================
-    const SAMPLE_LOGS = {
-      minefort_oom: {
-        host: 'minefort',
-        log: `[14:10:02] [Server thread/INFO]: Starting minecraft server version 1.21.1
-[14:10:02] [Server thread/INFO]: Loading properties
-[14:10:02] [Server thread/INFO]: This server is running Paper version 1.21.1-R0.1-SNAPSHOT (Git: a8f9d12)
-[14:10:03] [Server thread/INFO]: Starting Minecraft server on 0.0.0.0:25565
-[14:10:04] [Server thread/INFO]: Connecting to database mysql://admin:SuperSecretPass99@db.internal:3306/mc_data
-[14:10:05] [Server thread/INFO]: RCON running on 0.0.0.0:25575 with password rcon_secret_8821
-[14:10:12] [Server thread/INFO]: Player Ahmed_EG[/197.52.114.88:54120] logged in with entity id 142
-[14:11:01] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 6420ms or 128 ticks behind
-[14:11:05] [Server thread/ERROR]: Encountered an unexpected exception
-java.lang.OutOfMemoryError: Java heap space
-    at net.minecraft.world.level.chunk.LevelChunkSection.<init>(LevelChunkSection.java:48) ~[paper-1.21.1.jar:?]
-    at net.minecraft.server.level.ServerChunkCache.getChunk(ServerChunkCache.java:192) ~[paper-1.21.1.jar:?]
-[14:11:05] [Server thread/ERROR]: Encountered an unexpected exception
-java.lang.OutOfMemoryError: Java heap space
-    at net.minecraft.world.level.chunk.LevelChunkSection.<init>(LevelChunkSection.java:48) ~[paper-1.21.1.jar:?]
-    at net.minecraft.server.level.ServerChunkCache.getChunk(ServerChunkCache.java:192) ~[paper-1.21.1.jar:?]
-[14:11:06] [Server thread/WARN]: If you wish to use IP forwarding, please enable it in your BungeeCord config as well!`
-      },
-      falix_geyser: {
-        host: 'falixnodes',
-        log: `[16:02:11] [Server thread/INFO]: This server is running Purpur version 1.21.1-2285-HEAD
-[16:02:14] [Server thread/INFO]: [voicechat] Loading Simple Voice Chat v2.5.20
-[16:02:15] [Server thread/INFO]: [voicechat] Starting voice chat UDP server on port 25565
-[16:02:16] [Server thread/INFO]: [Geyser-Spigot] Loading Geyser version 2.4.2-b675
-[16:02:17] [Server thread/ERROR]: [Geyser-Spigot] Failed to bind to UDP port 25565! Address already in use (BindException)
-java.net.BindException: Address already in use
-    at sun.nio.ch.Net.bind0(Native Method) ~[?:?]
-    at org.geysermc.geyser.network.netty.GeyserServer.bind(GeyserServer.java:118) ~[Geyser-Spigot.jar:?]
-[16:02:18] [Server thread/INFO]: Player OmarCraft[/156.204.31.19:60211] tried to connect
-[16:05:00] [Server thread/INFO]: [FalixMonitor] 0 players online for 180s. Server shutting down for hibernation...
-[16:05:01] [Server thread/INFO]: Stopping server`
-      },
-      play_dependency: {
-        host: 'play_hosting',
-        log: `[18:20:00] [Server thread/INFO]: This server is running Paper version 1.21.1-119
-[18:20:01] [Server thread/ERROR]: Could not load 'plugins/DeluxeMenus-1.14.0.jar' in folder 'plugins'
-org.bukkit.plugin.UnknownDependencyException: Unknown/missing dependency plugins: [PlaceholderAPI]. Please download and install these plugins to run 'DeluxeMenus'.
-    at io.papermc.paper.plugin.manager.PaperPluginInstanceManager.loadPlugins(PaperPluginInstanceManager.java:112) ~[paper-1.21.1.jar:1.21.1-119]
-[18:20:01] [Server thread/ERROR]: Could not load 'plugins/DeluxeMenus-1.14.0.jar' in folder 'plugins'
-org.bukkit.plugin.UnknownDependencyException: Unknown/missing dependency plugins: [PlaceholderAPI]. Please download and install these plugins to run 'DeluxeMenus'.
-    at io.papermc.paper.plugin.manager.PaperPluginInstanceManager.loadPlugins(PaperPluginInstanceManager.java:112) ~[paper-1.21.1.jar:1.21.1-119]
-[18:20:04] [Server thread/INFO]: Discord Webhook configured: https://discord.com/api/webhooks/129384912/AbCdEfGhIjKlMnOpQrStUvWxYz`
-      },
-      mcserverhost_lag: {
-        host: 'mcserverhost',
-        log: `[20:01:10] [Server thread/INFO]: This server is running Paper version 1.21.1-119 (MC: 1.21.1)
-[20:01:12] [Server thread/ERROR]: Cannot load configuration fromplugins/Essentials/config.yml
-org.bukkit.configuration.InvalidConfigurationException: while parsing a block mapping
- in 'reader', line 42, column 3:
-      teleport-cooldown: 5
-      ^
-expected <block end>, but found '<block mapping start>'
- in 'reader', line 43, column 4:
-       heal-cooldown: 10
-       ^
-[20:03:40] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 4850ms or 97 ticks behind
-[20:03:45] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 5120ms or 102 ticks behind
-[20:03:50] [Spark/INFO]: High MSPT detected (68.4ms). Top contributor: Villager AI tick (net.minecraft.world.entity.npc.Villager)`
-      }
-    };
-
-    // ========================================================================
-    // 3. STATE MANAGEMENT
-    // ========================================================================
-    let activeHostId = 'play_hosting';
-    let currentPlan = null;
-    let auditLogs = [
-      {
-        time: '16:20:10',
-        action: 'CONNECTOR_INIT',
-        target: 'Play.hosting (Paper 1.21.1)',
-        outcome: 'SUCCESS'
-      },
-      {
-        time: '16:22:45',
-        action: 'POLICY_GUARD_LOAD',
-        target: 'hosts-profiles.json (4 Official Hosts)',
-        outcome: 'SUCCESS'
-      }
-    ];
-
-    // ========================================================================
-    // 4. INITIALIZATION & UI RENDERING
-    // ========================================================================
-    function initApp() {
-      loadSavedSettings();
-      renderHostCards();
-      selectHost('play_hosting');
-      loadSampleLog('minefort_oom');
-      renderAuditLogs();
-    }
-
-    function renderHostCards() {
-      const container = document.getElementById('host-cards-container');
-      container.innerHTML = '';
-      Object.values(HOSTS_DATA).forEach(host => {
-        const isSelected = host.id === activeHostId;
-        const card = document.createElement('div');
-        card.className = `host-card ${isSelected ? 'selected' : ''}`;
-        card.onclick = () => selectHost(host.id);
-        card.innerHTML = `
-          <div>
-            <div class="host-name">
-              <span>${host.name}</span>
-              <span class="badge ${host.badgeClass}">${host.badge}</span>
-            </div>
-            <div class="host-domain">${host.domain}</div>
-            <div class="spec-list">
-              <span class="spec-pill">🧠 ${host.ram}</span>
-              <span class="spec-pill">💾 ${host.storage}</span>
-              <span class="spec-pill">🔌 ${host.extraPorts}</span>
-            </div>
-          </div>
-          <div style="font-size:0.78rem; color:#34d399; font-weight:600;">
-            ${isSelected ? '✔ الاستضافة النشطة حالياً' : 'اضغط لتفعيل قواعد هذه الاستضافة ←'}
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function selectHost(hostId) {
-      activeHostId = hostId;
-      const host = HOSTS_DATA[hostId];
-      renderHostCards();
-
-      // Update badges
-      document.getElementById('active-host-badge').textContent = host.name;
-      document.getElementById('doctor-host-kpi').textContent = host.name;
-      document.getElementById('bedrock-host-badge').textContent = host.name;
-      document.getElementById('hibernation-host-name').textContent = host.name;
-
-      // Render Capabilities table
-      const tbody = document.getElementById('capabilities-tbody');
-      tbody.innerHTML = host.capabilities.map(c => `
-        <tr>
-          <td><strong>${c.name}</strong></td>
-          <td><span class="badge ${c.badge}">${c.status}</span></td>
-          <td style="color:var(--text-muted); font-size:0.82rem;">${c.note}</td>
-        </tr>
-      `).join('');
-
-      // Render Install Notice & Policies
-      document.getElementById('host-install-alert').textContent = host.installNotice;
-      document.getElementById('host-policy-list').innerHTML = host.policies.map(p => `<li>${p}</li>`).join('');
-
-      // Update Bedrock tab
-      document.getElementById('bedrock-host-instructions').textContent = host.bedrockGuide;
-      document.getElementById('java-port-input').value = host.defaultJavaPort;
-      document.getElementById('bedrock-port-input').value = host.defaultBedrockPort;
-      document.getElementById('bedrock-checklist').innerHTML = host.checklist.map(item => `<li>${item}</li>`).join('');
-      updateGeyserConfigPreview();
-
-      // Update Plan View for the host
-      renderDefaultPlanForHost(hostId);
-    }
-
-    // ========================================================================
-    // 5. DUAL-LAYER SECRET SCRUBBER & LOG DEDUPLICATOR (FR-05 & SECTION 14)
-    // ========================================================================
-    function scrubAndDeduplicateLog(rawText) {
-      let scrubbedCount = 0;
-
-      // 1. Redact IPv4 addresses (except 0.0.0.0 and 127.0.0.1)
-      let clean = rawText.replace(/\b(?!0\.0\.0\.0|127\.0\.0\.1)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?\b/g, (m, ip, port) => {
-        scrubbedCount++;
-        return `[REDACTED_PLAYER_IP]${port || ''}`;
-      });
-
-      // 2. Redact Database credentials (mysql:// or postgres://)
-      clean = clean.replace(/(mysql|postgres|mongodb|redis):\/\/[^\s]+/gi, (m, proto) => {
-        scrubbedCount++;
-        return `${proto}://[REDACTED_DB_CREDENTIALS]`;
-      });
-
-      // 3. Redact RCON passwords & Discord webhooks
-      clean = clean.replace(/(password\s+)([^\s]+)/gi, (m, prefix) => {
-        scrubbedCount++;
-        return `${prefix}[REDACTED_SECRET]`;
-      });
-      clean = clean.replace(/https:\/\/discord\.com\/api\/webhooks\/[^\s]+/gi, () => {
-        scrubbedCount++;
-        return `https://discord.com/api/webhooks/[REDACTED_WEBHOOK]`;
-      });
-
-      // 4. Deduplicate consecutive repeated lines / stacktraces
-      const lines = clean.split('\n');
-      const dedupedLines = [];
-      let prevLine = null;
-      let repeatCounter = 0;
-
-      for (const line of lines) {
-        const normalized = line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '').trim();
-        if (normalized && normalized === prevLine) {
-          repeatCounter++;
-        } else {
-          if (repeatCounter > 0) {
-            dedupedLines.push(`   ↳ [CraftMate Deduplicator: تكرر السطر السابق ${repeatCounter} مرة إضافية وتم ضغطه لتوفير التوكنز]`);
-            repeatCounter = 0;
-          }
-          dedupedLines.push(line);
-          prevLine = normalized;
-        }
-      }
-      if (repeatCounter > 0) {
-        dedupedLines.push(`   ↳ [CraftMate Deduplicator: تكرر السطر السابق ${repeatCounter} مرة إضافية]`);
-      }
-
-      const finalLog = dedupedLines.join('\n');
-      const ratio = rawText.length > 0
-        ? Math.max(0, Math.round((1 - finalLog.length / rawText.length) * 100))
-        : 0;
-
-      return { scrubbedLog: finalLog, scrubbedCount, ratio };
-    }
-
-    // ========================================================================
-    // 6. AI LOG DOCTOR DIAGNOSTIC ENGINE (DETERMINISTIC + GEMINI OPTIONAL)
-    // ========================================================================
-    function loadSampleLog(key) {
-      const sample = SAMPLE_LOGS[key];
-      if (!sample) return;
-      selectHost(sample.host);
-      document.getElementById('raw-log-input').value = sample.log;
-      runLogDiagnosis();
-    }
-
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (file.size > 15 * 1024 * 1024) {
-        alert('حجم الملف يتجاوز الحد المسموح به في الـ MVP (15 MB).');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('raw-log-input').value = e.target.result;
-        runLogDiagnosis();
-      };
-      reader.readAsText(file);
-    }
-
-    async function runLogDiagnosis() {
-      const rawLog = document.getElementById('raw-log-input').value.trim();
-      if (!rawLog) return;
-
-      const { scrubbedLog, scrubbedCount, ratio } = scrubAndDeduplicateLog(rawLog);
-      document.getElementById('scrubbed-log-preview').textContent = scrubbedLog;
-      document.getElementById('scrubbed-count-kpi').textContent = scrubbedCount;
-      document.getElementById('dedup-ratio-kpi').textContent = `${ratio}%`;
-
-      const host = HOSTS_DATA[activeHostId];
-      const findings = [];
-      let confidence = '96%';
-
-      // Detect OutOfMemoryError
-      if (/OutOfMemoryError/i.test(scrubbedLog)) {
-        findings.push({
-          severity: 'CRITICAL',
-          badge: 'badge-danger',
-          title: `نفاد ذاكرة السيرفر (OutOfMemoryError) على ${host.name}`,
-          evidence: 'java.lang.OutOfMemoryError: Java heap space',
-          explanation: `السيرفر استهلك كامل الذاكرة المتاحة (${host.ram}) أثناء تحميل الـ Chunks. في ${host.name}، يجب تقليل مسافات الرؤية والمحاكاة في إعدادات Paper فوراً لتجنب انهيار السيرفر.`
-        });
-      }
-
-      // Detect BungeeCord warning on Minefort
-      if (/BungeeCord/i.test(scrubbedLog) || activeHostId === 'minefort') {
-        findings.push({
-          severity: 'HOST_POLICY',
-          badge: 'badge-warning',
-          title: 'تنبيه خاص ببروكسي Minefort المركزي (BungeeCord Forwarding)',
-          evidence: 'If you wish to use IP forwarding, please enable it in your BungeeCord config',
-          explanation: 'يعمل Minefort خلف بروكسي مركزي (play.minefort.com). يجب التأكد من بقاء bungeecord: true في spigot.yml وعدم تغييره إلى false إطلاقاً.'
-        });
-      }
-
-      // Detect Geyser UDP Port Conflict
-      if (/Failed to bind to UDP port|BindException|Address already in use/i.test(scrubbedLog)) {
-        findings.push({
-          severity: 'CRITICAL',
-          badge: 'badge-danger',
-          title: 'تعارض منفذ UDP بين Geyser وإضافة أخرى (BindException)',
-          evidence: '[Geyser-Spigot] Failed to bind to UDP port 25565! Address already in use',
-          explanation: `إضافة Simple Voice Chat حجزت منفذ UDP 25565 قبل Geyser. الحل في ${host.name}: افتح Network -> Ports وأنشئ منفذاً إضافياً مخصصاً لـ Geyser أو لـ VoiceChat.`
-        });
-      }
-
-      // Detect Hibernation Shutdown
-      if (/hibernation|0 players online/i.test(scrubbedLog)) {
-        findings.push({
-          severity: 'INFO',
-          badge: 'badge-accent',
-          title: 'إغلاق طبيعي لوضع السبات (Server Hibernation — ليس عطلاً)',
-          evidence: '0 players online for 180s. Server shutting down for hibernation...',
-          explanation: 'أغلقت الاستضافة السيرفر تلقائياً لعدم وجود لاعبين متصلين. تم تحديث حالة السيرفر إلى HIBERNATING 💤.'
-        });
-        document.getElementById('server-state-select').value = 'HIBERNATING';
-        updateServerStateUI();
-      }
-
-      // Detect Missing Dependency
-      if (/UnknownDependencyException/i.test(scrubbedLog)) {
-        const match = scrubbedLog.match(/missing dependency plugins:\s*\[([^\]]+)\]/i);
-        const missingDep = match ? match[1] : 'PlaceholderAPI';
-        findings.push({
-          severity: 'HIGH',
-          badge: 'badge-danger',
-          title: `بلجن مفقود مطلوب للتشغيل (${missingDep})`,
-          evidence: `org.bukkit.plugin.UnknownDependencyException: Unknown/missing dependency plugins: [${missingDep}]`,
-          explanation: `فشل تحميل البلجن لأن إضافة ${missingDep} غير مثبتة في مجلد /plugins. يجب تثبيت ${missingDep} المتوافق مع Paper 1.21.1.`
-        });
-      }
-
-      // Detect Invalid YAML Configuration
-      if (/InvalidConfigurationException/i.test(scrubbedLog)) {
-        findings.push({
-          severity: 'HIGH',
-          badge: 'badge-danger',
-          title: 'خطأ في المسافات البادئة داخل ملف YAML (Syntax Error)',
-          evidence: 'org.bukkit.configuration.InvalidConfigurationException: while parsing a block mapping (line 42)',
-          explanation: 'يوجد خطأ محاذاة (Indentation) في السطر 43 من ملف config.yml. سيقوم CraftMate AI بإصلاح المسافات البادئة وأخذ نسخة احتياطية .bak.'
-        });
-      }
-
-      // Detect High MSPT / Tick Lag
-      if (/Can't keep up!|High MSPT detected/i.test(scrubbedLog)) {
-        findings.push({
-          severity: 'MEDIUM',
-          badge: 'badge-warning',
-          title: 'ارتفاع زمن معالجة التكتات (High MSPT / TPS Drop)',
-          evidence: "Can't keep up! Is the server overloaded? / High MSPT detected (68.4ms)",
-          explanation: 'يوجد ضغط على المعالج بسبب معالجة الكيانات (Entities/Villagers) وتحميل الـ Chunks. يُنصح بتفعيل تحسينات Paper للكيانات.'
-        });
-      }
-
-      if (findings.length === 0) {
-        confidence = '85%';
-        findings.push({
-          severity: 'OK',
-          badge: 'badge-primary',
-          title: 'لم يتم رصد انهيارات حرجة في هذا المقطع',
-          evidence: 'No fatal stacktraces detected',
-          explanation: `السجل يبدو سليماً، وتم تنقيح ${scrubbedCount} من البيانات الحساسة بنجاح.`
-        });
-      }
-
-      document.getElementById('confidence-kpi').textContent = confidence;
-
-      const resultsContainer = document.getElementById('diagnosis-results-container');
-      resultsContainer.innerHTML = findings.map(f => `
-        <div class="finding-item">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-            <strong>${f.title}</strong>
-            <span class="badge ${f.badge}">${f.severity}</span>
-          </div>
-          <div class="code-block" style="padding:0.45rem 0.65rem; margin-bottom:0.5rem; font-size:0.76rem; color:#fca5a5;">الدليل من السجل: ${f.evidence}</div>
-          <p style="font-size:0.85rem; color:#cbd5e1;">${f.explanation}</p>
+<!-- ══════════ PLUGIN ══════════ -->
+<section id="plugin">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="جاهز للتحميل فوراً" data-en="READY TO DOWNLOAD">جاهز للتحميل فوراً</span>
+      <h2 data-ar="بلجن CraftMate-Connector — منشور ومتاح دلوقتي" data-en="The CraftMate-Connector plugin — published & available now">بلجن CraftMate-Connector — منشور ومتاح دلوقتي</h2>
+      <p data-ar="ده مش وعد مستقبلي. البلجن اتبنى واتنشر رسمياً، وتقدر تحمله وترفعه على سيرفرك في دقيقة." data-en="This is not a future promise. The plugin is built and officially released — download it and drop it on your server in a minute.">ده مش وعد مستقبلي. البلجن اتبنى واتنشر رسمياً، وتقدر تحمله وترفعه على سيرفرك في دقيقة.</p>
+    </div>
+    <div class="plugin-grid">
+      <div class="plugin-card">
+        <span class="badge-now">CraftMate-Connector v0.2.0 · Paper / Purpur 1.20.4–1.21.x</span>
+        <h3 style="margin-top:15px" data-ar="اربط سيرفرك بلوحتك بأمر واحد" data-en="Link your server to your dashboard with one command">اربط سيرفرك بلوحتك بأمر واحد</h3>
+        <p data-ar="بيربط بحسابك، بيكتشف بيئة سيرفرك واستضافتك تلقائياً، بينقّي سجلاتك من الأسرار قبل ما تخرج، وبيبلغ بحالة السبات النظيفة لما سيرفرك الفاضي يقفل — كل ده من غير منفذ مفتوح واحد." data-en="It links to your account, auto-detects your server environment and host, scrubs secrets from your logs before they leave, and reports a clean hibernation state when your empty server sleeps — with zero open ports.">بيربط بحسابك، بيكتشف بيئة سيرفرك واستضافتك تلقائياً، بينقّي سجلاتك من الأسرار قبل ما تخرج، وبيبلغ بحالة السبات النظيفة لما سيرفرك الفاضي يقفل — كل ده من غير منفذ مفتوح واحد.</p>
+        <div style="display:flex;gap:11px;flex-wrap:wrap">
+          <a class="btn btn-green" href="https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar" target="_blank" rel="noopener" data-ar="⬇️ تحميل البلجن (.jar)" data-en="⬇️ Download plugin (.jar)">⬇️ تحميل البلجن (.jar)</a>
+          <a class="btn btn-ghost" href="https://github.com/esaye2312-art/CraftMate-AI/releases/tag/v0.2.0" target="_blank" rel="noopener" data-ar="صفحة الإصدار على GitHub" data-en="Release page on GitHub">صفحة الإصدار على GitHub</a>
         </div>
-      `).join('') + `
-        <button class="btn btn-accent btn-sm" onclick="switchTabById('tab-plans')">
-          🛡️ الانتقال إلى خطة الإصلاح والموافقة البشرية ←
-        </button>
-      `;
+        <p style="margin-top:17px;font-size:.84rem" data-ar="التركيب: ارفع الملف في مجلد plugins وشغّل السيرفر — وبس. على FalixNodes المجاني هنمشيك من مسار التثبيت الداخلي بتاعهم خطوة بخطوة جوه حسابك." data-en="Install: drop the file into your plugins folder and start the server — done. On FalixNodes Free we walk you through their built-in installer step by step inside your account.">التركيب: ارفع الملف في مجلد <code style="direction:ltr">plugins</code> وشغّل السيرفر — وبس. على FalixNodes المجاني هنمشيك من مسار التثبيت الداخلي بتاعهم خطوة بخطوة جوه حسابك.</p>
+      </div>
+      <div class="cmd-list">
+        <h3 data-ar="أوامر البلجن داخل اللعبة" data-en="In-game plugin commands">أوامر البلجن داخل اللعبة</h3>
+        <div class="cmd"><code>/craftmate status</code><span data-ar="حالة الربط والبيئة المكتشفة" data-en="Link status & detected environment">حالة الربط والبيئة المكتشفة</span></div>
+        <div class="cmd"><code>/craftmate link &lt;CODE&gt;</code><span data-ar="ربط السيرفر بحسابك" data-en="Link this server to your account">ربط السيرفر بحسابك</span></div>
+        <div class="cmd"><code>/craftmate sync</code><span data-ar="مزامنة فورية مع اللوحة" data-en="Instant sync with the dashboard">مزامنة فورية مع اللوحة</span></div>
+        <div class="cmd"><code>/craftmate diagnose</code><span data-ar="تشخيص أحدث سجل فوراً" data-en="Diagnose the latest log now">تشخيص أحدث سجل فوراً</span></div>
+        <div class="cmd"><code>/craftmate disconnect</code><span data-ar="فصل السيرفر عن الحساب" data-en="Unlink from your account">فصل السيرفر عن الحساب</span></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-      addAuditLog('LOG_DIAGNOSIS', `${host.name} (Scrubbed: ${scrubbedCount})`, 'SUCCESS');
-    }
+<!-- ══════════ GET STARTED ══════════ -->
+<section id="get-started" style="background:var(--bg2);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="ابدأ في أقل من 5 دقائق" data-en="START IN UNDER 5 MINUTES">ابدأ في أقل من 5 دقائق</span>
+      <h2 data-ar="اختار طريقك — كله بيوصل لنفس اللوحة" data-en="Choose your path — all lead to the same dashboard">اختار طريقك — كله بيوصل لنفس اللوحة</h2>
+    </div>
+    <div class="start-grid">
+      <div class="start-card"><div class="ic">🔗</div><h3 data-ar="عندي سيرفر شغال" data-en="I have a running server">عندي سيرفر شغال</h3><p data-ar="حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة." data-en="Download the plugin, start your server, generate a link code here and type it in-game. Your server appears in your dashboard on the first heartbeat.">حمّل البلجن، شغّل سيرفرك، وولّد كود ربط من هنا واكتبه في اللعبة. سيرفرك هيظهر في لوحتك مع أول نبضة.</p><button class="btn btn-green btn-sm" onclick="genCode()" data-ar="ولّد كود ربط تجريبي" data-en="Generate a demo link code">ولّد كود ربط تجريبي</button><div class="link-code" id="linkCode"><b id="codeVal"></b><span id="codeHint"></span></div></div>
+      <div class="start-card"><div class="ic">📄</div><h3 data-ar="مش قادر أثبّت بلجنات" data-en="I can't install plugins">مش قادر أثبّت بلجنات</h3><p data-ar="بعض الخطط المجانية بتقفل رفع البلجنات. ولا يهمك: ارفع أحدث سجل عندك وهنشخصه فوراً بنفس القوة — جهّز ملفك وجرّب من غرفة التشخيص." data-en="Some free plans lock plugin uploads. No problem: upload your latest log and we diagnose it instantly with the same power — try it in the Diagnosis Room.">بعض الخطط المجانية بتقفل رفع البلجنات. ولا يهمك: ارفع أحدث سجل عندك وهنشخصه فوراً بنفس القوة — جهّز ملفك وجرّب من غرفة التشخيص.</p><a class="btn btn-ghost btn-sm" href="#demo" data-ar="افتح غرفة التشخيص" data-en="Open the Diagnosis Room">افتح غرفة التشخيص</a></div>
+      <div class="start-card"><div class="ic">🤖</div><h3 data-ar="عايز سيرفري يفضل حي" data-en="I want my server alive">عايز سيرفري يفضل حي</h3><p data-ar="بوت البقاء AFK بيتبني دلوقتي على بنية Workers موزعة. سجّل في قائمة الانتظار وهنبدأ بيك قبل الإطلاق العام." data-en="The Stay-Alive AFK bot is being built now on a distributed worker fleet. Join the waitlist and you start before the public launch.">بوت البقاء AFK بيتبني دلوقتي على بنية Workers موزعة. سجّل في قائمة الانتظار وهنبدأ بيك قبل الإطلاق العام.</p><a class="btn btn-ghost btn-sm" href="#waitlist" data-ar="انضم لقائمة AFK" data-en="Join the AFK waitlist">انضم لقائمة AFK</a></div>
+    </div>
+  </div>
+</section>
 
-    // ========================================================================
-    // 7. ACTION PLANS, DIFF VIEW & POLICY GUARDRAILS (TAB 3)
-    // ========================================================================
-    function renderDefaultPlanForHost(hostId) {
-      const host = HOSTS_DATA[hostId];
-      const planContainer = document.getElementById('active-plan-container');
-      const diffView = document.getElementById('plan-diff-view');
-      const verdictBox = document.getElementById('policy-engine-verdict');
+<!-- ══════════ TESTERS (honest social proof) ══════════ -->
+<section>
+  <div class="wrap">
+    <div class="testers">
+      <span class="sec-tag" data-ar="دليل اجتماعي — بصدق" data-en="SOCIAL PROOF — HONESTLY">دليل اجتماعي — بصدق</span>
+      <h2 data-ar="لسه بنبني أول 10 قصص نجاح — ممكن تكون واحدة منهم" data-en="We are building our first 10 success stories — yours could be one">لسه بنبني أول 10 قصص نجاح — ممكن تكون واحدة منهم</h2>
+      <p data-ar="مش هنعرض لك تقييمات نجوم ولا أرقام مستخدمين مش حقيقية. برنامج المختبرين الأوائل مفتوح دلوقتي: جرّب المنصة على سيرفرك، وقولنا رأيك بصراحة — والتقييمات المنشورة هنا بعد كده هتكون بأسماء أصحابها الحقيقيين وبإذنهم." data-en="We will not show you star ratings or user numbers that are not real. The Early Testers program is open now: try the platform on your server and tell us honestly — every review published here later will carry its real owner's name and permission.">مش هنعرض لك تقييمات نجوم ولا أرقام مستخدمين مش حقيقية. برنامج المختبرين الأوائل مفتوح دلوقتي: جرّب المنصة على سيرفرك، وقولنا رأيك بصراحة — والتقييمات المنشورة هنا بعد كده هتكون بأسماء أصحابها الحقيقيين وبإذنهم.</p>
+      <div class="tester-perks">
+        <span class="chip" data-ar="🎁 وصول مبكر لكل المميزات" data-en="🎁 Early access to every feature">🎁 وصول مبكر لكل المميزات</span>
+        <span class="chip" data-ar="💬 دعم مباشر من المطوّر" data-en="💬 Direct developer support">💬 دعم مباشر من المطوّر</span>
+        <span class="chip" data-ar="⭐ رأيك بيتبني بيه المنتج" data-en="⭐ Your feedback shapes the product">⭐ رأيك بيتبني بيه المنتج</span>
+        <span class="chip" data-ar="🏷️ سعر مؤسس عند إطلاق Pro" data-en="🏷️ Founder pricing when Pro launches">🏷️ سعر مؤسس عند إطلاق Pro</span>
+      </div>
+      <a class="btn btn-green" href="#waitlist" data-ar="قدّم في برنامج المختبرين الأوائل" data-en="Apply to Early Testers">قدّم في برنامج المختبرين الأوائل</a>
+    </div>
+  </div>
+</section>
 
-      document.getElementById('plan-status-badge').textContent = 'بانتظار موافقة المشرف (PENDING_APPROVAL)';
-      document.getElementById('plan-status-badge').className = 'badge badge-warning';
-      document.getElementById('btn-approve-plan').disabled = false;
+<!-- ══════════ PRICING ══════════ -->
+<section id="pricing" style="background:var(--bg2);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="الخطط والأسعار" data-en="PLANS & PRICING">الخطط والأسعار</span>
+      <h2 data-ar="مجاني دلوقتي — بجد، ومن غير بطاقة" data-en="Free right now — really, no card">مجاني دلوقتي — بجد، ومن غير بطاقة</h2>
+      <p data-ar="إحنا في مرحلة بناء المجتمع والثقة. الخطط المدفوعة مرسومة من دلوقتي عشان تعرف مستقبلك معانا، وأسعارها النهائية هتوصل لقائمة الانتظار قبل أي حد." data-en="We are in the community-and-trust building phase. Paid plans are already designed so you know your future with us, and their final prices reach the waitlist before anyone else.">إحنا في مرحلة بناء المجتمع والثقة. الخطط المدفوعة مرسومة من دلوقتي عشان تعرف مستقبلك معانا، وأسعارها النهائية هتوصل لقائمة الانتظار قبل أي حد.</p>
+    </div>
+    <div class="price-grid">
+      <div class="price-card featured"><span class="pop" data-ar="شغالة دلوقتي" data-en="LIVE NOW">شغالة دلوقتي</span>
+        <h3 data-ar="🆓 مجاني — إطلاق تجريبي" data-en="🆓 Free — Beta Launch">🆓 مجاني — إطلاق تجريبي</h3>
+        <div class="price-now">$0 <small data-ar="أثناء الإطلاق" data-en="during launch">أثناء الإطلاق</small></div>
+        <p class="pdesc" data-ar="كل اللي محتاجه صاحب سيرفر صغير عشان يبدأ صح." data-en="Everything a small server owner needs to start right.">كل اللي محتاجه صاحب سيرفر صغير عشان يبدأ صح.</p>
+        <ul>
+          <li data-ar="سيرفر واحد مرتبط بالبلجن أو برفع السجلات" data-en="1 linked server, via plugin or log uploads">سيرفر واحد مرتبط بالبلجن أو برفع السجلات</li>
+          <li data-ar="10 تشخيصات ذكية شهرياً" data-en="10 AI diagnoses per month">10 تشخيصات ذكية شهرياً</li>
+          <li data-ar="معالج اللعب المشترك الأساسي + فحص منافذ" data-en="Core crossplay wizard + port checks">معالج اللعب المشترك الأساسي + فحص منافذ</li>
+          <li data-ar="احتفاظ بالتقارير 7 أيام" data-en="7-day report history">احتفاظ بالتقارير 7 أيام</li>
+          <li data-ar="تنبيهات توقف أساسية داخل اللوحة" data-en="Basic in-dashboard downtime alerts">تنبيهات توقف أساسية داخل اللوحة</li>
+          <li class="no" data-ar="بوت AFK — بينضم لقائمة الانتظار" data-en="AFK bot — waitlist only">بوت AFK — بينضم لقائمة الانتظار</li>
+        </ul>
+        <a class="btn btn-green" href="#get-started" data-ar="ابدأ مجاناً" data-en="Start free">ابدأ مجاناً</a>
+      </div>
+      <div class="price-card">
+        <h3 data-ar="🚀 Pro — للي بيكبر" data-en="🚀 Pro — for growing servers">🚀 Pro — للي بيكبر</h3>
+        <div class="price-now"><span data-ar="قريباً" data-en="Soon">قريباً</span></div>
+        <p class="pdesc" data-ar="لأصحاب السيرفرات والمحتوى اللي سيرفرهم بقى شغل حقيقي." data-en="For owners and creators whose server became real work.">لأصحاب السيرفرات والمحتوى اللي سيرفرهم بقى شغل حقيقي.</p>
+        <ul>
+          <li data-ar="حتى 5 سيرفرات مرتبطة" data-en="Up to 5 linked servers">حتى 5 سيرفرات مرتبطة</li>
+          <li data-ar="تشخيصات ذكية بلا حدود عملية (استخدام عادل)" data-en="Effectively unlimited diagnoses (fair use)">تشخيصات ذكية بلا حدود عملية (استخدام عادل)</li>
+          <li data-ar="معالج لعب مشترك كامل + فحص جاهزية متقدم" data-en="Full crossplay wizard + advanced readiness">معالج لعب مشترك كامل + فحص جاهزية متقدم</li>
+          <li data-ar="احتفاظ بالتقارير 90 يوماً" data-en="90-day report history">احتفاظ بالتقارير 90 يوماً</li>
+          <li data-ar="تنبيهات فورية متعددة القنوات" data-en="Instant multi-channel alerts">تنبيهات فورية متعددة القنوات</li>
+          <li data-ar="أولوية بوت AFK عند إطلاقه" data-en="AFK bot priority at launch">أولوية بوت AFK عند إطلاقه</li>
+        </ul>
+        <a class="btn btn-ghost" href="#waitlist" data-ar="انضم لقائمة Pro" data-en="Join the Pro waitlist">انضم لقائمة Pro</a>
+      </div>
+      <div class="price-card">
+        <h3 data-ar="👑 Ultra — دفع مرة واحدة" data-en="👑 Ultra — one-time">👑 Ultra — دفع مرة واحدة</h3>
+        <div class="price-now"><span data-ar="لاحقاً" data-en="Later">لاحقاً</span></div>
+        <p class="pdesc" data-ar="للي بيكره الاشتراكات وعايز كل حاجة مرة واحدة." data-en="For those who hate subscriptions and want everything at once.">للي بيكره الاشتراكات وعايز كل حاجة مرة واحدة.</p>
+        <ul>
+          <li data-ar="حتى 20 سيرفراً مرتبطاً" data-en="Up to 20 linked servers">حتى 20 سيرفراً مرتبطاً</li>
+          <li data-ar="كل مزايا Pro كاملة" data-en="Everything in Pro">كل مزايا Pro كاملة</li>
+          <li data-ar="احتفاظ دائم بالتقارير" data-en="Permanent report history">احتفاظ دائم بالتقارير</li>
+          <li data-ar="وصول مبكر لكل ميزة جديدة" data-en="Early access to every new feature">وصول مبكر لكل ميزة جديدة</li>
+          <li data-ar="أولوية دعم قصوى" data-en="Top-priority support">أولوية دعم قصوى</li>
+        </ul>
+        <a class="btn btn-ghost" href="#waitlist" data-ar="ابلغني عند الإطلاق" data-en="Notify me at launch">ابلغني عند الإطلاق</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-      if (hostId === 'minefort') {
-        planContainer.innerHTML = `
-          <p style="font-size:0.9rem; margin-bottom:0.75rem;">
-            <strong>الهدف:</strong> حماية سيرفر <strong>Minefort (1GB RAM)</strong> من انهيار <code>OutOfMemoryError</code> مع الحفاظ الصارم على إعدادات بروكسي <code>play.minefort.com</code>.
-          </p>
-          <ol style="padding-inline-start:1.25rem; font-size:0.86rem; color:#cbd5e1; display:grid; gap:0.45rem;">
-            <li>إنشاء نسخة احتياطية <code>spigot.yml.bak</code> و <code>config/paper-world-defaults.yml.bak</code>.</li>
-            <li>خفض <code>view-distance</code> من <code>10</code> إلى <code>5</code> و <code>simulation-distance</code> إلى <code>4</code> لتوفير 45% من استهلاك الـ Heap.</li>
-            <li>الإبقاء على <code>bungeecord: true</code> دون مساس (محمي بواسطة Policy Engine).</li>
-          </ol>
-        `;
-        diffView.innerHTML = `<span style="color:#94a3b8;"># File: spigot.yml (Minefort Safe Profile)</span>
-settings:
-  bungeecord: true  <span style="color:#34d399;"># [LOCKED BY POLICY: Required for play.minefort.com]</span>
-world-settings:
-  default:
-<span class="diff-del">-   view-distance: 10</span>
-<span class="diff-del">-   simulation-distance: 10</span>
-<span class="diff-add">+   view-distance: 5</span>
-<span class="diff-add">+   simulation-distance: 4</span>`;
-      } else if (hostId === 'falixnodes') {
-        planContainer.innerHTML = `
-          <p style="font-size:0.9rem; margin-bottom:0.75rem;">
-            <strong>الهدف:</strong> حل تعارض منفذ UDP بين <strong>Geyser</strong> و <strong>Simple Voice Chat</strong> على استضافة <strong>FalixNodes</strong>.
-          </p>
-          <ol style="padding-inline-start:1.25rem; font-size:0.86rem; color:#cbd5e1; display:grid; gap:0.45rem;">
-            <li>أخذ نسخة احتياطية <code>plugins/Geyser-Spigot/config.yml.bak</code>.</li>
-            <li>تغيير منفذ <code>bedrock.port</code> من المنفذ المشترك <code>25565</code> إلى المنفذ الإضافي المخصص من لوحة Falix (<code>30124</code>).</li>
-            <li>ضبط <code>auth-type: floodgate</code> والتحقق من استجابة مستمع UDP بعد إعادة التحميل.</li>
-          </ol>
-        `;
-        diffView.innerHTML = `<span style="color:#94a3b8;"># File: plugins/Geyser-Spigot/config.yml</span>
-bedrock:
-  address: 0.0.0.0
-<span class="diff-del">- port: 25565</span>
-<span class="diff-del">- clone-remote-port: true</span>
-<span class="diff-add">+ port: 30124</span>
-<span class="diff-add">+ clone-remote-port: false</span>
-remote:
-  auth-type: floodgate`;
-      } else {
-        planContainer.innerHTML = `
-          <p style="font-size:0.9rem; margin-bottom:0.75rem;">
-            <strong>الهدف:</strong> تحسين أداء التكتات (TPS/MSPT) وإصلاح إعدادات السيرفر على <strong>${host.name}</strong>.
-          </p>
-          <ol style="padding-inline-start:1.25rem; font-size:0.86rem; color:#cbd5e1; display:grid; gap:0.45rem;">
-            <li>أخذ نسخة احتياطية تلقائية للملفات قبل التعديل (<code>.bak</code>).</li>
-            <li>ضبط <code>view-distance: 8</code> و <code>simulation-distance: 6</code> وتفعيل تحسينات الكيانات في Paper.</li>
-            <li>التحقق من السجل بعد التنفيذ للتأكد من اختفاء تحذيرات <code>Can't keep up!</code>.</li>
-          </ol>
-        `;
-        diffView.innerHTML = `<span style="color:#94a3b8;"># File: config/paper-world-defaults.yml (${host.name})</span>
-chunks:
-  auto-save-interval: 6000
-<span class="diff-del">- max-auto-save-chunks-per-tick: 24</span>
-<span class="diff-add">+ max-auto-save-chunks-per-tick: 8</span>
-entities:
-  behavior:
-<span class="diff-add">+   tick-inactive-villagers: false</span>`;
-      }
+<!-- ══════════ WAITLIST ══════════ -->
+<section id="waitlist">
+  <div class="wrap">
+    <div class="waitlist">
+      <h2 data-ar="احجز مكانك قبل الإطلاق العام" data-en="Reserve your spot before public launch">احجز مكانك قبل الإطلاق العام</h2>
+      <p data-ar="اختار اللي مستنيه وسيب بريدك. أول ناس هتعرف وتعرف الأسعار وتجرب — هما اللي في القائمة دي. مفيش سبام، وعد." data-en="Choose what you are waiting for and leave your email. The first to know, to see pricing and to try — are the people on this list. No spam, promised.">اختار اللي مستنيه وسيب بريدك. أول ناس هتعرف وتعرف الأسعار وتجرب — هما اللي في القائمة دي. مفيش سبام، وعد.</p>
+      <form class="wl-form" onsubmit="return joinWaitlist(event)">
+        <select id="wlProduct">
+          <option value="beta" data-ar="🧪 المختبرين الأوائل (المنصة)" data-en="🧪 Early Testers (platform)">🧪 المختبرين الأوائل (المنصة)</option>
+          <option value="afk" data-ar="🤖 بوت البقاء AFK" data-en="🤖 Stay-Alive AFK Bot">🤖 بوت البقاء AFK</option>
+          <option value="pro" data-ar="🚀 خطة Pro المدفوعة" data-en="🚀 Pro paid plan">🚀 خطة Pro المدفوعة</option>
+        </select>
+        <input type="email" id="wlEmail" required data-ar-ph="بريدك الإلكتروني you@example.com" data-en-ph="Your email you@example.com" placeholder="بريدك الإلكتروني you@example.com">
+        <button class="btn btn-green" type="submit" data-ar="احجز مكاني" data-en="Reserve my spot">احجز مكاني</button>
+      </form>
+      <div class="wl-ok" id="wlOk"></div>
+      <p class="wl-fine" data-ar="بيانات القائمة هتتربط بحسابات المنصة عند فتح التسجيل الكامل في المرحلة التالية — ومش بتتباع ولا بتتشارك مع أي حد." data-en="Waitlist data will be linked to platform accounts when full signup opens in the next phase — never sold or shared with anyone.">بيانات القائمة هتتربط بحسابات المنصة عند فتح التسجيل الكامل في المرحلة التالية — ومش بتتباع ولا بتتشارك مع أي حد.</p>
+    </div>
+  </div>
+</section>
 
-      verdictBox.className = 'alert alert-success';
-      verdictBox.innerHTML = `<strong>✅ فحص محرك السياسات (Policy Engine):</strong> الخطة متوافقة 100% مع قواعد <strong>${host.name}</strong> وقائمة السماح (Allowlist).`;
-    }
+<!-- ══════════ ROADMAP ══════════ -->
+<section id="roadmap" style="background:var(--bg2);border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="خارطة الطريق العلنية" data-en="PUBLIC ROADMAP">خارطة الطريق العلنية</span>
+      <h2 data-ar="بنبني قدامك — مش في الخفاء" data-en="We build in front of you — not in hiding">بنبني قدامك — مش في الخفاء</h2>
+      <p data-ar="ده ترتيب شغلنا الحقيقي. اللي مكتوب «بيتبني دلوقتي» يعني شغل شغال فعلاً، واللي «قادم» لسه مجاش دوره بصراحة." data-en="This is our real work order. “Building now” means work actually in progress, and “coming” honestly has not started yet.">ده ترتيب شغلنا الحقيقي. اللي مكتوب «بيتبني دلوقتي» يعني شغل شغال فعلاً، واللي «قادم» لسه مجاش دوره بصراحة.</p>
+    </div>
+    <div class="road">
+      <div class="road-card"><span class="st st-now" data-ar="🟢 بيتبني دلوقتي" data-en="🟢 Building now">🟢 بيتبني دلوقتي</span><h3 data-ar="الواجهة التجارية والحسابات" data-en="Commercial site & accounts">الواجهة التجارية والحسابات</h3><p data-ar="الموقع اللي واقف عليه دلوقتي + تسجيل ودخول وربط أول سيرفر بلوحتك عبر البلجن أو رفع سجل." data-en="The very site you are standing on, plus signup, login and linking your first server via plugin or log upload.">الموقع اللي واقف عليه دلوقتي + تسجيل ودخول وربط أول سيرفر بلوحتك عبر البلجن أو رفع سجل.</p></div>
+      <div class="road-card"><span class="st st-next" data-ar="🔵 التالي" data-en="🔵 Next">🔵 التالي</span><h3 data-ar="تقارير محفوظة وتنبيهات" data-en="Saved reports & alerts">تقارير محفوظة وتنبيهات</h3><p data-ar="تاريخ تشخيصاتك محفوظ وقابل للبحث، وتنبيه فوري لما سيرفرك يقف أو يرجع، وسجل تراجع لكل إصلاح." data-en="Your diagnosis history saved and searchable, instant alerts when your server stops or returns, and a rollback log for every fix.">تاريخ تشخيصاتك محفوظ وقابل للبحث، وتنبيه فوري لما سيرفرك يقف أو يرجع، وسجل تراجع لكل إصلاح.</p></div>
+      <div class="road-card"><span class="st st-next" data-ar="🔵 التالي" data-en="🔵 Next">🔵 التالي</span><h3 data-ar="منشورات ومجتمع ودعم ذكي" data-en="Posts, community & smart support">منشورات ومجتمع ودعم ذكي</h3><p data-ar="أخبار المنتج من جوه لوحتك، وإشعارات مطوّر فورية، ومساعد دعم بيرد من قاعدة معرفة حقيقية." data-en="Product news inside your dashboard, instant developer notices, and a support assistant answering from a real knowledge base.">أخبار المنتج من جوه لوحتك، وإشعارات مطوّر فورية، ومساعد دعم بيرد من قاعدة معرفة حقيقية.</p></div>
+      <div class="road-card"><span class="st st-later" data-ar="🟣 قادم" data-en="🟣 Coming">🟣 قادم</span><h3 data-ar="بوت البقاء AFK السحابي" data-en="Cloud Stay-Alive AFK Bot">بوت البقاء AFK السحابي</h3><p data-ar="بوتات على Workers موزعة تبقى داخل سيرفرك 24/7 بحركة ذكية وإعادة اتصال متدرجة حسب خطتك. الانتظار مفتوح." data-en="Bots on a distributed worker fleet living inside your server 24/7 with smart motion and plan-tiered reconnects. Waitlist open.">بوتات على Workers موزعة تبقى داخل سيرفرك 24/7 بحركة ذكية وإعادة اتصال متدرجة حسب خطتك. الانتظار مفتوح.</p></div>
+    </div>
+  </div>
+</section>
 
-    function approveAndExecutePlan() {
-      const host = HOSTS_DATA[activeHostId];
-      const badge = document.getElementById('plan-status-badge');
-      badge.textContent = 'تمت الموافقة والتنفيذ بنجاح (EXECUTED ✅)';
-      badge.className = 'badge badge-primary';
+<!-- ══════════ FAQ ══════════ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag" data-ar="الأسئلة الشائعة" data-en="FAQ">الأسئلة الشائعة</span>
+      <h2 data-ar="كل اللي بتسأله قبل ما تبدأ" data-en="Everything you ask before starting">كل اللي بتسأله قبل ما تبدأ</h2>
+    </div>
+    <div class="faq-tabs" id="faqTabs"></div>
+    <div class="faq-list" id="faqList"></div>
+  </div>
+</section>
 
-      const verdictBox = document.getElementById('policy-engine-verdict');
-      verdictBox.className = 'alert alert-success';
-      verdictBox.innerHTML = `<strong>🎉 تم التنفيذ والتحقق (FR-11):</strong> تم حفظ النسخة الاحتياطية <code>.bak</code>، وتطبيق الإعدادات على <strong>${host.name}</strong>، وتسجيل العملية في سجل التدقيق.`;
+<!-- ══════════ FINAL CTA ══════════ -->
+<section class="final">
+  <div class="wrap">
+    <h2 data-ar="سيرفرك يستاهل يفضل شغال — وانت تستاهل تفهمه" data-en="Your server deserves to stay up — and you deserve to understand it">سيرفرك يستاهل يفضل شغال — وانت تستاهل تفهمه</h2>
+    <p data-ar="حمّل البلجن المنشور دلوقتي، أو جرّب التشخيص من غير أي تثبيت. أول قيمة لك في أقل من 5 دقائق." data-en="Download the published plugin now, or try diagnosis with zero installation. Your first value in under 5 minutes.">حمّل البلجن المنشور دلوقتي، أو جرّب التشخيص من غير أي تثبيت. أول قيمة لك في أقل من 5 دقائق.</p>
+    <div style="display:flex;gap:13px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-green" href="https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar" target="_blank" rel="noopener" data-ar="⬇️ حمّل البلجن مجاناً" data-en="⬇️ Download the free plugin">⬇️ حمّل البلجن مجاناً</a>
+      <a class="btn btn-ghost" href="#demo" data-ar="جرّب التشخيص أولاً" data-en="Try diagnosis first">جرّب التشخيص أولاً</a>
+    </div>
+  </div>
+</section>
+</main>
 
-      addAuditLog('PLAN_APPROVED_EXECUTED', `${host.name} — Config Optimization`, 'SUCCESS');
-    }
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><a class="brand" href="#top"><span class="brand-logo">⛏️</span><span>CraftMate AI</span></a><p data-ar="منصة صاحب سيرفر ماينكرافت: تشخيص ذكي، لعب مشترك، وإدارة آمنة — مبنية بشفافية قدام مجتمعها." data-en="The Minecraft server owner's platform: smart diagnosis, crossplay and safe management — built transparently in front of its community.">منصة صاحب سيرفر ماينكرافت: تشخيص ذكي، لعب مشترك، وإدارة آمنة — مبنية بشفافية قدام مجتمعها.</p></div>
+      <div><h4 data-ar="المنتج" data-en="Product">المنتج</h4><a href="#features" data-ar="المميزات" data-en="Features">المميزات</a><a href="#pricing" data-ar="الخطط" data-en="Plans">الخطط</a><a href="#roadmap" data-ar="خارطة الطريق" data-en="Roadmap">خارطة الطريق</a><a href="#plugin" data-ar="البلجن" data-en="Plugin">البلجن</a></div>
+      <div><h4 data-ar="المجتمع" data-en="Community">المجتمع</h4><a href="https://github.com/esaye2312-art/CraftMate-AI" target="_blank" rel="noopener">GitHub ↗</a><a href="https://github.com/esaye2312-art/CraftMate-AI/issues" target="_blank" rel="noopener" data-ar="الدعم والبلاغات ↗" data-en="Support & issues ↗">الدعم والبلاغات ↗</a><a href="#waitlist" data-ar="قوائم الانتظار" data-en="Waitlists">قوائم الانتظار</a><a href="#faq" data-ar="الأسئلة الشائعة" data-en="FAQ">الأسئلة الشائعة</a></div>
+      <div><h4 data-ar="وثائق" data-en="Documents">وثائق</h4><a href="docs/CraftMate_AI_PRD_v0.3.md" target="_blank" data-ar="وثيقة المنتج PRD v0.3" data-en="Product doc PRD v0.3">وثيقة المنتج PRD v0.3</a><a href="docs/BENCHMARK_ahmed_amedo.md" target="_blank" data-ar="دراسة المنافس المرجعية" data-en="Competitor benchmark study">دراسة المنافس المرجعية</a><a href="legacy-dashboard-v0.2.html" data-ar="لوحة v0.2 التقنية (أرشيف)" data-en="v0.2 technical dashboard (archive)">لوحة v0.2 التقنية (أرشيف)</a></div>
+    </div>
+    <div class="copy"><span data-ar="© 2026 CraftMate AI — مشروع مفتوح المصدر يُبنى علناً. Minecraft علامة تجارية لـ Mojang/Microsoft ولا ينتمي لها هذا المشروع." data-en="© 2026 CraftMate AI — an open-source project built in public. Minecraft is a trademark of Mojang/Microsoft; this project is not affiliated.">© 2026 CraftMate AI — مشروع مفتوح المصدر يُبنى علناً. Minecraft علامة تجارية لـ Mojang/Microsoft ولا ينتمي لها هذا المشروع.</span></div>
+  </div>
+</footer>
 
-    function rejectPlan() {
-      const host = HOSTS_DATA[activeHostId];
-      const badge = document.getElementById('plan-status-badge');
-      badge.textContent = 'تم رفض الخطة من المشرف (REJECTED)';
-      badge.className = 'badge badge-danger';
-      addAuditLog('PLAN_REJECTED', `${host.name}`, 'BLOCKED_BY_POLICY');
-    }
+<!-- support widget -->
+<button class="sw-btn" onclick="toggleSW()" aria-label="Support">💬</button>
+<div class="sw-panel" id="swPanel">
+  <div class="sw-head"><div><b data-ar="مساعد دعم CraftMate" data-en="CraftMate Support Assistant">مساعد دعم CraftMate</b><span data-ar="بيرد من قاعدة المعرفة فوراً" data-en="Answers instantly from the knowledge base">بيرد من قاعدة المعرفة فوراً</span></div><button class="sw-close" onclick="toggleSW(false)">✕</button></div>
+  <div class="sw-msgs" id="swMsgs"></div>
+  <div class="sw-sugs">
+    <button class="sw-sug" onclick="swAsk(this.dataset.q)" data-q="سيرفري بيقفل" data-ar="سيرفري بيقفل" data-en="My server keeps stopping">سيرفري بيقفل</button>
+    <button class="sw-sug" onclick="swAsk(this.dataset.q)" data-q="ازاي افعل الجوال" data-ar="ازاي أفعّل الجوال؟" data-en="How do I enable mobile?">ازاي أفعّل الجوال؟</button>
+    <button class="sw-sug" onclick="swAsk(this.dataset.q)" data-q="سعر" data-ar="السعر كام؟" data-en="How much does it cost?">السعر كام؟</button>
+    <button class="sw-sug" onclick="swAsk(this.dataset.q)" data-q="بوت afk" data-ar="بوت AFK امتى؟" data-en="When is the AFK bot?">بوت AFK امتى؟</button>
+  </div>
+  <form class="sw-form" onsubmit="return swSend(event)"><input id="swInput" data-ar-ph="اكتب سؤالك هنا..." data-en-ph="Type your question..." placeholder="اكتب سؤالك هنا..." autocomplete="off"><button type="submit">➤</button></form>
+</div>
 
-    function simulateUnsafeAction() {
-      selectHost('minefort');
-      const badge = document.getElementById('plan-status-badge');
-      badge.textContent = 'محظور بواسطة محرك السياسات (BLOCKED 🔒)';
-      badge.className = 'badge badge-danger';
-      document.getElementById('btn-approve-plan').disabled = true;
+<div class="toast" id="toast"></div>
 
-      document.getElementById('plan-diff-view').innerHTML = `<span style="color:#fca5a5;"># [UNSAFE AI PROPOSAL INTERCEPTED] File: spigot.yml (Minefort)</span>
-settings:
-<span class="diff-del">- bungeecord: true</span>
-<span class="diff-add">+ bungeecord: false   # ❌ محاولة تعطيل بروكسي Minefort!</span>`;
+<script>
+let LANG = localStorage.getItem('cm_lang') || 'ar';
 
-      const verdictBox = document.getElementById('policy-engine-verdict');
-      verdictBox.className = 'alert alert-danger';
-      verdictBox.innerHTML = `<strong>🛑 تدخل محرك السياسات (Policy Engine Violation — FR-10):</strong> تم حظر هذه الخطة تلقائياً وتجميد زر الموافقة! السبب: الاستضافة <strong>Minefort</strong> تعمل خلف بروكسي BungeeCord مركزي (<code>play.minefort.com</code>)، وتعطيل <code>bungeecord: true</code> سيؤدي إلى منع جميع اللاعبين من دخول السيرفر.`;
+/* ── i18n ── */
+function applyLang(){
+  const isAr = LANG==='ar';
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-ar]').forEach(el=>{
+    const v = isAr ? el.getAttribute('data-ar') : el.getAttribute('data-en');
+    if(v!==null) el.innerHTML = v;
+  });
+  document.querySelectorAll('[data-ar-ph]').forEach(el=>{
+    el.placeholder = isAr ? el.getAttribute('data-ar-ph') : el.getAttribute('data-en-ph');
+  });
+  document.getElementById('langToggle').textContent = isAr ? 'EN 🌐' : 'عربي 🌐';
+  renderHosts(); renderFaq(currentFaqCat);
+  if(lastReport) showReport(lastReport);
+}
+function toggleLang(){ LANG = LANG==='ar' ? 'en' : 'ar'; localStorage.setItem('cm_lang',LANG); applyLang(); }
+function t(ar,en){ return LANG==='ar' ? ar : en; }
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3400);
+}
 
-      addAuditLog('POLICY_VIOLATION_BLOCKED', 'Minefort: Attempted bungeecord=false', 'BLOCKED_BY_POLICY');
-    }
+/* ── Doctor samples ── */
+const SAMPLES = {
+crash:"[12:00:01] [Server thread/INFO]: Starting minecraft server version 1.21.4\n[12:00:03] [Server thread/INFO]: [CraftTest] Enabling CraftTest v1.0\n[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\n\tat com.example.crafttest.Main.onEnable(Main.java:42)\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:04] [Server thread/INFO]: Done (3.214s)! For help, type \"help\"\n[12:00:19] [User Authenticator #1/INFO]: UUID of player Steve is 069a79f4-44e9-4726-a5be-fca90e38aaf5\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in with entity id 121",
+port:"[09:41:10] [Server thread/INFO]: Starting Minecraft server on *:25565\n[09:41:11] [Server thread/WARN]: **** FAILED TO BIND TO PORT!\n[09:41:11] [Server thread/WARN]: The exception was: java.net.BindException: Address already in use: bind\n[09:41:11] [Server thread/WARN]: Perhaps a server is already running on that port?",
+minefort:"[18:22:31] [Server thread/INFO]: [Geyser-Spigot] Enabling Geyser-Spigot v2.2.0\n[18:22:33] [Server thread/WARN]: [Geyser] Your server is in offline mode! This is not secure.\n[18:22:40] [Server thread/INFO]: This server is running Paper version 1.21.1\nDetected edit request: set spigot.yml settings.bungeecord = false on host minefort (play.minefort.com)\n[18:22:41] [Server thread/WARN]: If you are using BungeeCord, make sure settings.bungeecord is true!",
+memory:"[02:13:55] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 4821ms or 96 ticks behind\n[02:14:20] [Server thread/ERROR]: Encountered an unexpected exception\njava.lang.OutOfMemoryError: Java heap space\n\tat java.base/java.util.Arrays.copyOf(Arrays.java:3513)\n[02:14:21] [Server thread/INFO]: Stopping server\nJVM args: -Xmx1024M on host with 1GB free plan"
+};
+function loadSample(key,btn){
+  document.getElementById('logInput').value = SAMPLES[key];
+  document.querySelectorAll('.sample-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+function scrub(text){
+  let ips=0, secrets=0;
+  let out=text.replace(/\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b/g,()=>{ips++;return '[IP]';});
+  out=out.replace(/(password|passwd|pwd|secret|token)\s*[:=]\s*\S+/gi,(m)=>{secrets++;return m.split(/[:=]/)[0]+'=[REDACTED]';});
+  out=out.replace(/(mysql|postgres|mongodb|redis):\/\/\S+/gi,()=>{secrets++;return '[DB-URL]';});
+  out=out.replace(/https:\/\/discord\.com\/api\/webhooks\/\S+/gi,()=>{secrets++;return '[WEBHOOK]';});
+  return {text:out,ips,secrets};
+}
+let lastReport=null;
+function showReport(r){
+  document.getElementById('reportEmpty').style.display='none';
+  const card=document.getElementById('reportCard'); card.style.display='block';
+  const sev=document.getElementById('repSev');
+  sev.textContent = r.sev==='high' ? t('🔴 خطورة عالية','🔴 High severity') : r.sev==='ok' ? t('🟢 لا خطر فوري','🟢 No immediate risk') : t('🟡 خطورة متوسطة','🟡 Medium severity');
+  sev.className='sev '+(r.sev==='high'?'sev-high':r.sev==='ok'?'sev-ok':'sev-med');
+  document.getElementById('repTitle').textContent=r.title;
+  document.getElementById('repCause').textContent=r.cause;
+  document.getElementById('repSteps').innerHTML=r.steps.map(s=>'<li>'+s+'</li>').join('');
+  document.getElementById('repGuard').textContent=r.guard;
+  document.getElementById('repScrub').textContent=t('🔒 اتحذف قبل التحليل: '+r.ips+' عنوان IP و'+r.secrets+' سر','🔒 Scrubbed before analysis: '+r.ips+' IPs, '+r.secrets+' secrets');
+}
+function analyzeLog(){
+  const raw=document.getElementById('logInput').value.trim();
+  if(!raw){ toast(t('الصق سجل الأول أو اختر عينة جاهزة','Paste a log first or pick a sample')); return; }
+  const s=scrub(raw), txt=s.text;
+  let r;
+  if(/bungeecord\s*=\s*false/i.test(txt) && /minefort/i.test(txt)){
+    r={sev:'high',title:t('⛔ خطوة ممنوعة: إيقاف BungeeCord على Minefort','⛔ Forbidden step: disabling BungeeCord on Minefort'),
+      cause:t('سيرفرات Minefort بتمر اتصالات لاعبيها عبر بروكسي مركزي، وإعداد settings.bungeecord لازم يفضل true. تعديله false هيقطع دخول كل اللاعبين فوراً — فالطبيب بيرفض تنفيذه مهما اتطلب منه.','Minefort routes all player connections through its central proxy, so settings.bungeecord must stay true. Setting it to false instantly cuts off every player — the Doctor refuses to run it, no matter who asks.'),
+      steps:[t('سيب settings.bungeecord = true زي ما هو — ده مش غلطة، ده شرط تشغيل Minefort.','Leave settings.bungeecord = true as-is — that is not a bug, it is a Minefort requirement.'),t('لو هدفك اللعب المشترك: فعّل Floodgate من إعداد Geyser نفسه بدل لمس إعدادات البروكسي.','If your goal is crossplay: enable Floodgate inside the Geyser config instead of touching proxy settings.'),t('أعد تشغيل السيرفر وتأكد من رسالة Geyser الناجحة في أحدث سجل.','Restart the server and confirm Geyser\'s success line in the latest log.')],
+      guard:t('🛡️ قاعدة حماية صارمة: المهام المحظورة لا تظهر أبداً كزر تنفيذ — لا هنا ولا في حسابك ولا عبر API.', '🛡️ Hard guardrail: forbidden tasks never appear as a run button — not here, not in your account, not via API.'),ips:s.ips,secrets:s.secrets};
+  } else if(/NoClassDefFoundError|ClassNotFoundException/i.test(txt)){
+    r={sev:'high',title:t('💥 إضافة بتحمّل مكتبة مش موجودة في إصدارك','💥 A plugin loads a library missing in your version'),
+      cause:t('الإضافة اتبنت على نسخة سيرفر قديمة وكانت بتعتمد على مكتبة داخلية اتشالت من الإصدارات الأحدث. السيرفر نفسه سليم — المشكلة كلها في توافق الإضافة.','The plugin was built against an older server build and relied on an internal library removed in newer versions. Your server is fine — this is purely a plugin compatibility issue.'),
+      steps:[t('حدّد اسم الإضافة من أول سطر ERROR (اللي قبل كلمة Enabling).','Identify the plugin name from the first ERROR line (before “Enabling”).'),t('حمّل أحدث إصدار منها من صفحتها الرسمية (Modrinth/SpigotMC) المظبوط على إصدار سيرفرك.','Download its latest official build (Modrinth/SpigotMC) matched to your server version.'),t('استبدل ملف الـ jar القديم بالجديد من غير ما تمسح مجلد بيانات الإضافة.','Replace the old jar with the new one without deleting the plugin\'s data folder.'),t('أعد التشغيل وابحث عن نفس الخطأ: اختفى؟ يبقى التشخيص اكتمل.','Restart and search for the same error: gone? Diagnosis complete.')],
+      guard:t('🛡️ الإصلاح الآمن في حسابك هياخد نسخة .bak من بيانات الإضافة الأول، ولو أي خطوة فشلت التراجع بضغطة واحدة.','🛡️ The safe fix in your account backs up the plugin data first — if any step fails, rollback is one click.'),ips:s.ips,secrets:s.secrets};
+  } else if(/FAILED TO BIND TO PORT|BindException|Address already in use/i.test(txt)){
+    r={sev:'med',title:t('🔌 المنفذ مشغول — نسخة تانية شغالة على نفس البورت','🔌 Port already in use — another process owns it'),
+      cause:t('السيرفر حاول يفتح بورت عليه عملية تانية بالفعل (غالباً نسخة سيرفر لم تُقفل، أو خدمة تانية). لا ملفات باظت ولا عالم اتضرر.','The server tried to bind a port another process already owns (usually an unclosed server instance, or another service). No files or worlds were harmed.'),
+      steps:[t('اتأكد إن مفيش نسخة سيرفر تانية شغالة من نفس المجلد وأقفلها الأول.','Make sure no second server instance runs from the same folder, and stop it first.'),t('على الاستضافات: استخدم زر Restart من لوحة الاستضافة بدل التشغيل اليدوي المتكرر.','On hosted servers: use the host panel\'s Restart button instead of repeated manual starts.'),t('لو البورت اتغير من الاستضافة، حدّثه في server.properties وفي أي إعداد Geyser.','If your host changed the port, update it in server.properties and any Geyser config.')],
+      guard:t('🛡️ تنبيه: تغيير البورت من غير تحديث إعداد اللاعبين واللعب المشترك هيقطع الوصول — الطبيب بيحدّثهم مع بعض في حسابك.','🛡️ Note: changing the port without updating player and crossplay settings cuts access — in your account the Doctor updates them together.'),ips:s.ips,secrets:s.secrets};
+  } else if(/OutOfMemoryError|heap space/i.test(txt)){
+    r={sev:'high',title:t('🧠 الذاكرة خلصت — السيرفر خنق نفسه','🧠 Out of memory — the server starved itself'),
+      cause:t('السيرفر استهلك كل الرام المخصصة له ووقع. على الخطط المجانية (1–4GB) ده بيحصل غالباً من عالم كبير بيتحمّل مرة واحدة أو blaze من البلجنات، مش من عدد اللاعبين وحده.','The server consumed all its allocated RAM and fell. On free plans (1–4GB) this usually comes from huge world loading chunks at once or plugin blaze, not player count alone.'),
+      steps:[t('ارفع -Xmx فقط لو خطتك تسمح — ما تزودش عن رام خطتك الفعلية أبداً.','Raise -Xmx only if your plan allows — never exceed your actual plan RAM.'),t('قلل view-distance و simulation-distance درجتين وشوف استهلاك الرام بعد ساعة لعب.','Lower view-distance and simulation-distance by two and watch RAM after an hour of play.'),t('راجع أثقل البلجنات: أي إضافة بتولّد تقارير باستمرار أو بتحمّل Chunks هي أول مشتبه.','Review your heaviest plugins: anything constantly reporting or loading chunks is suspect #1.')],
+      guard:t('🛡️ الطبيب بيقارن رام خطتك الحقيقية (من ملف استضافتك) قبل ما يقترح أي رقم — مفيش أرقام من الهوا.','🛡️ The Doctor compares your real plan RAM (from your host profile) before suggesting any number — no made-up figures.'),ips:s.ips,secrets:s.secrets};
+  } else if(/Can't keep up|overloaded/i.test(txt)){
+    r={sev:'med',title:t('🐢 السيرفر بيجري وراء نفسه — تأخير Ticks','🐢 The server is falling behind — tick lag'),
+      cause:t('السيرفر سليم لكنه أبطأ من حمل اللحظة: كيانات كتير أو مزارع تقيلة أو عالم بيولّد أرض جديدة باستمرار. دي مشكلة أداء مش تعطل.','Your server is healthy but slower than the moment\'s load: too many entities, heavy farms, or constant new terrain generation. This is performance, not a crash.'),
+      steps:[t('شوف TPS من /tps أو spark وحدد وقت الهبوط (غالباً مع توليد عالم جديد).','Check /tps or spark and pinpoint when it dips (usually during new terrain generation.'),t('قلل simulation-distance وحدّد سقف كيانات لكل Chunk.','Lower simulation-distance and cap entities per chunk.'),t('ولّد العالم مسبقاً بحدود واضحة بدل توليده أثناء لعب الناس.','Pre-generate your world within clear borders instead of generating as people play.')],
+      guard:t('🛡️ كل خطوة أداء عندنا قابلة للقياس قبل وبعد — لو الرقم متحسنش، التراجع متاح.','🛡️ Every performance step here is measurable before and after — if the number does not improve, rollback is available.'),ips:s.ips,secrets:s.secrets};
+  } else {
+    r={sev:'ok',title:t('🔎 لا توجد بصمة عطل معروفة في هذا السجل','🔎 No known crash fingerprint in this log'),
+      cause:t('السجل اللي لصقته لا يحتوي على أنماط الأخطاء المصنفة عندنا. ممكن يكون سجل تشغيل طبيعي، أو مشكلة جديدة هنحتاج أطول منه — الحساب الكامل بيقرأ آخر 250 سطر وبيقارنها بتاريخ سيرفرك.','This log contains none of our classified error patterns. It may be a normal startup log, or a new issue needing more lines — a full account reads the last 250 lines and compares them to your server\'s history.'),
+      steps:[t('اتأكد إنك لاصق لحظة التعطل نفسها، مش بداية تشغيل ناجحة.','Make sure you pasted the crash moment itself, not a successful startup.'),t('شغّل /craftmate diagnose من البلجن بعد أول وقوع على طول.','Run /craftmate diagnose from the plugin right after the next incident.'),t('اربط سيرفرك عشان نقارن السجل ده بسجلاته السابقة تلقائياً.','Link your server so we automatically compare this log to its previous ones.')],
+      guard:t('🛡️ صدق الطبيب: لما مش متأكد بيقول مش متأكد — لا بنختلق سبب ولا بنقترح إصلاح عشوائي.','🛡️ Doctor honesty: when unsure, it says unsure — we never invent a cause or suggest a random fix.'),ips:s.ips,secrets:s.secrets};
+  }
+  lastReport=r; showReport(r);
+  toast(t('✅ اكتملت المعاينة — ده شكل تقارير حسابك','✅ Preview complete — this is what your account reports look like'));
+}
 
-    // ========================================================================
-    // 8. BEDROCK / GEYSER CONFIG GENERATOR (TAB 4)
-    // ========================================================================
-    function updateGeyserConfigPreview() {
-      const host = HOSTS_DATA[activeHostId];
-      const javaPort = document.getElementById('java-port-input').value.trim() || '25565';
-      const bedrockPort = document.getElementById('bedrock-port-input').value.trim() || '19132';
-      const clonePort = (javaPort === bedrockPort) ? 'true' : 'false';
+/* ── Crossplay hosts ── */
+const HOSTS=[
+{id:'play',icon:'🟣',nameAr:'Play Hosting',nameEn:'Play Hosting',subAr:'أقوى بداية: 3GB رام وبورت Bedrock جاهز',subEn:'Strongest start: 3GB RAM and a ready Bedrock port',specs:'3GB RAM · 10GB NVMe',installAr:'رفع JAR يدوي كامل',installEn:'Full manual JAR upload',port:'19132 (UDP)',warnAr:'',warnEn:'',authType:'online'},
+{id:'falix',icon:'🟠',nameAr:'FalixNodes',nameEn:'FalixNodes',subAr:'ممتاز مجاناً — لكن البلجنات من متجرهم الداخلي فقط',subEn:'Great free tier — but plugins only from their built-in installer',specs:'2.5–4.5GB RAM · 10GB',installAr:'متجر داخلي (Modrinth)',installEn:'Built-in installer (Modrinth)',port:'19132 عبر Network → Ports',warnAr:'⚠️ خطتهم المجانية بتمنع رفع ملفات jar يدوياً. تثبيت Geyser وFloodgate بيتم من متجر إضافات FalixNodes نفسه — وحساب CraftMate بيمشيك في الطريق ده خطوة بخطوة، أو استخدم مسار رفع السجل من غير أي بلجن.',warnEn:'⚠️ Their free plan blocks manual jar uploads. Geyser and Floodgate install from FalixNodes\' own plugin store — your CraftMate account walks you through that path, or use the no-plugin log-upload route.',authType:'online'},
+{id:'mcsh',icon:'🔵',nameAr:'MCServerHost',nameEn:'MCServerHost',subAr:'تحكم كامل في الملفات — أقوى تركيب يدوي',subEn:'Full file control — the strongest manual setup',specs:'4GB RAM · 10GB',installAr:'رفع JAR + FTP كامل',installEn:'Manual JAR + full FTP',port:'19132 (UDP)',warnAr:'',warnEn:'',authType:'online'},
+{id:'minefort',icon:'⛏️',nameAr:'Minefort',nameEn:'Minefort',subAr:'سهل للمبتدئين — لكن اتصالاته عبر بروكسي مركزي',subEn:'Beginner-friendly — but its connections run through a central proxy',specs:'1GB RAM · 10GB',installAr:'رفع JAR + FTP',installEn:'JAR upload + FTP',port:'عبر بروكسي Minefort',warnAr:'🛡️ قاعدة حديدية: لاعبوك بيعدّوا من بروكسي Minefort المركزي، فإعداد settings.bungeecord لازم يفضل true دائماً. أي أداة أو شرح يقولك تقفله هيقطع دخول لاعبيك كلهم — وCraftMate بيمنع الخطوة دي بنفسه.',warnEn:'🛡️ Iron rule: your players pass through Minefort\'s central proxy, so settings.bungeecord must always stay true. Any tool or guide telling you to disable it will cut off all your players — CraftMate blocks that step itself.',authType:'floodgate'}];
+let currentHost='play';
+function renderHosts(){
+  const grid=document.getElementById('hostGrid');
+  grid.innerHTML=HOSTS.map(h=>'<button class="host-card'+(h.id===currentHost?' sel':'')+'" onclick="selectHost(\''+h.id+'\')"><div class="hic">'+h.icon+'</div><b>'+(LANG==='ar'?h.nameAr:h.nameEn)+'</b><span>'+(LANG==='ar'?h.subAr:h.subEn)+'</span></button>').join('');
+  const h=HOSTS.find(x=>x.id===currentHost);
+  document.getElementById('hostName').textContent=(LANG==='ar'?h.nameAr:h.nameEn)+' — '+(LANG==='ar'?'خطة اللعب المشترك':'Crossplay plan');
+  document.getElementById('hostSub').textContent=LANG==='ar'?h.subAr:h.subEn;
+  document.getElementById('hostSpecs').textContent=h.specs;
+  document.getElementById('hostInstall').textContent=LANG==='ar'?h.installAr:h.installEn;
+  document.getElementById('hostPort').textContent=h.port;
+  const w=document.getElementById('hostWarn');
+  const warn=LANG==='ar'?h.warnAr:h.warnEn;
+  w.style.display=warn?'block':'none'; w.textContent=warn;
+  document.getElementById('hostConfig').textContent=
+'# Geyser config.yml — '+(LANG==='ar'?h.nameAr:h.nameEn)+'\nbedrock:\n  address: 0.0.0.0\n  port: 19132\nremote:\n  address: auto\n  port: 25565\n  auth-type: '+(h.authType==='floodgate'?'floodgate':'online')+'\nfloodgate-key-file: key.pem\n# '+(LANG==='ar'?'اتولدت من ملف قدرات استضافتك — حسابك بيظبط الباقي ويفحص الجاهزية':'Generated from your host profile — your account tunes the rest and checks readiness');
+}
+function selectHost(id){ currentHost=id; renderHosts(); }
+function copyConfig(btn){
+  navigator.clipboard && navigator.clipboard.writeText(document.getElementById('hostConfig').textContent);
+  toast(t('📋 اتنسخ إعداد Geyser — الصقه في config.yml','📋 Geyser config copied — paste it into config.yml'));
+}
 
-      const configYaml = `# ==========================================================
-# Geyser-Spigot Configuration — Generated by CraftMate AI v0.2
-# Target Host Profile: ${host.name} (${host.domain})
-# ==========================================================
+/* ── onboarding code ── */
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let p=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const code='CM-'+p()+'-'+p();
+  const box=document.getElementById('linkCode'); box.style.display='block';
+  document.getElementById('codeVal').textContent=code;
+  document.getElementById('codeHint').textContent=t('اكتبه في اللعبة: /craftmate link '+code+' — كود تجريبي للعرض، الصلاحية الحقيقية 15 دقيقة من حسابك','Type in-game: /craftmate link '+code+' — demo code; real codes live 15 minutes from your account');
+}
 
-bedrock:
-  address: 0.0.0.0
-  port: ${bedrockPort}
-  clone-remote-port: ${clonePort}
-  motd1: "${host.name} - CraftMate AI Server"
-  motd2: "Java & Bedrock Crossplay Ready"
+/* ── waitlist ── */
+function joinWaitlist(ev){
+  ev.preventDefault();
+  const email=document.getElementById('wlEmail').value.trim();
+  const product=document.getElementById('wlProduct').value;
+  const list=JSON.parse(localStorage.getItem('craftmate_waitlists_v1')||'[]');
+  if(list.some(x=>x.email===email&&x.product===product)){
+    toast(t('أنت مسجل في القائمة دي بالفعل ✓','You are already on this list ✓'));
+  } else {
+    list.push({email,product,at:new Date().toISOString()});
+    localStorage.setItem('craftmate_waitlists_v1',JSON.stringify(list));
+  }
+  const ok=document.getElementById('wlOk'); ok.style.display='block';
+  ok.textContent=t('✅ مكانك اتحجز يا بطل! أول ما يفتح اللي اخترته، هتوصلك رسالة على '+email+' قبل الإطلاق العام.','✅ Your spot is reserved! The moment your pick opens, a message reaches '+email+' before the public launch.');
+  document.getElementById('wlEmail').value='';
+  return false;
+}
 
-remote:
-  address: auto
-  port: ${javaPort}
-  auth-type: floodgate
-  use-proxy-protocol: false
+/* ── FAQ ── */
+const FAQ=[
+{cat:'general',catAr:'⚡ عام',catEn:'⚡ General',qAr:'هل CraftMate مجاني فعلاً؟',qEn:'Is CraftMate really free?',aAr:'أيوه — مجاني 100% أثناء الإطلاق التجريبي، ومن غير بطاقة. الخطط المدفوعة (Pro وUltra) مرسومة للمستقبل وأسعارها هتوصل لقائمة الانتظار أول ما تتحدد، ومفيش أي ميزة اتوعدت بيها مجاناً هتتقفل فجأة ورا دفع من غير إعلان مسبق.',aEn:'Yes — 100% free during the beta launch, no card required. Paid plans (Pro and Ultra) are designed for the future, their prices reach the waitlist first, and nothing promised free will suddenly lock behind payment without prior notice.'},
+{cat:'general',catAr:'⚡ عام',catEn:'⚡ General',qAr:'محتاج أنقل سيرفري من استضافته الحالية؟',qEn:'Do I need to move my server from its host?',aAr:'لأ خالص. CraftMate طبقة ذكاء فوق استضافتك الحالية — شغال رسمياً مع Play Hosting وFalixNodes وMCServerHost وMinefort، وبمسار رفع سجلات يدوي لأي سيرفر Paper/Purpur تاني.',aEn:'Not at all. CraftMate is an intelligence layer on top of your current host — officially works with Play Hosting, FalixNodes, MCServerHost and Minefort, plus a manual log-upload route for any other Paper/Purpur server.'},
+{cat:'general',catAr:'⚡ عام',catEn:'⚡ General',qAr:'الموقع شغال على الموبايل؟',qEn:'Does the site work on mobile?',aAr:'أيوه — اللوحة والتشخيص مصممين للموبايل أولاً بنفس قوة الكمبيوتر، عشان سيرفرك غالباً هيقع وانت بره البيت أصلاً.',aEn:'Yes — the dashboard and diagnosis are designed mobile-first with full desktop power, because your server will probably crash while you are out anyway.'},
+{cat:'tech',catAr:'🔧 تقني',catEn:'🔧 Technical',qAr:'ما إصدارات ماينكرافت المدعومة؟',qEn:'Which Minecraft versions are supported?',aAr:'البلجن الحالي CraftMate-Connector v0.2.0 شغال مع Paper/Purpur من 1.20.4 لحد 1.21.x، وتشخيص السجلات شغال مع أي إصدار تقريباً لأن بصمات الأخطاء واحدة. بوت AFK القادم هيدعم جافا وبيدروك بكشف إصدار تلقائي.',aEn:'The current CraftMate-Connector v0.2.0 plugin runs on Paper/Purpur 1.20.4 through 1.21.x, and log diagnosis works with nearly any version since error fingerprints are shared. The coming AFK bot will support Java and Bedrock with auto version detection.'},
+{cat:'tech',catAr:'🔧 تقني',catEn:'🔧 Technical',qAr:'استضافتي بتمنع رفع بلجنات خارجية (زي FalixNodes المجاني). أعمل ايه؟',qEn:'My host blocks external plugin uploads (like FalixNodes Free). What do I do?',aAr:'طريقين: ثبّت ما تحتاجه من متجر إضافات الاستضافة الداخلي (وهنمشیك فيه خطوة بخطوة)، أو استخدم مسار رفع السجل اليدوي — بترفع أحدث latest.log وبتاخد نفس التشخيص الكامل من غير أي بلجن.',aEn:'Two paths: install what you need from your host\'s built-in plugin store (we walk you through it), or use the manual log-upload route — upload your latest latest.log and get the same full diagnosis with zero plugins.'},
+{cat:'tech',catAr:'🔧 تقني',catEn:'🔧 Technical',qAr:'هل يدعم لاعبي الجوال (Bedrock)؟',qEn:'Does it support Bedrock (mobile) players?',aAr:'أيوه — مركز اللعب المشترك بيولد إعداد Geyser وFloodgate مظبوط على استضافتك وبيفحص الجاهزية. وعلى Minefort فيه قاعدة حماية خاصة: ممنوع إيقاف settings.bungeecord لأنه هيقطع كل لاعبيك، وإحنا بنمنع الخطوة دي بنفسنا.',aEn:'Yes — the Crossplay Hub generates Geyser & Floodgate settings tuned to your host and checks readiness. On Minefort a special guardrail applies: never disable settings.bungeecord or you cut off every player — we block that step ourselves.'},
+{cat:'tech',catAr:'🔧 تقني',catEn:'🔧 Technical',qAr:'بوت AFK هيشتغل على سيرفرات Premium-Only؟',qEn:'Will the AFK bot work on premium-only servers?',aAr:'بصراحة: مسار البوت المجاني مصمم للسيرفرات التي تقبل Offline-Mode. السيرفرات التي تطلب حساب Microsoft أصلي تحتاج حسابك الأصلي بنفسك، وهنوضح ده صراحة في واجهة البوت قبل ما يبدأ — لا وعود كاذبة.',aEn:'Honestly: the free bot route is designed for offline-mode servers. Servers requiring a genuine Microsoft account need your own real account, and we will state that plainly in the bot UI before it starts — no false promises.'},
+{cat:'safety',catAr:'🔒 الأمان',catEn:'🔒 Safety',qAr:'هل الذكاء الاصطناعي هيعدل ملفات سيرفري لوحده؟',qEn:'Will the AI edit my server files by itself?',aAr:'مستحيل. كل خطوة محتاجة موافقتك، وقبل التنفيذ بتتاخد نسخة احتياطية .bak، وكل مهمة بتنفذ مرة واحدة بس (حماية من التكرار)، وفيه خطوات محظورة أصلاً لا تظهر كزر تنفيذ لا في الموقع ولا عبر الـ API — زي إيقاف BungeeCord على Minefort.',aEn:'Never. Every step needs your approval, a .bak backup is taken before execution, each task runs exactly once (idempotency), and some steps are forbidden outright — they never appear as a run button on the site or via API, like disabling BungeeCord on Minefort.'},
+{cat:'safety',catAr:'🔒 الأمان',catEn:'🔒 Safety',qAr:'سجلات سيرفري فيها عناوين لاعبين وكلمات سر. آمنة؟',qEn:'My logs contain player IPs and passwords. Are they safe?',aAr:'السجل بيتنقى على طبقتين: جوه البلجن عندك قبل ما يخرج، وعلى الخادم قبل أي تحليل. عناوين IP وروابط قواعد البيانات وكلمات السر وروابط الويبهوك بتتحذف وتتستبدل بعلامات. جرّب بنفسك في غرفة التشخيص: الصق IP وشوف بيتحذف وبيتعد كام واحد اتمسح.',aEn:'Logs are scrubbed in two layers: inside your plugin before anything leaves, and server-side before any analysis. IPs, database URLs, passwords and webhook URLs are removed and replaced with markers. Try it in the Diagnosis Room: paste an IP and watch it get scrubbed and counted.'},
+{cat:'support',catAr:'💬 الدعم',catEn:'💬 Support',qAr:'واجهت مشكلة — أكلم مين؟',qEn:'I hit a problem — who do I talk to?',aAr:'ابدأ بمساعد الدعم اللي تحت على الشمال (أو اليمين بالإنجليزي) — بيرد فوراً من قاعدة المعرفة. لو محتاج بشر: بلاغات GitHub مفتوحة للبلجن، وقنوات Discord وTelegram للمجتمع بتتجهز مع برنامج المختبرين الأوائل.',aEn:'Start with the support assistant at the bottom corner — it answers instantly from the knowledge base. For humans: GitHub Issues are open for the plugin, and Discord/Telegram community channels are being prepared with the Early Testers program.'},
+{cat:'support',catAr:'💬 الدعم',catEn:'💬 Support',qAr:'ازاي أقترح ميزة أو أبلغ عن تشخيص غلط؟',qEn:'How do I suggest a feature or report a wrong diagnosis?',aAr:'من GitHub Issues في المستودع — اقتراحات الميزات بتغذي خارطة الطريق العلنية مباشرة، وتقارير التشخيص الغلط ليها أولوية مراجعة لأن هدفنا أقل من 5 تقارير خاطئة في كل 100.',aEn:'Via GitHub Issues in the repository — feature suggestions feed the public roadmap directly, and wrong-diagnosis reports get review priority since our target is under 5 wrong reports per 100.'}];
+let currentFaqCat='general';
+function renderFaq(cat){
+  currentFaqCat=cat;
+  const cats=[['general','⚡'],['tech','🔧'],['safety','🔒'],['support','💬']];
+  document.getElementById('faqTabs').innerHTML=cats.map(c=>{
+    const f=FAQ.find(x=>x.cat===c[0]);
+    return '<button class="faq-tab'+(cat===c[0]?' active':'')+'" onclick="renderFaq(\''+c[0]+'\')">'+(LANG==='ar'?f.catAr:f.catEn)+'</button>';
+  }).join('');
+  document.getElementById('faqList').innerHTML=FAQ.filter(f=>f.cat===cat).map((f,i)=>
+    '<div class="faq-item"><button class="faq-q" onclick="this.parentElement.classList.toggle(\'open\')"><span>'+(LANG==='ar'?f.qAr:f.qEn)+'</span><span class="arr">▾</span></button><div class="faq-a">'+(LANG==='ar'?f.aAr:f.aEn)+'</div></div>').join('');
+}
 
-floodgate-key-file: key.pem
-saved-user-logins:
-  - ThisExampleUserShouldBeLongEnoughToNeverBeAnXboxUsername`;
+/* ── support widget ── */
+let swGreeted=false;
+function toggleSW(force){
+  const p=document.getElementById('swPanel');
+  const open=typeof force==='boolean'?force:!p.classList.contains('open');
+  p.classList.toggle('open',open);
+  if(open&&!swGreeted){ swGreeted=true; swAdd('bot',t('أهلاً 👋 أنا مساعد دعم CraftMate. اسألني عن التشخيص أو اللعب المشترك أو الأسعار أو بوت AFK — أو اختر سؤالاً جاهزاً تحت.','Hi 👋 I am the CraftMate support assistant. Ask me about diagnosis, crossplay, pricing or the AFK bot — or pick a ready question below.')); }
+}
+function swAdd(who,text){
+  const box=document.getElementById('swMsgs');
+  const d=document.createElement('div'); d.className='sw-msg '+who; d.textContent=text;
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+}
+function swAnswer(q){
+  const s=q.toLowerCase();
+  if(/يقفل|بيقفل|تعطل|crash|stop|يقع/.test(s)) return t('لو سيرفرك بيقفل: ① ارفع أحدث سجل في غرفة التشخيص هنا في الموقع وخد السبب بخطواته، ② أو ثبّت البلجن واكتب /craftmate diagnose بعد أول وقوع. السبب غالباً إضافة غير متوافقة أو ذاكرة خنقانة — والطبيب هيفرق بينهم فوراً.','If your server keeps stopping: ① upload its latest log in the Diagnosis Room here for the cause and steps, or ② install the plugin and run /craftmate diagnose after the next incident. It is usually an incompatible plugin or starved memory — the Doctor tells them apart instantly.');
+  if(/جوال|bedrock|geyser|ايفون|اندرويد|mobile| crossplay/.test(s)) return t('لتشغيل لاعبي الجوال: روح قسم اللعب المشترك، اختر استضافتك، وانسخ إعداد Geyser الجاهز لها. على Minefort خليك فاكر: ممنوع تقفل settings.bungeecord أبداً. وتثبيت Geyser وFloodgate من بلجنات سيرفرك الجافا.','To enable mobile players: go to the Crossplay section, pick your host, and copy its ready Geyser config. On Minefort remember: never disable settings.bungeecord. Geyser and Floodgate install as plugins on your Java server.');
+  if(/سعر|فلوس|كام|price|cost|مجاني|اشتراك/.test(s)) return t('CraftMate مجاني 100% أثناء الإطلاق التجريبي ومن غير بطاقة: سيرفر واحد و10 تشخيصات شهرياً ومعالج لعب مشترك. خطط Pro وUltra جاية بعدين وأسعارها هتوصل لقائمة الانتظار الأول — سجل من قسم «احجز مكانك».','CraftMate is 100% free during beta launch with no card: 1 server, 10 diagnoses a month and the crossplay wizard. Pro and Ultra come later, and their prices reach the waitlist first — join from the “Reserve your spot” section.');
+  if(/afk|بوت|بقاء|حي|24/.test(s)) return t('بوت البقاء AFK بيتبني دلوقتي على Workers موزعة ولسه ما أطلقناش — مش هنوعدك بتاريخ كذاب. سجل في قائمة انتظار AFK من الموقع وهتكون أول من يبدأ عند فتحه، ومتابعته خطوة بخطوة في خارطة الطريق العلنية.','The Stay-Alive AFK bot is being built now on distributed workers and has not launched — we will not promise a fake date. Join the AFK waitlist on the site to be first in when it opens, and follow it step by step on the public roadmap.');
+  if(/بلجن|plugin|jar|تحميل|ثبت/.test(s)) return t('بلجن CraftMate-Connector v0.2.0 منشور رسمياً: حمّله من قسم البلجن هنا، ارفعه في مجلد plugins، شغّل سيرفرك، وجرّب /craftmate status. على FalixNodes المجاني التثبيت بيكون من متجرهم الداخلي — أو اشتغل بمسار رفع السجلات من غير بلجن أصلاً.','The CraftMate-Connector v0.2.0 plugin is officially released: download it from the plugin section here, drop it in your plugins folder, start your server, try /craftmate status. On FalixNodes Free, installs go through their built-in store — or use the no-plugin log-upload route.');
+  if(/امن|امان|safe|سر|password|خصوص/.test(s)) return t('أمانك خط أحمر: السجلات بتتنقى من عناوين IP وكلمات السر قبل ما تخرج من سيرفرك أصلاً، ومفيش أي تعديل بيتنفذ إلا بموافقتك وبعد نسخة احتياطية .bak، وبخطوات محظورة لا بتظهر حتى كزر. وحسابك معزول تماماً عن أي مستخدم تاني.','Your safety is a red line: logs are scrubbed of IPs and passwords before leaving your server, nothing is ever edited without your approval and a .bak backup first, and forbidden steps never even appear as buttons. Your account is fully isolated from every other user.');
+  return t('سؤال حلو — مش عندي إجابته المؤكدة هنا، فمش هخترعها لك. جرب صياغة تانية (تشخيص/جوال/سعر/بوت) أو افتح بلاغ دعم على GitHub وهنرد بشرياً: github.com/esaye2312-art/CraftMate-AI/issues','Good question — I do not have a confirmed answer here, so I will not invent one. Try rephrasing (diagnosis/mobile/pricing/bot) or open a support issue on GitHub for a human reply: github.com/esaye2312-art/CraftMate-AI/issues');
+}
+function swAsk(q){ swAdd('user',q); setTimeout(()=>swAdd('bot',swAnswer(q)),350); }
+function swSend(ev){
+  ev.preventDefault();
+  const inp=document.getElementById('swInput'); const v=inp.value.trim();
+  if(!v) return false; inp.value=''; swAsk(v); return false;
+}
 
-      document.getElementById('geyser-config-preview').textContent = configYaml;
-    }
-
-    // ========================================================================
-    // 9. SUPABASE INTEGRATION (fucsztovkkilyboinhrv) & AUDIT LOG
-    // ========================================================================
-    function addAuditLog(action, target, outcome) {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      auditLogs.unshift({ time: timeStr, action, target, outcome });
-      renderAuditLogs();
-      syncAuditLogToSupabase({ action_type: action, target_resource: target, outcome });
-    }
-
-    function renderAuditLogs() {
-      const tbody = document.getElementById('audit-log-tbody');
-      tbody.innerHTML = auditLogs.map(item => {
-        const badge = item.outcome === 'SUCCESS' ? 'badge-primary' : 'badge-danger';
-        return `
-          <tr>
-            <td style="font-family:var(--font-mono); font-size:0.8rem;">${item.time}</td>
-            <td><code>${item.action}</code></td>
-            <td>${item.target}</td>
-            <td><span class="badge ${badge}">${item.outcome}</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function syncAuditLogToSupabase(entry) {
-      const url = localStorage.getItem('cm_supabase_url') || 'https://fucsztovkkilyboinhrv.supabase.co';
-      const key = localStorage.getItem('cm_supabase_anon_key');
-      if (!key) return;
-      try {
-        await fetch(`${url}/rest/v1/audit_logs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': key,
-            'Authorization': `Bearer ${key}`,
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(entry)
-        });
-        document.getElementById('supabase-sync-status').textContent = 'متصل ومتزامن مع Supabase (fucsztovkkilyboinhrv) ✅';
-      } catch (e) {
-        // Offline or preview sandbox mode
-      }
-    }
-
-    // ========================================================================
-    // 10. UI HELPERS (TABS, PAIRING CODE, SETTINGS MODAL)
-    // ========================================================================
-    function switchTab(tabId, btnEl) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      if (btnEl) btnEl.classList.add('active');
-    }
-
-    function switchTabById(tabId) {
-      const buttons = document.querySelectorAll('.nav-tab');
-      buttons.forEach(btn => {
-        if (btn.getAttribute('onclick').includes(tabId)) {
-          switchTab(tabId, btn);
-        }
-      });
-    }
-
-    function updateServerStateUI() {
-      const state = document.getElementById('server-state-select').value;
-      const dot = document.getElementById('server-status-dot');
-      const banner = document.getElementById('hibernation-banner');
-      if (state === 'ONLINE') {
-        dot.className = 'status-dot dot-online';
-        banner.style.display = 'none';
-      } else if (state === 'HIBERNATING') {
-        dot.className = 'status-dot dot-sleep';
-        banner.style.display = 'block';
-      } else {
-        dot.className = 'status-dot dot-crash';
-        banner.style.display = 'none';
-      }
-    }
-
-    function generateNewPairingCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const part1 = Array.from({length: 4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
-      const part2 = Array.from({length: 4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
-      document.getElementById('pairing-code-display').textContent = `/craftmate link CM-${part1}-${part2}`;
-      document.getElementById('pairing-ttl').textContent = '15:00';
-      addAuditLog('PAIRING_TOKEN_ISSUED', `${HOSTS_DATA[activeHostId].name} (One-time TTL 15m)`, 'SUCCESS');
-    }
-
-    function copyText(elementId) {
-      const text = document.getElementById(elementId).textContent;
-      navigator.clipboard?.writeText(text);
-    }
-
-    function toggleDir() {
-      const html = document.documentElement;
-      html.dir = html.dir === 'rtl' ? 'ltr' : 'rtl';
-    }
-
-    function openSettingsModal() {
-      document.getElementById('settings-modal').classList.add('open');
-    }
-
-    function closeSettingsModal() {
-      document.getElementById('settings-modal').classList.remove('open');
-    }
-
-    function loadSavedSettings() {
-      const savedKey = localStorage.getItem('cm_supabase_anon_key') || '';
-      const savedGemini = localStorage.getItem('cm_gemini_api_key') || '';
-      document.getElementById('supabase-key-input').value = savedKey;
-      document.getElementById('gemini-key-input').value = savedGemini;
-    }
-
-    function saveSettings() {
-      const supaKey = document.getElementById('supabase-key-input').value.trim();
-      const geminiKey = document.getElementById('gemini-key-input').value.trim();
-      localStorage.setItem('cm_supabase_url', 'https://fucsztovkkilyboinhrv.supabase.co');
-      localStorage.setItem('cm_supabase_anon_key', supaKey);
-      localStorage.setItem('cm_gemini_api_key', geminiKey);
-      document.getElementById('connection-test-output').innerHTML = '<span style="color:#34d399;">✅ تم حفظ المفاتيح محلياً في المتصفح بنجاح!</span>';
-      setTimeout(closeSettingsModal, 700);
-    }
-
-    async function testSupabaseConnection() {
-      const out = document.getElementById('connection-test-output');
-      const key = document.getElementById('supabase-key-input').value.trim();
-      out.innerHTML = '<span style="color:#60a5fa;">⏳ جاري فحص الاتصال بـ https://fucsztovkkilyboinhrv.supabase.co ...</span>';
-      if (!key) {
-        out.innerHTML = '<span style="color:#fbbf24;">⚠️ الخادم https://fucsztovkkilyboinhrv.supabase.co نشط ويستجيب! أدخل مفتاح anon public key من لوحة Supabase لتفعيل القراءة والكتابة.</span>';
-        return;
-      }
-      try {
-        const res = await fetch('https://fucsztovkkilyboinhrv.supabase.co/rest/v1/', {
-          headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
-        if (res.ok) {
-          out.innerHTML = '<span style="color:#34d399;">✅ اتصال ناجح بمشروع Supabase (fucsztovkkilyboinhrv)!</span>';
-        } else {
-          out.innerHTML = `<span style="color:#f87171;">⚠️ استجاب الخادم برمز ${res.status} — تأكد من صحة مفتاح anon public key.</span>`;
-        }
-      } catch (err) {
-        out.innerHTML = '<span style="color:#fbbf24;">ℹ️ ملاحظة: قم بفتح الصفحة من رابط GitHub Pages المباشر لاختبار الاتصال الخارجي بـ Supabase.</span>';
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', initApp);
-  </script>
+/* init */
+loadSample('crash',document.querySelector('.sample-btn'));
+applyLang();
+</script>
 </body>
 </html>

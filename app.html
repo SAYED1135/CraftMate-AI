@@ -123,6 +123,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(6,10,18,.85);backdrop-f
 table{width:100%;border-collapse:collapse;font-size:.87rem}
 th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:start;vertical-align:top}
 th{color:var(--dim);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+.notice-banner{display:none;background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(56,189,248,.12));border:1px solid rgba(34,197,94,.45);border-radius:15px;padding:17px 19px;margin-bottom:18px}.notice-banner.show{display:flex;gap:14px;align-items:flex-start}.notice-banner .grow{flex:1}.notice-banner b{display:block;margin-bottom:3px}.notice-banner p{color:var(--muted);font-size:.9rem}.ibadge{display:inline-flex;min-width:21px;height:21px;border-radius:999px;background:var(--red);color:#fff;align-items:center;justify-content:center;font-size:.68rem;padding:0 6px;margin-inline-start:6px}.post{background:var(--card3);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:13px}.post h4{margin-bottom:5px}.post p{color:var(--muted);font-size:.92rem;white-space:pre-wrap}.post-meta{font-size:.76rem;color:var(--dim);margin-bottom:9px}.post-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.comment{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:.86rem}.comment span{color:var(--dim);font-size:.74rem;display:block}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}.flagrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 0;border-bottom:1px dashed var(--border)}.switch{width:48px;height:26px;appearance:none;background:var(--card3);border:1px solid var(--border2);border-radius:999px;position:relative;cursor:pointer;outline:none}.switch:checked{background:var(--green)}.switch::after{content:"";position:absolute;top:2px;inset-inline-start:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}.switch:checked::after{transform:translateX(-20px)}[dir="ltr"] .switch:checked::after{transform:translateX(20px)}
 footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--dim);font-size:.82rem;background:#04070d}
 .toast{position:fixed;bottom:24px;inset-inline-start:50%;transform:translate(50%,90px);background:#14532d;border:1px solid rgba(34,197,94,.5);color:#dcfce7;border-radius:12px;padding:13px 22px;font-size:.9rem;font-weight:700;z-index:400;transition:.35s;box-shadow:0 16px 40px rgba(0,0,0,.5);max-width:92vw;text-align:center}
 [dir="ltr"] .toast{transform:translate(-50%,90px)}
@@ -206,12 +207,17 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         <button data-view="servers" onclick="go('servers')" data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفرتي</button>
         <button data-view="diagnose" onclick="go('diagnose')" data-ar="🩺 تشخيص جديد" data-en="🩺 New diagnosis">🩺 تشخيص جديد</button>
         <button data-view="history" onclick="go('history')" data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</button>
+        <button data-view="alerts" id="alertsNav" onclick="go('alerts')">🔔 <span data-ar="التنبيهات" data-en="Alerts">التنبيهات</span></button>
+        <button data-view="community" onclick="go('community')" data-ar="📝 المجتمع والمنشورات" data-en="📝 Community & posts">📝 المجتمع والمنشورات</button>
+        <button data-view="support" onclick="go('support')" data-ar="💬 الدعم والتذاكر" data-en="💬 Support & tickets">💬 الدعم والتذاكر</button>
+        <button data-view="admin" id="adminNav" onclick="go('admin')" style="display:none" data-ar="🛡️ لوحة الإدارة" data-en="🛡️ Admin console">🛡️ لوحة الإدارة</button>
         <button data-view="settings" onclick="go('settings')" data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</button>
       </nav>
       <div style="margin-top:17px;background:var(--card3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:.8rem;color:var(--muted)" id="sideModeNote"></div>
     </aside>
 
     <div>
+      <div class="notice-banner" id="noticeBanner"></div>
       <!-- DASHBOARD -->
       <section class="view active" id="view-dashboard">
         <div class="view-head"><div><h2 id="dashTitle">🏠 لوحتي</h2><p data-ar="حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة." data-en="Your servers, activation steps and latest activity — at a glance.">حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ اربط سيرفر" data-en="➕ Link a server">➕ اربط سيرفر</button></div>
@@ -303,6 +309,71 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         <div class="panel"><div id="historyList"></div></div>
       </section>
 
+      
+      <!-- ALERTS -->
+      <section class="view" id="view-alerts">
+        <div class="view-head"><div><h2 data-ar="🔔 التنبيهات" data-en="🔔 Alerts">🔔 التنبيهات</h2><p data-ar="نبضات سيرفرك والأعطال المهمة وحدود خطتك — في مركز واحد." data-en="Server heartbeats, important failures and plan limits — in one center.">نبضات سيرفرك والأعطال المهمة وحدود خطتك — في مركز واحد.</p></div><button class="btn ghost sm" onclick="markAllRead()" data-ar="تعليم الكل كمقروء" data-en="Mark all read">تعليم الكل كمقروء</button></div>
+        <div class="panel"><h3 data-ar="📥 أحدث التنبيهات" data-en="📥 Latest alerts">📥 أحدث التنبيهات</h3><div id="alertsList"></div></div>
+        <div class="panel"><h3 data-ar="⚙️ إعدادات التنبيه" data-en="⚙️ Alert settings">⚙️ إعدادات التنبيه</h3>
+          <div class="flagrow"><span data-ar="تنبيهات داخل اللوحة" data-en="In-dashboard alerts">تنبيهات داخل اللوحة</span><input class="switch" type="checkbox" id="alInApp"></div>
+          <div class="flagrow"><span data-ar="تنبيه عند توقف أو سبات سيرفر" data-en="Alert on server stop or hibernation">تنبيه عند توقف أو سبات سيرفر</span><input class="switch" type="checkbox" id="alDown"></div>
+          <div class="flagrow"><span data-ar="تنبيه عند تشخيص عالي الخطورة" data-en="Alert on high-severity diagnosis">تنبيه عند تشخيص عالي الخطورة</span><input class="switch" type="checkbox" id="alDiag"></div>
+          <div class="field" style="margin-top:15px"><label>Discord Webhook (اختياري)</label><input id="alWebhook" placeholder="https://discord.com/api/webhooks/..." style="direction:ltr;text-align:left"><p class="hint" data-ar="هنبعت تنبيهات التوقف للويبهوك ده من متصفحك لما تكون اللوحة مفعلة بسجلات حقيقية في السحابة لاحقاً." data-en="Downtime alerts can be sent to this webhook from your browser when live cloud heartbeats are connected later.">هنبعت تنبيهات التوقف للويبهوك ده من متصفحك لما تكون اللوحة مفعلة بسجلات حقيقية في السحابة لاحقاً.</p></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn sm" onclick="saveAlertSettings()" data-ar="حفظ إعدادات التنبيه" data-en="Save alert settings">حفظ إعدادات التنبيه</button><button class="btn ghost sm" onclick="testWebhook()" data-ar="اختبار الويبهوك" data-en="Test webhook">اختبار الويبهوك</button></div>
+        </div>
+      </section>
+
+      <!-- COMMUNITY -->
+      <section class="view" id="view-community">
+        <div class="view-head"><div><h2 data-ar="📝 المجتمع والمنشورات" data-en="📝 Community & posts">📝 المجتمع والمنشورات</h2><p data-ar="أخبار CraftMate وتجارب أصحاب السيرفرات وأسئلتهم — مجتمع المنتج من جوه لوحتك." data-en="CraftMate news, server-owner stories and questions — the product community inside your dashboard.">أخبار CraftMate وتجارب أصحاب السيرفرات وأسئلتهم — مجتمع المنتج من جوه لوحتك.</p></div></div>
+        <div class="panel"><h3 data-ar="✍️ انشر في المجتمع" data-en="✍️ Post to the community">✍️ انشر في المجتمع</h3>
+          <div class="field"><label data-ar="العنوان" data-en="Title">العنوان</label><input id="postTitle"></div>
+          <div class="field"><label data-ar="المحتوى" data-en="Content">المحتوى</label><textarea id="postBody" style="min-height:95px;direction:inherit;text-align:start;font-family:inherit;font-size:.92rem"></textarea></div>
+          <button class="btn sm" onclick="createPost()" data-ar="نشر" data-en="Publish">نشر</button>
+        </div>
+        <div id="postsList"></div>
+      </section>
+
+      <!-- SUPPORT -->
+      <section class="view" id="view-support">
+        <div class="view-head"><div><h2 data-ar="💬 الدعم والتذاكر" data-en="💬 Support & tickets">💬 الدعم والتذاكر</h2><p data-ar="ابحث في قاعدة المعرفة الأول — ولو محتاج بشر افتح تذكرة وهنتابعها معاك." data-en="Search the knowledge base first — if you need a human, open a ticket and we will follow it with you.">ابحث في قاعدة المعرفة الأول — ولو محتاج بشر افتح تذكرة وهنتابعها معاك.</p></div></div>
+        <div class="panel"><h3 data-ar="🔎 قاعدة المعرفة" data-en="🔎 Knowledge base">🔎 قاعدة المعرفة</h3>
+          <div class="field"><input id="kbSearch" oninput="renderKB()" data-ar-ph="ابحث: سيرفر بيقفل، جوال، سعر، بلجن..." data-en-ph="Search: server stops, mobile, price, plugin..." placeholder="ابحث: سيرفر بيقفل، جوال، سعر، بلجن..."></div>
+          <div id="kbList"></div>
+        </div>
+        <div class="panel"><h3 data-ar="🎫 افتح تذكرة دعم" data-en="🎫 Open a support ticket">🎫 افتح تذكرة دعم</h3>
+          <div class="grid2"><div class="field"><label data-ar="الموضوع" data-en="Subject">الموضوع</label><input id="ticketSubject"></div><div class="field"><label data-ar="السيرفر (اختياري)" data-en="Server (optional)">السيرفر (اختياري)</label><select id="ticketServer"></select></div></div>
+          <div class="field"><label data-ar="اشرح مشكلتك" data-en="Describe your issue">اشرح مشكلتك</label><textarea id="ticketBody" style="min-height:95px;direction:inherit;text-align:start;font-family:inherit;font-size:.92rem"></textarea></div>
+          <button class="btn sm" onclick="createTicket()" data-ar="إرسال التذكرة" data-en="Send ticket">إرسال التذكرة</button>
+        </div>
+        <div class="panel"><h3 data-ar="🎫 تذاكري" data-en="🎫 My tickets">🎫 تذاكري</h3><div id="ticketsList"></div></div>
+      </section>
+
+      <!-- ADMIN -->
+      <section class="view" id="view-admin">
+        <div class="view-head"><div><h2 data-ar="🛡️ لوحة الإدارة" data-en="🛡️ Admin console">🛡️ لوحة الإدارة</h2><p data-ar="إدارة المنتج: المستخدمون والخطط والاستحقاقات والإشعارات ومفاتيح الميزات وقوائم الانتظار." data-en="Product management: users, plans, entitlements, notices, feature flags and waitlists.">إدارة المنتج: المستخدمون والخطط والاستحقاقات والإشعارات ومفاتيح الميزات وقوائم الانتظار.</p></div></div>
+        <div class="stats" id="adminStats"></div>
+        <div class="panel"><h3 data-ar="💎 حدود الخطة المجانية (تُطبق فوراً)" data-en="💎 Free plan limits (apply instantly)">💎 حدود الخطة المجانية (تُطبق فوراً)</h3>
+          <div class="grid2">
+            <div class="field"><label data-ar="أقصى سيرفرات" data-en="Max servers">أقصى سيرفرات</label><input id="admFreeServers" type="number" min="0"></div>
+            <div class="field"><label data-ar="تشخيصات / شهر" data-en="Diagnoses / month">تشخيصات / شهر</label><input id="admFreeDiag" type="number" min="0"></div>
+            <div class="field"><label data-ar="أيام الاحتفاظ" data-en="Retention days">أيام الاحتفاظ</label><input id="admFreeRet" type="number" min="1"></div>
+            <div class="field"><label data-ar="أقصى سيرفرات Pro" data-en="Pro max servers">أقصى سيرفرات Pro</label><input id="admProServers" type="number" min="0"></div>
+          </div>
+          <button class="btn sm" onclick="savePlanLimits()" data-ar="حفظ الاستحقاقات" data-en="Save entitlements">حفظ الاستحقاقات</button>
+        </div>
+        <div class="panel"><h3 data-ar="🚦 مفاتيح الميزات" data-en="🚦 Feature flags">🚦 مفاتيح الميزات</h3><div id="flagsList"></div></div>
+        <div class="panel"><h3 data-ar="📢 إشعار مطوّر جديد" data-en="📢 New developer notice">📢 إشعار مطوّر جديد</h3>
+          <div class="field"><label data-ar="العنوان" data-en="Title">العنوان</label><input id="noticeTitle"></div>
+          <div class="field"><label data-ar="النص" data-en="Message">النص</label><textarea id="noticeBody" style="min-height:80px;direction:inherit;text-align:start;font-family:inherit;font-size:.92rem"></textarea></div>
+          <button class="btn sm" onclick="createNotice()" data-ar="نشر الإشعار لكل المستخدمين" data-en="Publish notice to all users">نشر الإشعار لكل المستخدمين</button>
+          <div id="noticesAdminList" style="margin-top:15px"></div>
+        </div>
+        <div class="panel"><h3 data-ar="👥 المستخدمون المسجلون على هذا الجهاز" data-en="👥 Users registered on this device">👥 المستخدمون المسجلون على هذا الجهاز</h3><div id="adminUsers"></div></div>
+        <div class="panel"><h3 data-ar="📋 قوائم الانتظار المحفوظة" data-en="📋 Saved waitlists">📋 قوائم الانتظار المحفوظة</h3><div id="adminWaitlists"></div></div>
+        <div class="panel"><h3 data-ar="🎫 كل تذاكر الدعم" data-en="🎫 All support tickets">🎫 كل تذاكر الدعم</h3><div id="adminTickets"></div></div>
+      </section>
+
       <!-- SETTINGS -->
       <section class="view" id="view-settings">
         <div class="view-head"><div><h2 data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</h2><p data-ar="حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه." data-en="Your account, plan and data — plus the Supabase cloud connection when its keys are ready.">حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه.</p></div></div>
@@ -341,6 +412,7 @@ window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enablin
 
 let LANG=localStorage.getItem('cm_lang')||'ar';
 let db=loadDB(), session=loadSession(), authMode=localStorage.getItem('cm_auth_mode')||'local';
+ensureDB();
 let obHost='play_hosting', obMethod='plugin', activeServerId=null;
 
 const HOSTS={
@@ -351,6 +423,33 @@ const HOSTS={
 
 function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY))||{users:[],servers:[],codes:[],diagnoses:[],audits:[]}; }catch(e){ return {users:[],servers:[],codes:[],diagnoses:[],audits:[]}; } }
 function saveDB(){ localStorage.setItem(DB_KEY,JSON.stringify(db)); }
+function ensureDB(){
+  ['users','servers','codes','diagnoses','audits','notifications','posts','comments','notices','tickets','changes'].forEach(k=>{ if(!Array.isArray(db[k])) db[k]=[]; });
+  if(!db.config) db.config={};
+  if(!db.config.plans) db.config.plans={};
+  if(!db.config.flags) db.config.flags={posts:true,notices:true,afkWaitlist:true,support:true};
+  if(!db.posts.length && !db.config.seededPosts){
+    db.config.seededPosts=true;
+    db.posts.push(
+      {id:uid(),ownerId:'system',author:'CraftMate Team',titleAr:'🎉 أهلاً بكم في إطلاق CraftMate التجريبي',titleEn:'🎉 Welcome to the CraftMate beta launch',bodyAr:'المنصة بقت حسابات ولوحات وربط سيرفر وتشخيصات محفوظة. جرّب حساباً، اربط سيرفرك، وقولنا رأيك بصراحة — المنتج بيتبني بملاحظاتكم.',bodyEn:'The platform now has accounts, dashboards, server linking and saved diagnoses. Try an account, link your server, and tell us honestly — the product is shaped by your feedback.',at:new Date().toISOString(),likes:[],pinned:true},
+      {id:uid(),ownerId:'system',author:'CraftMate Team',titleAr:'🤖 بوت البقاء AFK — الحالة بصراحة',titleEn:'🤖 Stay-Alive AFK Bot — the honest status',bodyAr:'البوت لسه بيتبني على Workers موزعة ومش هنوعد بتاريخ قبل ما نثبت Worker شغال أسبوعاً كاملاً. قائمة الانتظار مفتوحة من الموقع الرئيسي.',bodyEn:'The bot is being built on distributed workers and we will not promise a date before proving one worker stable for a full week. The waitlist is open on the main website.',at:new Date().toISOString(),likes:[],pinned:false}
+    );
+  }
+  db.servers.forEach(normalizeServer);
+  saveDB();
+}
+function normalizeServer(sv){
+  if(!sv.settings) sv.settings={viewDistance:8,simulationDistance:6,maxPlayers:20,difficulty:'normal',pvp:true};
+  return sv;
+}
+function isAdmin(u){ return !!(u && (u.isAdmin || ['admin','craftmate','esaye2312'].includes(String(u.username||'').toLowerCase()) || u.email==='demo@craftmate.ai')); }
+function notify(type,titleAr,titleEn,bodyAr,bodyEn){
+  const u=user(); if(!u) return;
+  const cfg=u.alerts||{inApp:true,onDown:true,onDiag:true};
+  if(cfg.inApp===false) return;
+  db.notifications.push({id:uid(),ownerId:u.id,type,titleAr,titleEn,bodyAr:bodyAr||'',bodyEn:bodyEn||'',read:false,at:new Date().toISOString()});
+  saveDB();
+}
 function loadSession(){ try{ const s=JSON.parse(localStorage.getItem(SESSION_KEY)); if(s && s.at && (Date.now()-s.at) > 7*24*60*60*1000){ localStorage.removeItem(SESSION_KEY); return null; } return s; }catch(e){ return null; } }
 function saveSession(){ session?localStorage.setItem(SESSION_KEY,JSON.stringify(session)):localStorage.removeItem(SESSION_KEY); }
 function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
@@ -470,13 +569,14 @@ async function demoLogin(){
   let u=db.users.find(x=>x.email==='demo@craftmate.ai');
   if(!u){
     const salt=uid();
-    u={id:uid(),username:'CraftMateDemo',email:'demo@craftmate.ai',salt,passHash:await hashPw(salt,'Demo1234'),displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),demo:true};
+    u={id:uid(),username:'CraftMateDemo',email:'demo@craftmate.ai',salt,passHash:await hashPw(salt,'Demo1234'),displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),demo:true,isAdmin:true};
     db.users.push(u);
     const sv={id:uid(),ownerId:u.id,name:t('سيرفر تجريبي — Survival','Demo Server — Survival'),address:'play.example.net:25565',host:'play_hosting',software:'Paper',version:'1.21.4',status:'ONLINE',method:'plugin',env:{players:8,maxPlayers:20,ramMb:1536,maxRamMb:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion']},linkedAt:new Date().toISOString(),lastHeartbeat:new Date().toISOString()};
     db.servers.push(sv);
     db.diagnoses.push({id:uid(),ownerId:u.id,serverId:sv.id,title:t('إضافة قديمة كسرت التحميل','Outdated plugin broke loading'),sev:'high',cause:t('نسخة تجريبية محفوظة من حساب العرض','Saved sample from the demo account'),steps:[t('حدّث الإضافة','Update the plugin')],guard:'🛡️ Demo',ips:1,secrets:0,at:new Date().toISOString()});
     saveDB();
   }
+  if(u.email==='demo@craftmate.ai' && !u.isAdmin){ u.isAdmin=true; saveDB(); }
   session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
   toast(t('🎮 دخلت بالحساب التجريبي — جرّب كل حاجة بحرية','🎮 You are in the demo account — try everything freely'));
 }
@@ -494,8 +594,16 @@ function go(view){
 function myServers(){ const u=user(); return u?db.servers.filter(s=>s.ownerId===u.id):[]; }
 function myDiagnoses(){ const u=user(); return u?db.diagnoses.filter(d=>d.ownerId===u.id).sort((a,b)=>new Date(b.at)-new Date(a.at)):[]; }
 function monthDiagnoses(){ const now=new Date(); return myDiagnoses().filter(d=>{ const x=new Date(d.at); return x.getMonth()===now.getMonth()&&x.getFullYear()===now.getFullYear(); }).length; }
-function plan(){ const u=user(); return PLANS[(u&&u.plan)||'free']; }
+function plan(){ const u=user(); const code=(u&&u.plan)||'free'; const base=PLANS[code]||PLANS.free; const ov=(db.config&&db.config.plans&&db.config.plans[code])||{}; return Object.assign({},base,ov,{label:base.label,code}); }
+function planOf(u){ const code=(u&&u.plan)||'free'; const base=PLANS[code]||PLANS.free; const ov=(db.config&&db.config.plans&&db.config.plans[code])||{}; return Object.assign({},base,ov,{label:base.label,code}); }
 
+function cleanupRetention(u){
+  const p=planOf(u); if(!p.retention||p.retention>9000) return;
+  const cutoff=Date.now()-p.retention*24*60*60*1000;
+  const before=db.diagnoses.length;
+  db.diagnoses=db.diagnoses.filter(d=>d.ownerId!==u.id || new Date(d.at).getTime()>=cutoff);
+  if(db.diagnoses.length!==before) saveDB();
+}
 function renderAll(){
   updateModeChip();
   const u=user();
@@ -503,6 +611,7 @@ function renderAll(){
   document.getElementById('appView').style.display=u?'block':'none';
   document.getElementById('logoutBtn').style.display=u?'inline-block':'none';
   if(!u) return;
+  cleanupRetention(u);
   document.getElementById('profName').textContent=u.username;
   document.getElementById('profCode').textContent=u.displayCode+(u.cloud?' · ☁️':'');
   document.getElementById('profPlan').textContent=plan().label+' · '+t('مجاني أثناء الإطلاق','Free during launch');
@@ -513,7 +622,8 @@ function renderAll(){
   document.getElementById('stDiag').textContent=diags+'/'+(plan().diagnoses>9000?'∞':plan().diagnoses);
   document.getElementById('stOnline').textContent=online;
   document.getElementById('stDays').textContent=plan().retention>9000?'∞':plan().retention;
-  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderSettings();
+  document.getElementById('adminNav').style.display=isAdmin(u)?'block':'none';
+  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderSettings(); renderPhaseC();
 }
 function renderChecklist(servers){
   const hasServer=servers.length>0;
@@ -621,7 +731,7 @@ function simulateLink(serverId){
   code.usedAt=Date.now();
   s.status='ONLINE'; s.linkedAt=new Date().toISOString(); s.lastHeartbeat=new Date().toISOString();
   s.env={players:6,maxPlayers:20,ramMb:1420,maxRamMb:s.host==='minefort'?1024:s.host==='falixnodes'?2560:s.host==='mcserverhost'?4096:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion','spark']};
-  saveDB(); audit('SERVER_LINKED',s.name); renderAll();
+  saveDB(); audit('SERVER_LINKED',s.name); notify('link',t('🎉 سيرفرك اتصل','🎉 Your server connected'),t('🎉 Your server connected'),s.name+' '+t('بقى حي في لوحتك','is live in your dashboard'),s.name+' is live in your dashboard'); renderAll();
   toast(t('🎉 اتصل سيرفرك! بقى حي في لوحتك','🎉 Your server connected! It is live in your dashboard'));
   go('dashboard');
 }
@@ -636,11 +746,12 @@ function openServer(id){
    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="syncServer(\''+s.id+'\')">'+t('🔄 مزامنة نبضة','🔄 Sync heartbeat')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status==='ONLINE'?'<button class="btn ghost sm" onclick="hibernate(\''+s.id+'\')">'+t('💤 محاكاة سبات','💤 Simulate sleep')+'</button><button class="btn ghost sm" onclick="disconnectServer(\''+s.id+'\')">'+t('🔌 فصل','🔌 Unlink')+'</button>':'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 ربط','🔗 Link')+'</button>')+'<button class="btn danger sm" onclick="deleteServer(\''+s.id+'\')">'+t('🗑️ حذف','🗑️ Delete')+'</button></div></div>'+
    '<div class="stats" style="margin-top:17px"><div class="stat"><b>'+(s.env?s.env.players+'/'+s.env.maxPlayers:'—')+'</b><span>'+t('لاعبون','Players')+'</span></div><div class="stat"><b>'+(s.env?Math.round(s.env.ramMb/1024*10)/10+'GB':'—')+'</b><span>'+t('رام مستخدمة','RAM used')+'</span></div><div class="stat"><b style="font-size:1rem;padding-top:8px">'+(s.lastHeartbeat?fmtDate(s.lastHeartbeat):'—')+'</b><span>'+t('آخر نبضة','Last heartbeat')+'</span></div><div class="stat"><b>'+diags.length+'</b><span>'+t('تشخيصات محفوظة','Saved diagnoses')+'</span></div></div>'+
    (s.env?'<p style="color:var(--muted);font-size:.88rem">'+t('البلجنات المكتشفة: ','Detected plugins: ')+s.env.plugins.map(escapeHtml).join(' · ')+'</p>':'<p style="color:var(--muted);font-size:.88rem">'+t('لا توجد بيئة مكتشفة بعد — اربط البلجن لتظهر حالة سيرفرك الحية هنا.','No environment detected yet — link the plugin for live server state here.')+'</p>')+
+   serverSettingsHtml(s)+
    (diags.length?'<h4 style="margin:16px 0 9px">'+t('آخر تشخيصات هذا السيرفر','Latest diagnoses for this server')+'</h4>'+diags.slice(0,3).map(x=>'<div class="check"><span class="box" style="background:var(--card3);border-color:var(--border2)">🩺</span><div><b>'+escapeHtml(x.title)+'</b><span>'+fmtDate(x.at)+'</span></div></div>').join(''):'');
   d.scrollIntoView({behavior:'smooth'});
 }
 function syncServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.lastHeartbeat=new Date().toISOString(); if(s.status!=='ONLINE'){ s.status='ONLINE'; s.linkedAt=s.linkedAt||new Date().toISOString(); } if(s.env){ s.env.players=Math.max(0,Math.min(s.env.maxPlayers,s.env.players+(Math.random()>.5?1:-1))); } saveDB(); audit('HEARTBEAT',s.name); renderAll(); openServer(id); toast(t('🔄 وصلت نبضة جديدة من سيرفرك','🔄 A fresh heartbeat arrived from your server')); }
-function hibernate(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='HIBERNATING'; s.lastHeartbeat=new Date().toISOString(); if(s.env) s.env.players=0; saveDB(); audit('HIBERNATING',s.name); renderAll(); openServer(id); toast(t('💤 سيرفرك دخل سبات نظيف (مش عطل)','💤 Your server entered clean hibernation (not a crash)')); }
+function hibernate(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='HIBERNATING'; s.lastHeartbeat=new Date().toISOString(); if(s.env) s.env.players=0; saveDB(); audit('HIBERNATING',s.name); if(alertsCfg().onDown!==false) notify('sleep',t('💤 سيرفرك دخل سبات نظيف','💤 Your server entered clean hibernation'),t('💤 Your server entered clean hibernation'),s.name,s.name); renderAll(); openServer(id); toast(t('💤 سيرفرك دخل سبات نظيف (مش عطل)','💤 Your server entered clean hibernation (not a crash)')); }
 function disconnectServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='UNLINKED'; s.env=null; saveDB(); audit('SERVER_UNLINKED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🔌 اتفصل السيرفر عن حسابك','🔌 Server unlinked from your account')); }
 function deleteServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; if(!confirm(t('حذف «'+s.name+'» نهائياً من حسابك؟','Delete “'+s.name+'” permanently from your account?'))) return; db.servers=db.servers.filter(x=>x.id!==id); db.codes=db.codes.filter(x=>x.serverId!==id); saveDB(); audit('SERVER_DELETED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🗑️ اتحذف السيرفر','🗑️ Server deleted')); }
 
@@ -682,7 +793,7 @@ function runDiagnosis(){
   const rec={id:uid(),ownerId:u.id,serverId,title:r.title,sev:r.sev,cause:r.cause,steps:r.steps,guard:r.guard,ips:r.ips,secrets:r.secrets,at:new Date().toISOString()};
   db.diagnoses.push(rec);
   if(serverId){ const s=myServers().find(x=>x.id===serverId); if(s&&s.status==='UNLINKED'&&s.method==='manual'){ s.status='HIBERNATING'; s.linkedAt=new Date().toISOString(); } }
-  saveDB(); audit('DIAGNOSIS',r.title);
+  saveDB(); audit('DIAGNOSIS',r.title); if(r.sev==='high' && alertsCfg().onDiag!==false) notify('danger',t('🔴 تشخيص عالي الخطورة','🔴 High-severity diagnosis'),t('🔴 High-severity diagnosis'),r.title,r.title);
   const rep=document.getElementById('dgReport'); rep.style.display='block';
   const sev=document.getElementById('dgSev'); sev.textContent=r.sev==='high'?t('🔴 خطورة عالية','🔴 High'):r.sev==='ok'?t('🟢 لا خطر فوري','🟢 No immediate risk'):t('🟡 خطورة متوسطة','🟡 Medium'); sev.className='sev '+(r.sev==='high'?'sev-high':r.sev==='ok'?'sev-ok':'sev-med');
   document.getElementById('dgTitle').textContent=r.title;
@@ -695,6 +806,152 @@ function runDiagnosis(){
   rep.scrollIntoView({behavior:'smooth'});
   toast(t('✅ اكتمل التشخيص واتحفظ في تقاريرك','✅ Diagnosis complete and saved to your reports'));
 }
+
+
+/* ── Phase C: alerts, notices, posts, support, changes, admin ── */
+function myNotifications(){ const u=user(); return u?db.notifications.filter(n=>n.ownerId===u.id).sort((a,b)=>new Date(b.at)-new Date(a.at)):[]; }
+function alertsCfg(){ const u=user(); if(!u) return {inApp:true,onDown:true,onDiag:true,discordWebhook:''}; if(!u.alerts) u.alerts={inApp:true,onDown:true,onDiag:true,discordWebhook:''}; return u.alerts; }
+function renderPhaseC(){ renderNotice(); renderAlerts(); renderPosts(); renderKB(); renderTickets(); renderAdmin(); }
+function renderNotice(){
+  const u=user(), box=document.getElementById('noticeBanner'); if(!u||!box) return;
+  if(db.config.flags && db.config.flags.notices===false){ box.className='notice-banner'; return; }
+  const dismissed=u.dismissedNotices||[];
+  const n=[...db.notices].reverse().find(x=>x.active!==false && !dismissed.includes(x.id));
+  if(!n){ box.className='notice-banner'; box.innerHTML=''; return; }
+  box.className='notice-banner show';
+  box.innerHTML='<span style="font-size:23px">📢</span><div class="grow"><b>'+escapeHtml(LANG==='ar'?n.titleAr:n.titleEn)+'</b><p>'+escapeHtml(LANG==='ar'?n.bodyAr:n.bodyEn)+'</p></div><button class="btn ghost sm" onclick="dismissNotice(\''+n.id+'\')">'+t('فهمت','Got it')+'</button>';
+}
+function dismissNotice(id){ const u=user(); if(!u) return; u.dismissedNotices=u.dismissedNotices||[]; u.dismissedNotices.push(id); saveDB(); renderNotice(); }
+function renderAlerts(){
+  const list=document.getElementById('alertsList'); if(!list) return;
+  const items=myNotifications();
+  const unread=items.filter(n=>!n.read).length;
+  const nav=document.getElementById('alertsNav');
+  if(nav) nav.innerHTML='🔔 '+t('التنبيهات','Alerts')+(unread?'<span class="ibadge">'+unread+'</span>':'');
+  const cfg=alertsCfg();
+  const a=document.getElementById('alInApp'), b=document.getElementById('alDown'), c=document.getElementById('alDiag'), w=document.getElementById('alWebhook');
+  if(a) a.checked=cfg.inApp!==false; if(b) b.checked=cfg.onDown!==false; if(c) c.checked=cfg.onDiag!==false; if(w && document.activeElement!==w) w.value=cfg.discordWebhook||'';
+  if(!items.length){ list.innerHTML='<div class="empty"><div class="big">🔔</div><p>'+t('لا تنبيهات بعد — ربط سيرفر وتشخيصاته هتظهر هنا.','No alerts yet — server links and diagnoses will appear here.')+'</p></div>'; return; }
+  list.innerHTML=items.slice(0,30).map(n=>'<div class="check'+(n.read?' done':'')+'"><span class="box">'+(n.type==='danger'?'!':n.type==='sleep'?'💤':'🔔')+'</span><div style="flex:1"><b>'+escapeHtml(LANG==='ar'?n.titleAr:n.titleEn)+'</b><span>'+escapeHtml(LANG==='ar'?(n.bodyAr||''):(n.bodyEn||''))+' · '+fmtDate(n.at)+'</span></div>'+(n.read?'':'<button class="btn ghost sm" onclick="markRead(\''+n.id+'\')">'+t('قراءة','Read')+'</button>')+'</div>').join('');
+}
+function markRead(id){ const n=db.notifications.find(x=>x.id===id); if(n){ n.read=true; saveDB(); renderAlerts(); } }
+function markAllRead(){ myNotifications().forEach(n=>n.read=true); saveDB(); renderAlerts(); toast(t('✅ اتعلمت كل التنبيهات كمقروءة','✅ All alerts marked read')); }
+function saveAlertSettings(){ const u=user(); if(!u) return; u.alerts={inApp:document.getElementById('alInApp').checked,onDown:document.getElementById('alDown').checked,onDiag:document.getElementById('alDiag').checked,discordWebhook:document.getElementById('alWebhook').value.trim()}; saveDB(); toast(t('✅ اتحفظت إعدادات التنبيه','✅ Alert settings saved')); }
+async function testWebhook(){
+  const url=document.getElementById('alWebhook').value.trim();
+  if(!url) return toast(t('الصق رابط Discord Webhook الأول','Paste a Discord webhook URL first'));
+  try{ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:'✅ CraftMate AI — اختبار تنبيه ناجح من لوحتك.'})}); toast(r.ok?t('✅ وصلت رسالة الاختبار إلى Discord','✅ Test message reached Discord'):t('⚠️ Discord رفض الطلب ('+r.status+')','⚠️ Discord rejected the request ('+r.status+')')); }
+  catch(e){ toast(t('⚠️ تعذر الإرسال من المتصفح — جرّب ويبهوك صحيح','⚠️ Browser send failed — try a valid webhook')); }
+}
+function renderPosts(){
+  const box=document.getElementById('postsList'); if(!box) return;
+  if(db.config.flags && db.config.flags.posts===false){ box.innerHTML='<div class="panel"><div class="empty"><p>'+t('المجتمع مقفول مؤقتاً من الإدارة.','Community is temporarily disabled by admin.')+'</p></div></div>'; return; }
+  const posts=[...db.posts].sort((a,b)=>(b.pinned-a.pinned)||(new Date(b.at)-new Date(a.at)));
+  if(!posts.length){ box.innerHTML='<div class="panel"><div class="empty"><p>'+t('لا منشورات بعد — كن أول من ينشر.','No posts yet — be the first to publish.')+'</p></div></div>'; return; }
+  box.innerHTML=posts.map(post=>{
+    const liked=(post.likes||[]).includes(user().id);
+    const comments=db.comments.filter(c=>c.postId===post.id);
+    return '<article class="post">'+(post.pinned?'<span class="sev sev-ok">📌 '+t('مثبت','Pinned')+'</span>':'')+'<h4>'+escapeHtml(LANG==='ar'?(post.titleAr||post.titleEn):(post.titleEn||post.titleAr))+'</h4><div class="post-meta">'+escapeHtml(post.author||'CraftMate')+' · '+fmtDate(post.at)+'</div><p>'+escapeHtml(LANG==='ar'?(post.bodyAr||post.bodyEn):(post.bodyEn||post.bodyAr))+'</p>'+
+    '<div class="post-actions"><button class="btn '+(liked?'':'ghost')+' sm" onclick="likePost(\''+post.id+'\')">❤️ '+(post.likes||[]).length+'</button><span class="tag">💬 '+comments.length+'</span>'+(post.ownerId===user().id||isAdmin(user())?'<button class="btn danger sm" onclick="deletePost(\''+post.id+'\')">'+t('حذف','Delete')+'</button>':'')+'</div>'+
+    comments.map(c=>'<div class="comment"><span>'+escapeHtml(c.author)+' · '+fmtDate(c.at)+'</span>'+escapeHtml(c.body)+'</div>').join('')+
+    '<div style="display:flex;gap:8px;margin-top:10px"><input id="comment-'+post.id+'" placeholder="'+t('اكتب تعليقاً...','Write a comment...')+'" style="flex:1;background:var(--card2);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:10px"><button class="btn ghost sm" onclick="addComment(\''+post.id+'\')">'+t('تعليق','Comment')+'</button></div></article>';
+  }).join('');
+}
+function createPost(){
+  const title=document.getElementById('postTitle').value.trim(), body=document.getElementById('postBody').value.trim();
+  if(!title||!body) return toast(t('اكتب عنواناً ومحتوى','Write a title and content'));
+  db.posts.push({id:uid(),ownerId:user().id,author:user().username,titleAr:title,titleEn:title,bodyAr:body,bodyEn:body,at:new Date().toISOString(),likes:[],pinned:false});
+  document.getElementById('postTitle').value=''; document.getElementById('postBody').value=''; saveDB(); renderPosts(); toast(t('✅ اتنشر في المجتمع','✅ Published to the community'));
+}
+function likePost(id){ const post=db.posts.find(x=>x.id===id); if(!post) return; post.likes=post.likes||[]; const i=post.likes.indexOf(user().id); i>=0?post.likes.splice(i,1):post.likes.push(user().id); saveDB(); renderPosts(); }
+function addComment(id){ const inp=document.getElementById('comment-'+id); const v=inp.value.trim(); if(!v) return; db.comments.push({id:uid(),postId:id,ownerId:user().id,author:user().username,body:v,at:new Date().toISOString()}); saveDB(); renderPosts(); }
+function deletePost(id){ if(!confirm(t('حذف هذا المنشور؟','Delete this post?'))) return; db.posts=db.posts.filter(x=>x.id!==id); db.comments=db.comments.filter(x=>x.postId!==id); saveDB(); renderPosts(); }
+const KB=[
+ {k:'crash stop يقفل تعطل',ar:['سيرفري بيقفل كل شوية','ارفع أحدث latest.log في «تشخيص جديد» أو شغّل /craftmate diagnose. أشهر سببين: إضافة غير متوافقة أو رام خنقانة — والتقرير هيفرق فوراً.'],en:['My server keeps stopping','Upload the latest latest.log under New Diagnosis or run /craftmate diagnose. Top two causes: incompatible plugin or starved RAM — the report separates them instantly.']},
+ {k:'bedrock جوال geyser mobile crossplay',ar:['ازاي أخلي لاعبي الجوال يدخلوا؟','من موقعنا اختر استضافتك في قسم اللعب المشترك وانسخ إعداد Geyser. وعلى Minefort ممنوع تقفل settings.bungeecord أبداً.'],en:['How do mobile players join?','On our website pick your host in Crossplay and copy the Geyser config. On Minefort never disable settings.bungeecord.']},
+ {k:'price سعر مجاني free pro',ar:['السعر كام؟','مجاني أثناء الإطلاق: سيرفر واحد و10 تشخيصات شهرياً. Pro لاحقاً وسعره هيوصل قائمة الانتظار أولاً.'],en:['How much does it cost?','Free during launch: 1 server and 10 diagnoses monthly. Pro comes later and its price reaches the waitlist first.']},
+ {k:'plugin بلجن jar install تثبيت',ar:['ازاي أثبت البلجن؟','حمّل الـ jar من الموقع، ارفعه في plugins، شغّل السيرفر، ونفّذ /craftmate link بكود حسابك. FalixNodes المجاني من متجرهم الداخلي أو بمسار رفع السجل.'],en:['How do I install the plugin?','Download the jar from the site, drop it in plugins, start the server, run /craftmate link with your account code. FalixNodes Free uses their built-in store or the log-upload route.']}];
+function renderKB(){
+  const box=document.getElementById('kbList'); if(!box) return;
+  const q=(document.getElementById('kbSearch')||{}).value||'';
+  const items=KB.filter(x=>!q || (x.k+' '+x.ar[0]+' '+x.en[0]).toLowerCase().includes(q.toLowerCase()));
+  box.innerHTML=items.length?items.map(x=>'<div class="check"><span class="box">؟</span><div><b>'+escapeHtml(LANG==='ar'?x.ar[0]:x.en[0])+'</b><span>'+escapeHtml(LANG==='ar'?x.ar[1]:x.en[1])+'</span></div></div>').join(''):'<div class="empty"><p>'+t('لا نتائج — افتح تذكرة دعم تحت.','No results — open a support ticket below.')+'</p></div>';
+  const sel=document.getElementById('ticketServer'); if(sel) sel.innerHTML='<option value="">'+t('بدون سيرفر محدد','No specific server')+'</option>'+myServers().map(sv=>'<option value="'+sv.id+'">'+escapeHtml(sv.name)+'</option>').join('');
+}
+function myTickets(){ const u=user(); if(!u) return []; return isAdmin(u)?[...db.tickets].sort((a,b)=>new Date(b.at)-new Date(a.at)):db.tickets.filter(x=>x.ownerId===u.id).sort((a,b)=>new Date(b.at)-new Date(a.at)); }
+function ticketHtml(x,admin){
+  return '<div class="check"><span class="box">🎫</span><div style="flex:1"><b>'+escapeHtml(x.subject)+'</b> <span class="tag">'+escapeHtml(x.status)+'</span><span>'+escapeHtml(x.body)+' · '+escapeHtml(x.username)+' · '+fmtDate(x.at)+'</span></div>'+(admin?'<select onchange="setTicketStatus(\''+x.id+'\',this.value)" style="background:var(--card3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px"><option '+(x.status==='open'?'selected':'')+'>open</option><option '+(x.status==='in-progress'?'selected':'')+'>in-progress</option><option '+(x.status==='closed'?'selected':'')+'>closed</option></select>':'')+'</div>';
+}
+function renderTickets(){
+  const box=document.getElementById('ticketsList'); if(!box) return;
+  const mine=db.tickets.filter(x=>x.ownerId===user().id).sort((a,b)=>new Date(b.at)-new Date(a.at));
+  box.innerHTML=mine.length?mine.map(x=>ticketHtml(x,false)).join(''):'<div class="empty"><p>'+t('لا تذاكر بعد.','No tickets yet.')+'</p></div>';
+  const adm=document.getElementById('adminTickets'); if(adm) adm.innerHTML=myTickets().length?myTickets().map(x=>ticketHtml(x,true)).join(''):'<div class="empty"><p>—</p></div>';
+}
+function createTicket(){
+  const subject=document.getElementById('ticketSubject').value.trim(), body=document.getElementById('ticketBody').value.trim();
+  if(!subject||!body) return toast(t('اكتب موضوعاً وشرحاً','Write a subject and description'));
+  db.tickets.push({id:uid(),ownerId:user().id,username:user().username,serverId:document.getElementById('ticketServer').value||null,subject,body,status:'open',at:new Date().toISOString()});
+  document.getElementById('ticketSubject').value=''; document.getElementById('ticketBody').value=''; saveDB(); renderTickets(); toast(t('🎫 اتفتحت التذكرة — هنتابعها معاك','🎫 Ticket opened — we will follow it with you'));
+}
+function setTicketStatus(id,status){ const x=db.tickets.find(tk=>tk.id===id); if(x){ x.status=status; saveDB(); renderTickets(); } }
+function serverSettingsHtml(s){
+  const st=normalizeServer(s).settings;
+  const changes=db.changes.filter(c=>c.serverId===s.id).sort((a,b)=>new Date(b.at)-new Date(a.at));
+  return '<div style="margin-top:19px;border-top:1px dashed var(--border);padding-top:17px"><h4 style="margin-bottom:10px">'+t('⚙️ إعدادات آمنة قابلة للتراجع','⚙️ Safe reversible settings')+'</h4>'+
+  '<div class="grid2"><div class="field"><label>view-distance</label><input id="set-view-'+s.id+'" type="number" min="2" max="32" value="'+st.viewDistance+'"></div><div class="field"><label>simulation-distance</label><input id="set-sim-'+s.id+'" type="number" min="2" max="32" value="'+st.simulationDistance+'"></div><div class="field"><label>'+t('أقصى لاعبين','Max players')+'</label><input id="set-max-'+s.id+'" type="number" min="1" max="1000" value="'+st.maxPlayers+'"></div><div class="field"><label>'+t('الصعوبة','Difficulty')+'</label><select id="set-diff-'+s.id+'"><option '+(st.difficulty==='peaceful'?'selected':'')+'>peaceful</option><option '+(st.difficulty==='easy'?'selected':'')+'>easy</option><option '+(st.difficulty==='normal'?'selected':'')+'>normal</option><option '+(st.difficulty==='hard'?'selected':'')+'>hard</option></select></div></div>'+
+  '<p class="hint">'+t('قبل أي تطبيق بنحفظ نسخة .bak من الإعدادات الحالية، وكل تغيير بيتسجل هنا وقابل للتراجع. على Minefort لا يوجد هنا أي خيار يمس BungeeCord — محظور أصلاً.','Before applying we save a .bak of current settings, and every change is logged here and reversible. On Minefort there is no BungeeCord option here at all — it is forbidden by design.')+'</p>'+
+  '<button class="btn sm" onclick="applyServerSettings(\''+s.id+'\')">'+t('💾 تطبيق آمن مع نسخة احتياطية','💾 Apply safely with backup')+'</button>'+
+  (changes.length?'<h4 style="margin:17px 0 8px">'+t('سجل التغييرات والتراجع','Change & rollback log')+'</h4>'+changes.slice(0,5).map(c=>'<div class="check"><span class="box">↩</span><div style="flex:1"><b>'+escapeHtml(c.summary)+'</b><span>backup: '+escapeHtml(c.backupRef)+' · '+fmtDate(c.at)+(c.revertedAt?' · '+t('تم التراجع','reverted'):'')+'</span></div>'+(c.revertedAt?'':'<button class="btn ghost sm" onclick="rollbackChange(\''+c.id+'\')">'+t('تراجع','Rollback')+'</button>')+'</div>').join(''):'')+'</div>';
+}
+function applyServerSettings(id){
+  const s=myServers().find(x=>x.id===id); if(!s) return;
+  normalizeServer(s);
+  const before=JSON.parse(JSON.stringify(s.settings));
+  const after={viewDistance:+(document.getElementById('set-view-'+id).value||8),simulationDistance:+(document.getElementById('set-sim-'+id).value||6),maxPlayers:+(document.getElementById('set-max-'+id).value||20),difficulty:document.getElementById('set-diff-'+id).value,pvp:s.settings.pvp};
+  if(after.viewDistance<2||after.viewDistance>32||after.simulationDistance<2||after.simulationDistance>32) return toast(t('مسافات الرؤية لازم بين 2 و32','Distances must be between 2 and 32'));
+  const changed=Object.keys(after).filter(k=>String(before[k])!==String(after[k]));
+  if(!changed.length) return toast(t('لا تغييرات لتطبيقها','No changes to apply'));
+  s.settings=after; if(s.env) s.env.maxPlayers=after.maxPlayers;
+  db.changes.push({id:uid(),ownerId:user().id,serverId:id,summary:changed.join(', '),before,after,backupRef:'config-'+Date.now()+'.bak',at:new Date().toISOString(),revertedAt:null});
+  saveDB(); audit('SETTINGS_APPLIED',s.name+': '+changed.join(',')); notify('settings',t('⚙️ اتحدثت إعدادات سيرفرك','⚙️ Your server settings updated'),t('⚙️ Your server settings updated'),s.name+': '+changed.join(', '),s.name+': '+changed.join(', '));
+  renderAll(); openServer(id); toast(t('✅ اتطبق التغيير واتحفظت نسخة .bak','✅ Change applied and a .bak backup was saved'));
+}
+function rollbackChange(id){
+  const c=db.changes.find(x=>x.id===id); if(!c||c.revertedAt) return;
+  const s=myServers().find(x=>x.id===c.serverId); if(!s) return;
+  s.settings=JSON.parse(JSON.stringify(c.before)); if(s.env) s.env.maxPlayers=c.before.maxPlayers;
+  c.revertedAt=new Date().toISOString(); saveDB(); audit('SETTINGS_ROLLBACK',s.name); renderAll(); openServer(s.id); toast(t('↩️ تم التراجع للإعدادات السابقة','↩️ Rolled back to the previous settings'));
+}
+function renderAdmin(){
+  const u=user(); if(!u) return;
+  const stats=document.getElementById('adminStats'); if(!stats||!isAdmin(u)) return;
+  const waitlists=JSON.parse(localStorage.getItem('craftmate_waitlists_v1')||'[]');
+  stats.innerHTML=[['👥',db.users.length,t('مستخدمون','Users')],['🗂️',db.servers.length,t('سيرفرات','Servers')],['🩺',db.diagnoses.length,t('تقارير','Reports')],['📋',waitlists.length,t('قائمة انتظار','Waitlist')]].map(x=>'<div class="stat"><b>'+x[1]+'</b><span>'+x[0]+' '+x[2]+'</span></div>').join('');
+  const free=planOf({plan:'free'}), pro=planOf({plan:'pro'});
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e&&document.activeElement!==e) e.value=v; };
+  set('admFreeServers',free.servers); set('admFreeDiag',free.diagnoses); set('admFreeRet',free.retention); set('admProServers',pro.servers);
+  const flags=db.config.flags||{};
+  document.getElementById('flagsList').innerHTML=[['posts',t('منشورات المجتمع','Community posts')],['notices',t('إشعارات المطوّر','Developer notices')],['afkWaitlist',t('قائمة انتظار AFK','AFK waitlist')],['support',t('الدعم والتذاكر','Support & tickets')]].map(f=>'<div class="flagrow"><span>'+f[1]+'</span><input class="switch" type="checkbox" '+(flags[f[0]]!==false?'checked':'')+' onchange="toggleFlag(\''+f[0]+'\',this.checked)"></div>').join('');
+  document.getElementById('noticesAdminList').innerHTML=db.notices.length?[...db.notices].reverse().map(n=>'<div class="check"><span class="box">📢</span><div style="flex:1"><b>'+escapeHtml(LANG==='ar'?n.titleAr:n.titleEn)+'</b><span>'+fmtDate(n.at)+'</span></div><button class="btn danger sm" onclick="deleteNotice(\''+n.id+'\')">'+t('حذف','Delete')+'</button></div>').join(''):'<div class="empty"><p>'+t('لا إشعارات منشورة.','No published notices.')+'</p></div>';
+  document.getElementById('adminUsers').innerHTML=db.users.length?'<table><thead><tr><th>'+t('المستخدم','User')+'</th><th>'+t('الخطة','Plan')+'</th><th>'+t('سيرفرات','Servers')+'</th><th></th></tr></thead><tbody>'+db.users.map(x=>'<tr><td><b>'+escapeHtml(x.username)+'</b><br><span style="color:var(--dim);font-size:.75rem">'+x.displayCode+' · '+fmtDate(x.createdAt)+'</span></td><td>'+planOf(x).label+'</td><td>'+db.servers.filter(sv=>sv.ownerId===x.id).length+'</td><td><select onchange="adminSetPlan(\''+x.id+'\',this.value)" style="background:var(--card3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px"><option value="free" '+(x.plan==='free'?'selected':'')+'>free</option><option value="pro" '+(x.plan==='pro'?'selected':'')+'>pro</option><option value="ultra" '+(x.plan==='ultra'?'selected':'')+'>ultra</option></select></td></tr>').join('')+'</tbody></table>':'—';
+  document.getElementById('adminWaitlists').innerHTML=waitlists.length?'<table><thead><tr><th>Email</th><th>'+t('المنتج','Product')+'</th><th>'+t('التاريخ','Date')+'</th></tr></thead><tbody>'+waitlists.map(w=>'<tr><td>'+escapeHtml(w.email)+'</td><td>'+escapeHtml(w.product)+'</td><td>'+fmtDate(w.at)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty"><p>'+t('لا اشتراكات انتظار على هذا المتصفح بعد.','No waitlist signups in this browser yet.')+'</p></div>';
+}
+function savePlanLimits(){
+  db.config.plans.free={servers:+document.getElementById('admFreeServers').value||1,diagnoses:+document.getElementById('admFreeDiag').value||10,retention:+document.getElementById('admFreeRet').value||7};
+  db.config.plans.pro=Object.assign({},(db.config.plans.pro||{}),{servers:+document.getElementById('admProServers').value||5});
+  saveDB(); renderAll(); toast(t('✅ اتحدثت الاستحقاقات واتطبقت فوراً','✅ Entitlements updated and applied instantly'));
+}
+function toggleFlag(flag,val){ db.config.flags[flag]=val; saveDB(); renderAll(); }
+function createNotice(){
+  const title=document.getElementById('noticeTitle').value.trim(), body=document.getElementById('noticeBody').value.trim();
+  if(!title||!body) return toast(t('اكتب عنواناً ونصاً للإشعار','Write a notice title and message'));
+  db.notices.push({id:uid(),titleAr:title,titleEn:title,bodyAr:body,bodyEn:body,active:true,at:new Date().toISOString()});
+  document.getElementById('noticeTitle').value=''; document.getElementById('noticeBody').value=''; saveDB(); renderAll(); toast(t('📢 اتنشر الإشعار لكل المستخدمين','📢 Notice published to all users'));
+}
+function deleteNotice(id){ db.notices=db.notices.filter(n=>n.id!==id); saveDB(); renderAll(); }
+function adminSetPlan(userId,planCode){ const x=db.users.find(u2=>u2.id===userId); if(!x) return; x.plan=planCode; saveDB(); renderAll(); toast(t('✅ اتحدثت خطة المستخدم','✅ User plan updated')); }
+
 
 /* ── history & settings ── */
 function renderHistory(){
@@ -734,7 +991,7 @@ async function saveCloud(){
 function clearCloud(){ localStorage.removeItem('cm_sb_anon_key'); setAuthMode('local'); renderSettings(); toast(t('⚡ رجعنا للوضع الفوري على هذا الجهاز','⚡ Back to instant mode on this device')); }
 function exportData(){
   const u=user(); if(!u) return;
-  const data={profile:{username:u.username,email:u.email,displayCode:u.displayCode,plan:u.plan,createdAt:u.createdAt},servers:myServers(),diagnoses:myDiagnoses(),exportedAt:new Date().toISOString()};
+  const data={profile:{username:u.username,email:u.email,displayCode:u.displayCode,plan:u.plan,createdAt:u.createdAt},servers:myServers(),diagnoses:myDiagnoses(),notifications:myNotifications(),changes:db.changes.filter(c=>c.ownerId===u.id),tickets:db.tickets.filter(x=>x.ownerId===u.id),exportedAt:new Date().toISOString()};
   const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2)); a.download='craftmate-my-data.json'; a.click();
 }
 function deleteAccount(){

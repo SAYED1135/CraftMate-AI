@@ -91,3 +91,16 @@ CraftMate-AI/
 1. افتح Supabase SQL Editor لمشروعك `fucsztovkkilyboinhrv`.
 2. شغّل [`supabase/migrations/001_craftmate_schema.sql`](./supabase/migrations/001_craftmate_schema.sql) ثم [`supabase/migrations/002_phase_b_commercial.sql`](./supabase/migrations/002_phase_b_commercial.sql).
 3. من **Project Settings → API** انسخ `anon public` والصقه في إعدادات `app.html` للاختبار، أو في ثابت `SUPABASE_ANON_KEY_DEFAULT` للنشر العام.
+
+## 🛡️ المرحلة C — عمق القيمة والإدارة
+
+اكتملت داخل [`app.html`](./app.html):
+
+- **مركز تنبيهات**: ربط السيرفرات، السبات النظيف، التشخيصات عالية الخطورة وحدود الخطة — مقروء/غير مقروء، مع إعدادات تفعيل وDiscord Webhook اختياري.
+- **إعدادات سيرفر آمنة قابلة للتراجع**: تعديل مسافات الرؤية وأقصى اللاعبين والصعوبة مع نسخة `.bak` وسجل تغييرات وزر تراجع لكل تطبيق.
+- **مجتمع ومنشورات**: منشورات إدارة ومستخدمين وإعجاب وتعليقات وحذف، خلف مفتاح ميزة من الإدارة.
+- **إشعارات مطوّر فورية** تظهر أعلى اللوحة وتحترم إغلاق كل مستخدم.
+- **دعم متكامل**: بحث فوري في قاعدة معرفة، وتذاكر دعم بحالات (open / in-progress / closed).
+- **لوحة إدارة** (للحساب التجريبي وحسابات الإدارة): إحصائيات، حدود واستحقاقات تُطبق فوراً، مفاتيح ميزات، إدارة مستخدمين وخططهم، إشعارات، قوائم انتظار وتذاكر — وترحيلة سحابية [`003_phase_c_platform.sql`](./supabase/migrations/003_phase_c_platform.sql).
+
+> **تنبيه مفاتيح Supabase:** لا تضع مفتاح `service_role` في الموقع أو GitHub أبداً — ده مفتاح سري بيتجاوز RLS. المفتاح الوحيد المسموح في الواجهة هو `anon public` المحمي بسياسات RLS.

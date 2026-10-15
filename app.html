@@ -793,7 +793,7 @@ function showConnectPanel(s,fresh){
     return;
   }
   const code=activeCode(s.id)||newLinkCode(s.id); if(isCloud()&&s.source==='cloud') cloudInsertCode(code).catch(()=>{});
-  const jar='https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar';
+  const jar='https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.3.0/CraftMate-Connector-0.3.0.jar';
   box.innerHTML=
    '<p style="color:var(--muted)">'+t('حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Download the plugin, drop it in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
    '<div class="codebox"><b>'+code.code+'</b><span>'+t('صالح 15 دقيقة ولمرة واحدة — بينتهي في ','Valid 15 minutes, single use — expires at ')+new Date(code.expiresAt).toLocaleTimeString()+'</span></div>'+

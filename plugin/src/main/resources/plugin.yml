@@ -1,0 +1,20 @@
+name: CraftMateConnector
+version: '0.2.0'
+main: ai.craftmate.connector.CraftMateConnectorPlugin
+api-version: '1.20'
+authors: [CraftMateAI]
+description: Host-aware diagnostic and safe policy-driven connector for CraftMate AI (Play.hosting, FalixNodes, MCServerHost, Minefort).
+website: https://esaye2312-art.github.io/CraftMate-AI/
+folia-supported: true
+
+commands:
+  craftmate:
+    description: Manage CraftMate AI Connector pairing, diagnostics, and status
+    usage: /craftmate <status|link|sync|diagnose|disconnect>
+    aliases: [cm, craftmateai]
+    permission: craftmate.admin
+
+permissions:
+  craftmate.admin:
+    description: Allows linking the server and running CraftMate AI diagnostics
+    default: op

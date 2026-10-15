@@ -1,0 +1,72 @@
+name: Build CraftMate-Connector Paper/Purpur Plugin (.jar)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "plugin/**"
+      - ".github/workflows/build-plugin.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./plugin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Compile CraftMate-Connector.jar
+        run: gradle clean jar --no-daemon
+
+      - name: Upload Built Plugin JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CraftMate-Connector-v0.2.0
+          path: plugin/build/libs/CraftMate-Connector-*.jar
+          if-no-files-found: error
+
+      # Automatically publish to Modrinth & Hangar (for FalixNodes Free Tier Marketplace)
+      # when MODRINTH_TOKEN or HANGAR_API_TOKEN are set in Repository Secrets
+      - name: Publish to Modrinth & Hangar (Optional — when tokens configured)
+        if: ${{ env.MODRINTH_TOKEN != '' }}
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: plugin/build/libs/CraftMate-Connector-*.jar
+          name: "CraftMate Connector v0.2.0 (Paper/Purpur)"
+          version: "0.2.0"
+          version-type: beta
+          loaders: |
+            paper
+            purpur
+            spigot
+          game-versions: |
+            1.20.4
+            1.20.6
+            1.21
+            1.21.1
+            1.21.3
+            1.21.4

@@ -1,0 +1,37 @@
+# ============================================================================
+# CraftMate Connector v0.2.0 — Configuration
+# Docs: https://esaye2312-art.github.io/CraftMate-AI/
+# ============================================================================
+
+# Supported MVP Host Providers:
+#   auto          -> Auto-detect based on RAM & proxy settings
+#   play_hosting  -> play.hosting (3GB RAM, Extra UDP Ports supported)
+#   falixnodes    -> falixnodes.net (Modrinth/Hangar marketplace, 5 Extra Ports)
+#   mcserverhost  -> mcserverhost.com (4GB RAM, SFTP + File Manager)
+#   minefort      -> minefort.com (1GB RAM, BungeeCord Proxy LOCKED to true)
+host-provider: "auto"
+
+# Backend API & Supabase Edge Function Endpoint (Outbound HTTPS Only)
+backend:
+  endpoint-url: "https://fucsztovkkilyboinhrv.supabase.co/rest/v1"
+  project-ref: "fucsztovkkilyboinhrv"
+  # Long-lived server token (automatically populated after `/craftmate link <CODE>`)
+  connector-token: ""
+  server-id: ""
+
+# Polling & Resource Limits (FR-16 & NFR Performance)
+polling:
+  enabled: true
+  heartbeat-interval-seconds: 60
+  request-timeout-seconds: 10
+  notify-hibernation-on-empty-shutdown: true
+
+# Security & Policy Guardrails (Section 9.1 & Section 13)
+security:
+  # P2 Default: Read-only mode (diagnostics, log scrubbing, capability discovery only)
+  # Set to false ONLY when enabling P4 approved config updates
+  read-only-mode: true
+  create-backup-before-edit: true
+  # Local Dual-Layer Scrubbing (strips Player IPs, RCON passwords, DB URIs before upload)
+  redact-ips-and-secrets: true
+  max-log-lines-per-snapshot: 250

@@ -405,13 +405,13 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 <script>
 /* ════════════ CraftMate Phase B — Accounts, Onboarding, Dashboard ════════════ */
 const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
-const SUPABASE_ANON_KEY_DEFAULT = ''; // Owner: paste the public anon key here for site-wide cloud auth (safe with RLS).
+const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U'; // Public publishable key — safe in frontend, protected by RLS.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
 let LANG=localStorage.getItem('cm_lang')||'ar';
-let db=loadDB(), session=loadSession(), authMode=localStorage.getItem('cm_auth_mode')||'local';
+let db=loadDB(), session=loadSession(), authMode=localStorage.getItem('cm_auth_mode')||(SUPABASE_ANON_KEY_DEFAULT?'cloud':'local');
 ensureDB();
 let obHost='play_hosting', obMethod='plugin', activeServerId=null;
 
@@ -464,6 +464,82 @@ async function hashPw(salt,pw){
 }
 function cloudKey(){ return localStorage.getItem('cm_sb_anon_key')||SUPABASE_ANON_KEY_DEFAULT; }
 function cloudURL(){ return localStorage.getItem('cm_sb_url')||SUPABASE_URL_DEFAULT; }
+let cloudSyncing=false, cloudSyncedFor=null;
+function isCloud(){ return !!(session && session.mode==='cloud' && session.accessToken && cloudKey()); }
+async function cloudRefresh(){
+  if(!session||!session.refreshToken) return false;
+  try{
+    const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refreshToken})});
+    const d=await r.json(); if(!r.ok||!d.access_token) return false;
+    session.accessToken=d.access_token; session.refreshToken=d.refresh_token||session.refreshToken; session.expiresAt=Date.now()+((d.expires_in||3600)*1000); saveSession(); return true;
+  }catch(e){ return false; }
+}
+async function cloudFetch(path,opts){
+  opts=opts||{};
+  if(session&&session.expiresAt&&Date.now()>session.expiresAt-60000) await cloudRefresh();
+  const headers=Object.assign({'apikey':cloudKey(),'Authorization':'Bearer '+(session&&session.accessToken?session.accessToken:cloudKey()),'Content-Type':'application/json'},opts.headers||{});
+  let r=await fetch(cloudURL()+'/rest/v1/'+path,Object.assign({},opts,{headers}));
+  if(r.status===401&&await cloudRefresh()){
+    headers.Authorization='Bearer '+session.accessToken;
+    r=await fetch(cloudURL()+'/rest/v1/'+path,Object.assign({},opts,{headers}));
+  }
+  return r;
+}
+async function cloudJson(path,opts){ const r=await cloudFetch(path,opts); if(!r.ok) throw new Error('Supabase '+r.status+': '+(await r.text()).slice(0,240)); const txt=await r.text(); return txt?JSON.parse(txt):null; }
+function localServerFromCloud(x){
+  return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,createdAt:x.created_at,source:'cloud'};
+}
+function cloudServerPayload(sv){
+  return {id:sv.id,owner_id:sv.ownerId,name:sv.name,host_provider:sv.host,server_software:sv.software,mc_version:sv.version,status:sv.status,address:sv.address||null,edition:'java',link_method:sv.method||'plugin',linked_at:sv.linkedAt||null,last_heartbeat_at:sv.lastHeartbeat||null,environment_snapshot:sv.env||{},settings:normalizeServer(sv).settings};
+}
+async function cloudUpsertServer(sv){
+  if(!isCloud()) return null;
+  const payload=cloudServerPayload(sv);
+  const data=await cloudJson('servers?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(payload)});
+  return Array.isArray(data)?data[0]:data;
+}
+async function cloudDeleteServer(id){ if(!isCloud()) return; await cloudJson('servers?id=eq.'+encodeURIComponent(id),{method:'DELETE'}); }
+async function cloudInsertDiagnosis(rec,titleFallback){
+  if(!isCloud()) return null;
+  const sv=rec.serverId?myServers().find(x=>x.id===rec.serverId):null;
+  const payload={owner_id:rec.ownerId,server_id:sv&&sv.source==='cloud'?sv.id:null,host_provider:sv?sv.host:'other',source:'manual_upload',summary_ar:rec.title,summary_en:rec.title,confidence_score:0.85,findings:rec.steps.map(x=>({text:x})),deduplicated_stats:{ips:rec.ips,secrets:rec.secrets},created_at:rec.at};
+  const data=await cloudJson('diagnostic_reports',{method:'POST',headers:{'Prefer':'return=representation'},body:JSON.stringify(payload)});
+  return Array.isArray(data)?data[0]:data;
+}
+async function cloudInsertCode(code){
+  if(!isCloud()) return;
+  const sv=myServers().find(x=>x.id===code.serverId); if(!sv||sv.source!=='cloud') return;
+  await cloudJson('connector_tokens',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({server_id:sv.id,pairing_code:code.code,pairing_expires_at:new Date(code.expiresAt).toISOString()})});
+}
+async function syncCloudData(){
+  if(!isCloud()||cloudSyncing||cloudSyncedFor===session.userId) return;
+  cloudSyncing=true;
+  try{
+    const u=user(); if(!u) return;
+    const plans=await cloudJson('plans?select=plan,max_servers,max_diagnoses_month,retention_days');
+    if(Array.isArray(plans)) plans.forEach(pl=>{ db.config.plans[pl.plan]={servers:pl.max_servers,diagnoses:pl.max_diagnoses_month,retention:pl.retention_days}; });
+    const profiles=await cloudJson('profiles?id=eq.'+encodeURIComponent(u.id)+'&select=*');
+    if(Array.isArray(profiles)&&profiles[0]){ u.username=profiles[0].username||u.username; u.displayCode=profiles[0].display_code||u.displayCode; u.plan=profiles[0].plan||u.plan; }
+    const servers=await cloudJson('servers?owner_id=eq.'+encodeURIComponent(u.id)+'&select=*&order=created_at.asc');
+    if(Array.isArray(servers)){
+      const fetched=servers.map(localServerFromCloud);
+      const fetchedIds=new Set(fetched.map(x=>x.id));
+      db.servers=db.servers.filter(x=>!(x.ownerId===u.id&&x.source==='cloud'&&!fetchedIds.has(x.id)));
+      fetched.forEach(f=>{ const i=db.servers.findIndex(x=>x.id===f.id); i>=0?db.servers[i]=Object.assign({},db.servers[i],f):db.servers.push(f); });
+    }
+    const reports=await cloudJson('diagnostic_reports?owner_id=eq.'+encodeURIComponent(u.id)+'&select=*&order=created_at.desc&limit=100');
+    if(Array.isArray(reports)){
+      reports.forEach(r=>{
+        if(db.diagnoses.some(d=>d.id===r.id)) return;
+        db.diagnoses.push({id:r.id,ownerId:r.owner_id,serverId:r.server_id||null,title:r.summary_ar||r.summary_en||'Report',sev:'med',cause:'',steps:Array.isArray(r.findings)?r.findings.map(f=>f.text||String(f)):[],guard:'',ips:(r.deduplicated_stats||{}).ips||0,secrets:(r.deduplicated_stats||{}).secrets||0,at:r.created_at,source:'cloud'});
+      });
+    }
+    const notes=await cloudJson('notifications?owner_id=eq.'+encodeURIComponent(u.id)+'&select=*&order=created_at.desc&limit=50');
+    if(Array.isArray(notes)) notes.forEach(n=>{ if(!db.notifications.some(x=>x.id===n.id)) db.notifications.push({id:n.id,ownerId:n.owner_id,type:n.type,titleAr:n.title_ar,titleEn:n.title_en||n.title_ar,bodyAr:n.body_ar||'',bodyEn:n.body_en||n.body_ar||'',read:!!n.is_read,at:n.created_at,source:'cloud'}); });
+    cloudSyncedFor=session.userId; saveDB(); renderAll();
+  }catch(e){ console.warn('Cloud sync:',e.message); }
+  cloudSyncing=false;
+}
 function audit(action,detail){ const u=user(); if(!u) return; db.audits.push({id:uid(),ownerId:u.id,action,detail:detail||'',at:new Date().toISOString()}); saveDB(); }
 
 /* ── i18n ── */
@@ -484,7 +560,7 @@ function setAuthMode(m){
   document.getElementById('modeCloudBtn').classList.toggle('active',m==='cloud');
   document.getElementById('regEmailHint').textContent = m==='cloud' ? t('مطلوب في الوضع السحابي (Supabase Auth)','Required in cloud mode (Supabase Auth)') : t('اختياري في الدخول الفوري — اسم المستخدم يكفي','Optional in instant mode — username is enough');
   document.getElementById('modeHint').textContent = m==='cloud'
-    ? (cloudKey()? t('☁️ الوضع السحابي مفعّل بمفتاح محفوظ على هذا الجهاز. الدخول عبر Supabase Auth، والبيانات بتتمزامن كنسخة حساب على هذا الجهاز لحد اكتمال طبقة المزامنة.','☁️ Cloud mode active with a key saved on this device. Sign-in goes through Supabase Auth; data mirrors to this account on this device until the sync layer completes.')
+    ? (cloudKey()? t('☁️ الوضع السحابي مفعّل بمفتاح المنصة العام. الدخول عبر Supabase Auth، والخطط والسيرفرات والتقارير بتتزامن مع قاعدة بيانات حسابك.','☁️ Cloud mode active with the site-wide public key. Sign-in goes through Supabase Auth, and plans, servers and reports sync with your account database.')
                  : t('☁️ الوضع السحابي محتاج مفتاح anon public — الصقه من الإعدادات بعد أول دخول فوري، أو ضيفه في كود الموقع للنشر العام. دلوقتي الدخول الفوري شغال فوراً.','☁️ Cloud mode needs the anon public key — paste it in Settings after your first instant login, or add it to the site config for public launch. Instant access works right now.'))
     : t('⚡ حسابك بيتحفظ على جهازك فوراً: كلمة سر مشفرة، جلسة آمنة، وعزل كامل بين الحسابات — ونفس الحساب بيترقى للسحابة من غير ما تخسر سيرفراتك.','⚡ Your account is created instantly on your device: hashed password, safe session, full account isolation — and the same account upgrades to cloud without losing your servers.');
   updateModeChip();
@@ -526,8 +602,8 @@ async function doRegister(ev){
       const cloudId=(d.user&&d.user.id)||uid();
       let u=db.users.find(x=>x.id===cloudId);
       if(!u){ u={id:cloudId,username,email,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
-      if(d.access_token){ session={userId:u.id,mode:'cloud',at:Date.now()}; saveSession(); enterApp(); toast(t('☁️ أهلاً بيك! حسابك السحابي جاهز','☁️ Welcome! Your cloud account is ready')); }
-      else authOk(t('☁️ اتبعت لك تأكيد على البريد — أكّد حسابك وبعدين سجّل دخولك.','☁️ A confirmation was sent to your email — confirm, then log in.'));
+      if(d.access_token){ session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp(); toast(t('☁️ أهلاً بيك! حسابك السحابي جاهز','☁️ Welcome! Your cloud account is ready')); }
+      else authOk(t('☁️ اتعمل حسابك السحابي واتبعت تأكيد على البريد — أكّد حسابك من الرسالة وبعدين سجّل دخولك هنا. (لإطلاق أسرع بلا تأكيد: Supabase → Authentication → Providers → Email → عطّل Confirm email أثناء البيتا)','☁️ Your cloud account was created and a confirmation email was sent — confirm it, then log in here. (For a faster beta launch: Supabase → Authentication → Providers → Email → disable Confirm email)'));
       return false;
     }catch(e){ return authErr(t('تعذر الوصول لـ Supabase — تأكد من المفتاح والاتصال','Could not reach Supabase — check the key and connection')),false; }
   }
@@ -553,7 +629,7 @@ async function doLogin(ev){
       if(!r.ok||!d.access_token) return authErr(t('بيانات الدخول غير صحيحة','Invalid login credentials')),false;
       let u=db.users.find(x=>x.id===d.user.id);
       if(!u){ u={id:d.user.id,username:(d.user.email||id).split('@')[0],email:d.user.email||id,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
-      session={userId:u.id,mode:'cloud',at:Date.now()}; saveSession(); enterApp();
+      session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp();
       toast(t('☁️ أهلاً بعودتك!','☁️ Welcome back!')); return false;
     }catch(e){ return authErr(t('تعذر الوصول لـ Supabase','Could not reach Supabase')),false; }
   }
@@ -580,10 +656,14 @@ async function demoLogin(){
   session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
   toast(t('🎮 دخلت بالحساب التجريبي — جرّب كل حاجة بحرية','🎮 You are in the demo account — try everything freely'));
 }
-function logout(){ session=null; saveSession(); location.hash=''; renderAll(); toast(t('تم تسجيل الخروج','Logged out')); }
+function logout(){
+  const wasCloud=isCloud(), token=session&&session.accessToken;
+  session=null; cloudSyncedFor=null; saveSession(); location.hash=''; renderAll(); toast(t('تم تسجيل الخروج','Logged out'));
+  if(wasCloud&&token) fetch(cloudURL()+'/auth/v1/logout',{method:'POST',headers:{'apikey':cloudKey(),'Authorization':'Bearer '+token}}).catch(()=>{});
+}
 
 /* ── app shell ── */
-function enterApp(){ renderAll(); }
+function enterApp(){ renderAll(); if(isCloud()) syncCloudData(); }
 function go(view){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
@@ -684,12 +764,17 @@ function activeCode(serverId){
   const now=Date.now();
   return db.codes.filter(c=>c.serverId===serverId&&!c.usedAt&&c.expiresAt>now).sort((a,b)=>b.expiresAt-a.expiresAt)[0];
 }
-function createServer(){
+async function createServer(){
   const u=user(); if(!u) return;
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=document.getElementById('obName').value.trim()||t('سيرفري','My Server');
   const s={id:uid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:obMethod,env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
+  if(isCloud()){
+    try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
+    catch(e){ toast(t('⚠️ تعذر الحفظ السحابي — اتحفظ على هذا الجهاز مؤقتاً ('+e.message.slice(0,80)+')','⚠️ Cloud save failed — saved on this device temporarily')); }
+  }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
+  if(s.source==='cloud'){ const c=activeCode(s.id); if(c) cloudInsertCode(c).catch(()=>{}); }
   activeServerId=s.id;
   showConnectPanel(s,true);
   toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step'));
@@ -707,7 +792,7 @@ function showConnectPanel(s,fresh){
     box.innerHTML='<p style="color:var(--muted)">'+t('تمام — سيرفرك محفوظ بحالة «غير مرتبط». ارجع له في أي وقت من «سيرفراتي» وولّد كود ربط لما تجهز.','Done — your server is saved as “Unlinked”. Return anytime under “My servers” and generate a link code when ready.')+'</p><br><button class="btn" onclick="go(\'servers\')">'+t('🗂️ افتح سيرفراتي','🗂️ Open my servers')+'</button>';
     return;
   }
-  const code=activeCode(s.id)||newLinkCode(s.id);
+  const code=activeCode(s.id)||newLinkCode(s.id); if(isCloud()&&s.source==='cloud') cloudInsertCode(code).catch(()=>{});
   const jar='https://github.com/esaye2312-art/CraftMate-AI/releases/download/v0.2.0/CraftMate-Connector-0.2.0.jar';
   box.innerHTML=
    '<p style="color:var(--muted)">'+t('حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Download the plugin, drop it in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
@@ -731,7 +816,7 @@ function simulateLink(serverId){
   code.usedAt=Date.now();
   s.status='ONLINE'; s.linkedAt=new Date().toISOString(); s.lastHeartbeat=new Date().toISOString();
   s.env={players:6,maxPlayers:20,ramMb:1420,maxRamMb:s.host==='minefort'?1024:s.host==='falixnodes'?2560:s.host==='mcserverhost'?4096:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion','spark']};
-  saveDB(); audit('SERVER_LINKED',s.name); notify('link',t('🎉 سيرفرك اتصل','🎉 Your server connected'),t('🎉 Your server connected'),s.name+' '+t('بقى حي في لوحتك','is live in your dashboard'),s.name+' is live in your dashboard'); renderAll();
+  saveDB(); audit('SERVER_LINKED',s.name); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); notify('link',t('🎉 سيرفرك اتصل','🎉 Your server connected'),t('🎉 Your server connected'),s.name+' '+t('بقى حي في لوحتك','is live in your dashboard'),s.name+' is live in your dashboard'); renderAll();
   toast(t('🎉 اتصل سيرفرك! بقى حي في لوحتك','🎉 Your server connected! It is live in your dashboard'));
   go('dashboard');
 }
@@ -750,10 +835,10 @@ function openServer(id){
    (diags.length?'<h4 style="margin:16px 0 9px">'+t('آخر تشخيصات هذا السيرفر','Latest diagnoses for this server')+'</h4>'+diags.slice(0,3).map(x=>'<div class="check"><span class="box" style="background:var(--card3);border-color:var(--border2)">🩺</span><div><b>'+escapeHtml(x.title)+'</b><span>'+fmtDate(x.at)+'</span></div></div>').join(''):'');
   d.scrollIntoView({behavior:'smooth'});
 }
-function syncServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.lastHeartbeat=new Date().toISOString(); if(s.status!=='ONLINE'){ s.status='ONLINE'; s.linkedAt=s.linkedAt||new Date().toISOString(); } if(s.env){ s.env.players=Math.max(0,Math.min(s.env.maxPlayers,s.env.players+(Math.random()>.5?1:-1))); } saveDB(); audit('HEARTBEAT',s.name); renderAll(); openServer(id); toast(t('🔄 وصلت نبضة جديدة من سيرفرك','🔄 A fresh heartbeat arrived from your server')); }
+function syncServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.lastHeartbeat=new Date().toISOString(); if(s.status!=='ONLINE'){ s.status='ONLINE'; s.linkedAt=s.linkedAt||new Date().toISOString(); } if(s.env){ s.env.players=Math.max(0,Math.min(s.env.maxPlayers,s.env.players+(Math.random()>.5?1:-1))); } saveDB(); audit('HEARTBEAT',s.name); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); renderAll(); openServer(id); toast(t('🔄 وصلت نبضة جديدة من سيرفرك','🔄 A fresh heartbeat arrived from your server')); }
 function hibernate(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='HIBERNATING'; s.lastHeartbeat=new Date().toISOString(); if(s.env) s.env.players=0; saveDB(); audit('HIBERNATING',s.name); if(alertsCfg().onDown!==false) notify('sleep',t('💤 سيرفرك دخل سبات نظيف','💤 Your server entered clean hibernation'),t('💤 Your server entered clean hibernation'),s.name,s.name); renderAll(); openServer(id); toast(t('💤 سيرفرك دخل سبات نظيف (مش عطل)','💤 Your server entered clean hibernation (not a crash)')); }
-function disconnectServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='UNLINKED'; s.env=null; saveDB(); audit('SERVER_UNLINKED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🔌 اتفصل السيرفر عن حسابك','🔌 Server unlinked from your account')); }
-function deleteServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; if(!confirm(t('حذف «'+s.name+'» نهائياً من حسابك؟','Delete “'+s.name+'” permanently from your account?'))) return; db.servers=db.servers.filter(x=>x.id!==id); db.codes=db.codes.filter(x=>x.serverId!==id); saveDB(); audit('SERVER_DELETED',s.name); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🗑️ اتحذف السيرفر','🗑️ Server deleted')); }
+function disconnectServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='UNLINKED'; s.env=null; saveDB(); audit('SERVER_UNLINKED',s.name); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🔌 اتفصل السيرفر عن حسابك','🔌 Server unlinked from your account')); }
+function deleteServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; if(!confirm(t('حذف «'+s.name+'» نهائياً من حسابك؟','Delete “'+s.name+'” permanently from your account?'))) return; db.servers=db.servers.filter(x=>x.id!==id); db.codes=db.codes.filter(x=>x.serverId!==id); saveDB(); audit('SERVER_DELETED',s.name); if(s.source==='cloud') cloudDeleteServer(id).catch(()=>{}); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🗑️ اتحذف السيرفر','🗑️ Server deleted')); }
 
 /* ── diagnosis ── */
 function renderDiagnoseForm(){
@@ -792,6 +877,7 @@ function runDiagnosis(){
   const r=analyzeText(raw);
   const rec={id:uid(),ownerId:u.id,serverId,title:r.title,sev:r.sev,cause:r.cause,steps:r.steps,guard:r.guard,ips:r.ips,secrets:r.secrets,at:new Date().toISOString()};
   db.diagnoses.push(rec);
+  if(isCloud()) cloudInsertDiagnosis(rec).then(created=>{ if(created&&created.id){ rec.id=created.id; rec.source='cloud'; saveDB(); renderAll(); } }).catch(()=>{});
   if(serverId){ const s=myServers().find(x=>x.id===serverId); if(s&&s.status==='UNLINKED'&&s.method==='manual'){ s.status='HIBERNATING'; s.linkedAt=new Date().toISOString(); } }
   saveDB(); audit('DIAGNOSIS',r.title); if(r.sev==='high' && alertsCfg().onDiag!==false) notify('danger',t('🔴 تشخيص عالي الخطورة','🔴 High-severity diagnosis'),t('🔴 High-severity diagnosis'),r.title,r.title);
   const rep=document.getElementById('dgReport'); rep.style.display='block';
@@ -914,7 +1000,7 @@ function applyServerSettings(id){
   if(!changed.length) return toast(t('لا تغييرات لتطبيقها','No changes to apply'));
   s.settings=after; if(s.env) s.env.maxPlayers=after.maxPlayers;
   db.changes.push({id:uid(),ownerId:user().id,serverId:id,summary:changed.join(', '),before,after,backupRef:'config-'+Date.now()+'.bak',at:new Date().toISOString(),revertedAt:null});
-  saveDB(); audit('SETTINGS_APPLIED',s.name+': '+changed.join(',')); notify('settings',t('⚙️ اتحدثت إعدادات سيرفرك','⚙️ Your server settings updated'),t('⚙️ Your server settings updated'),s.name+': '+changed.join(', '),s.name+': '+changed.join(', '));
+  saveDB(); audit('SETTINGS_APPLIED',s.name+': '+changed.join(',')); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); notify('settings',t('⚙️ اتحدثت إعدادات سيرفرك','⚙️ Your server settings updated'),t('⚙️ Your server settings updated'),s.name+': '+changed.join(', '),s.name+': '+changed.join(', '));
   renderAll(); openServer(id); toast(t('✅ اتطبق التغيير واتحفظت نسخة .bak','✅ Change applied and a .bak backup was saved'));
 }
 function rollbackChange(id){
@@ -973,7 +1059,7 @@ function renderSettings(){
    '<tr><th>'+t('وضع الحساب','Account mode')+'</th><td>'+(u.cloud?t('☁️ Supabase سحابي','☁️ Supabase cloud'):t('⚡ فوري على هذا الجهاز','⚡ Instant on this device'))+'</td></tr></tbody></table>';
   document.getElementById('sbUrl').value=cloudURL();
   const k=cloudKey(); if(k) document.getElementById('sbKey').value=k;
-  document.getElementById('sbStatus').textContent=k?t('☁️ يوجد مفتاح سحابي محفوظ على هذا الجهاز — جرّب إعادة الاختبار للتأكد.','☁️ A cloud key is saved on this device — retest to verify.') : t('⚡ لا يوجد مفتاح سحابي بعد — الحسابات شغالة في الوضع الفوري.','⚡ No cloud key yet — accounts run in instant mode.');
+  document.getElementById('sbStatus').textContent=k?t('☁️ مفتاح المنصة العام موجود في إعدادات الموقع — الاتصال السحابي مهيأ، وجرّب إعادة الاختبار للتأكيد.','☁️ The site-wide public key is in the site config — cloud is configured; retest to confirm.') : t('⚡ لا يوجد مفتاح سحابي بعد — الحسابات شغالة في الوضع الفوري.','⚡ No cloud key yet — accounts run in instant mode.');
 }
 async function saveCloud(){
   const url=document.getElementById('sbUrl').value.trim().replace(/\/$/,'');

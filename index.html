@@ -675,6 +675,8 @@ footer{border-top:1px solid var(--border);background:#04070d;padding:46px 0 30px
 <div class="toast" id="toast"></div>
 
 <script>
+const SUPABASE_URL='https://fucsztovkkilyboinhrv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U';
 let LANG = localStorage.getItem('cm_lang') || 'ar';
 
 /* ── i18n ── */
@@ -812,8 +814,17 @@ function genCode(){
 }
 
 /* ── waitlist ── */
-function joinWaitlist(ev){
+async function joinWaitlist(ev){
   ev.preventDefault();
+  const emailNow=document.getElementById('wlEmail').value.trim();
+  const productNow=document.getElementById('wlProduct').value;
+  let cloudSaved=false;
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/waitlists',{method:'POST',headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({email:emailNow,product:productNow,locale:LANG,source:'website_phase_c'})});
+    cloudSaved=r.ok||r.status===409;
+  }catch(e){}
+  try{ sessionStorage.setItem('cm_wl_cloud',cloudSaved?'1':'0'); }catch(e){}
+
   const email=document.getElementById('wlEmail').value.trim();
   const product=document.getElementById('wlProduct').value;
   const list=JSON.parse(localStorage.getItem('craftmate_waitlists_v1')||'[]');
@@ -824,7 +835,8 @@ function joinWaitlist(ev){
     localStorage.setItem('craftmate_waitlists_v1',JSON.stringify(list));
   }
   const ok=document.getElementById('wlOk'); ok.style.display='block';
-  ok.textContent=t('✅ مكانك اتحجز يا بطل! أول ما يفتح اللي اخترته، هتوصلك رسالة على '+email+' قبل الإطلاق العام.','✅ Your spot is reserved! The moment your pick opens, a message reaches '+email+' before the public launch.');
+  const wasCloud=(()=>{ try{ return sessionStorage.getItem('cm_wl_cloud')==='1'; }catch(e){ return false; } })();
+  ok.textContent=t('✅ مكانك اتحجز يا بطل! أول ما يفتح اللي اخترته، هتوصلك رسالة على '+email+' قبل الإطلاق العام.','✅ Your spot is reserved! The moment your pick opens, a message reaches '+email+' before the public launch.')+(wasCloud?t(' (اتحفظ في قائمة الانتظار السحابية ✓)',' (Saved to the cloud waitlist ✓)'):t(' (اتحفظ على هذا الجهاز مؤقتاً)',' (Saved on this device temporarily)'));
   document.getElementById('wlEmail').value='';
   return false;
 }

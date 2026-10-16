@@ -48,5 +48,8 @@ jobs:
       - name: Verify Worker health
         if: steps.cf.outputs.configured == 'true'
         run: |
-          curl --fail --silent --show-error \
-            https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health
+          body="$(curl --fail --silent --show-error \
+            https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health)"
+          echo "$body"
+          echo "$body" | grep -q '"auth_registration":true'
+          echo "$body" | grep -q '"configured":true'

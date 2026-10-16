@@ -1,5 +1,7 @@
 # حل مشكلة `email rate limit exceeded` في Supabase Auth
 
+> **تحديث 2026-10-16 — المسار الحالي:** التطبيق أصبح Cloud-Only وأضاف Worker endpoint `POST /v1/auth/register` الذي ينشئ حساب Supabase مؤكدًا من خادم موثوق من دون إرسال بريد، فلا يمر التسجيل الجديد بحد الرسالتين/ساعة. اقرأ `CLOUD_ONLY_AUTH_FIX_AR.md` أولًا. يبقى شرح SMTP/Confirm email بالأسفل مرجعًا لمسار الإنتاج والتحقق الكامل بالبريد.
+
 ## السبب الحقيقي
 
 رسالة **`email rate limit exceeded`** (كود الخطأ `over_email_send_rate_limit`) لا تعني أن كلمة السر أو التطبيق مكسوران.

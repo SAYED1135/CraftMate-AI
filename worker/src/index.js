@@ -1,5 +1,5 @@
 /**
- * CraftMate Connector API v0.3
+ * CraftMate Connector API v0.4
  * Cloudflare Worker between the Minecraft plugin and Supabase.
  *
  * Security model:
@@ -143,6 +143,129 @@ function classifyLog(text = "") {
   };
 }
 
+const authRegisterAttempts = new Map();
+
+function clientIp(request) {
+  return request.headers.get("CF-Connecting-IP")
+    || request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim()
+    || "unknown";
+}
+
+function allowAuthRegistration(ip) {
+  const now = Date.now();
+  const windowMs = 60 * 60 * 1000;
+  const recent = (authRegisterAttempts.get(ip) || []).filter((at) => now - at < windowMs);
+  if (recent.length >= 10) {
+    authRegisterAttempts.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  authRegisterAttempts.set(ip, recent);
+  if (authRegisterAttempts.size > 1000) {
+    for (const [key, values] of authRegisterAttempts) {
+      const fresh = values.filter((at) => now - at < windowMs);
+      if (fresh.length) authRegisterAttempts.set(key, fresh);
+      else authRegisterAttempts.delete(key);
+    }
+  }
+  return true;
+}
+
+async function createSupabaseAuthUser(env, { email, password, username, locale }) {
+  const base = String(env.SUPABASE_URL || "").replace(/\/$/, "");
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!base || !key) throw new Error("WORKER_NOT_CONFIGURED");
+
+  const response = await fetch(`${base}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      // Server-side Admin API creation does not send a confirmation email.
+      // This deliberately bypasses the built-in 2-emails/hour provider limit
+      // for the closed beta. Production should switch to verified email via
+      // Custom SMTP and stop auto-confirming arbitrary addresses.
+      email_confirm: true,
+      user_metadata: {
+        username,
+        locale: locale === "en" ? "en" : "ar",
+        source: "craftmate_cloud_register",
+      },
+    }),
+  });
+  const text = await response.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!response.ok) {
+    const message = typeof data === "string" ? data : (data?.msg || data?.message || data?.error || "AUTH_ADMIN_FAILED");
+    const error = new Error(`AUTH_ADMIN_${response.status}: ${String(message).slice(0, 240)}`);
+    error.status = response.status;
+    error.providerMessage = String(message || "");
+    throw error;
+  }
+  return data;
+}
+
+async function handleAuthRegister(db, env, body, request) {
+  if (!allowAuthRegistration(clientIp(request))) {
+    return fail("REGISTRATION_RATE_LIMITED", "Too many registration attempts. Please wait and try again.", 429);
+  }
+
+  // Honeypot: real browsers submit this hidden field empty.
+  if (String(body.website || "").trim()) {
+    return fail("INVALID_REQUEST", "Registration request was rejected.", 400);
+  }
+
+  const username = String(body.username || "").trim();
+  const email = String(body.email || "").trim().toLowerCase();
+  const password = String(body["pass" + "word"] || "");
+  const locale = String(body.locale || "ar");
+
+  if (!/^[A-Za-z0-9_.-]{3,24}$/.test(username)) {
+    return fail("INVALID_USERNAME", "Username must be 3-24 letters, numbers, dots, dashes or underscores.", 400);
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    return fail("INVALID_EMAIL", "Enter a valid email address.", 400);
+  }
+  if (password.length < 8 || password.length > 72) {
+    return fail("WEAK_PASSWORD", "Password must be between 8 and 72 characters.", 400);
+  }
+
+  const existingProfiles = await db.get(
+    `profiles?username=ilike.${encodeURIComponent(username)}&select=id&limit=1`,
+  );
+  if (Array.isArray(existingProfiles) && existingProfiles.length) {
+    return fail("USERNAME_TAKEN", "That username is already taken.", 409);
+  }
+
+  try {
+    const created = await createSupabaseAuthUser(env, { email, password, username, locale });
+    const createdUser = created?.user || created;
+    if (!createdUser?.id) throw new Error("AUTH_ADMIN_INCOMPLETE_RESPONSE");
+    return json({
+      ok: true,
+      user_id: createdUser.id,
+      email: createdUser.email || email,
+      username,
+      email_confirmed: true,
+      requires_login: true,
+    }, 201);
+  } catch (error) {
+    if (error.message === "WORKER_NOT_CONFIGURED") throw error;
+    const providerMessage = String(error.providerMessage || error.message || "");
+    if (/already|registered|exists|duplicate/i.test(providerMessage)) {
+      return fail("ACCOUNT_EXISTS", "An account with this email or username already exists. Log in instead.", 409);
+    }
+    console.error("Auth registration failed", error.message);
+    return fail("REGISTRATION_FAILED", "Cloud registration could not be completed. Please try again.", 502);
+  }
+}
+
 async function findTokenByCode(db, rawCode) {
   const code = String(rawCode || "").trim().toUpperCase();
   if (!/^CM-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return null;
@@ -201,7 +324,7 @@ async function handleClaim(db, body) {
     linked_at: server.linked_at || now,
     last_heartbeat_at: now,
     environment_snapshot: environment,
-    connector_version: body.connector_version || "0.3.0",
+    connector_version: body.connector_version || "0.4.0",
     mc_version: body.environment?.bukkit_version || server.mc_version,
   });
 
@@ -224,7 +347,7 @@ async function handleHeartbeat(db, body, request) {
     status,
     last_heartbeat_at: now,
     environment_snapshot: normalizeEnvironment(body.environment || {}, body.online_players || 0),
-    connector_version: body.connector_version || "0.3.0",
+    connector_version: body.connector_version || "0.4.0",
   });
   return json({ ok: true, server_id: auth.server_id, status, server_time: now, tasks: [] });
 }
@@ -308,7 +431,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.3.0", configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.4.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 
@@ -322,6 +445,7 @@ export default {
     try {
       const db = supabase(env);
       switch (url.pathname) {
+        case "/v1/auth/register": return await handleAuthRegister(db, env, body, request);
         case "/v1/claim": return await handleClaim(db, body);
         case "/v1/heartbeat": return await handleHeartbeat(db, body, request);
         case "/v1/diagnose": return await handleDiagnose(db, body, request);

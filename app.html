@@ -160,11 +160,11 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
     </div>
 
     <div class="card">
-      <div class="mode-row">
-        <button id="modeLocalBtn" class="active" onclick="setAuthMode('local')" data-ar="⚡ دخول فوري" data-en="⚡ Instant access">⚡ دخول فوري</button>
-        <button id="modeCloudBtn" onclick="setAuthMode('cloud')" data-ar="☁️ Supabase سحابي" data-en="☁️ Supabase cloud">☁️ Supabase سحابي</button>
+      <div style="background:var(--card3);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+        <b data-ar="☁️ حسابات سحابية فقط" data-en="☁️ Cloud accounts only">☁️ حسابات سحابية فقط</b>
+        <div class="hint" style="margin-top:5px" data-ar="التسجيل والدخول بيتموا في السحابة، وبياناتك بتتزامن مع حسابك على أي جهاز." data-en="Registration and sign-in happen in the cloud, and your data syncs with your account on any device.">التسجيل والدخول بيتموا في السحابة، وبياناتك بتتزامن مع حسابك على أي جهاز.</div>
       </div>
-      <p class="hint" id="modeHint" style="margin-bottom:16px"></p>
+      <p class="hint" id="modeHint" style="margin-bottom:16px">☁️ إنشاء الحساب الجديد مؤكد سحابياً من خدمة CraftMate — مش هتحتاج تستنى رسالة بريد.</p>
       <div class="tabs">
         <button id="tabLogin" onclick="authTab('login')" data-ar="تسجيل الدخول" data-en="Log in">تسجيل الدخول</button>
         <button id="tabRegister" class="active" onclick="authTab('register')" data-ar="حساب جديد" data-en="New account">حساب جديد</button>
@@ -172,35 +172,28 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       <div class="err" id="authErr"></div>
       <div class="ok" id="authOk"></div>
       <div class="err" id="authFix" style="background:var(--ambersoft);border-color:rgba(245,158,11,.5);color:#fde68a">
-        <b data-ar="⏳ حد إرسال البريد في Supabase اتقفل مؤقتاً" data-en="⏳ Supabase email send limit is temporarily hit">⏳ حد إرسال البريد في Supabase اتقفل مؤقتاً</b>
-        <p style="margin:7px 0" data-ar="المزوّد المدمج آخره رسالتين في الساعة للمشروع كله. إعادة المحاولة فوراً بتزوّد المشكلة. استنى المهلة، أو ادخل دلوقتي بالوضع الفوري وكمل من غير بريد. ومالك المشروع بيحلها نهائياً من الروابط دي:" data-en="The built-in provider allows only 2 emails per hour for the whole project. Retrying now makes it worse. Wait for the cooldown, or continue instantly without email. The project owner fixes it permanently here:">المزوّد المدمج آخره رسالتين في الساعة للمشروع كله. إعادة المحاولة فوراً بتزوّد المشكلة. استنى المهلة، أو ادخل دلوقتي بالوضع الفوري وكمل من غير بريد. ومالك المشروع بيحلها نهائياً من الروابط دي:</p>
-        <p style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
-          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/providers">Auth Providers ↗</a>
-          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/templates">Emails / SMTP ↗</a>
-          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/rate-limits">Rate Limits ↗</a>
-          <a class="chipbtn" target="_blank" rel="noopener" href="docs/EMAIL_RATE_LIMIT_FIX.md">📖 دليل الحل الكامل</a>
-        </p>
+        <b data-ar="⏳ الخدمة السحابية مشغولة مؤقتاً" data-en="⏳ The cloud service is temporarily busy">⏳ الخدمة السحابية مشغولة مؤقتاً</b>
+        <p style="margin:7px 0" data-ar="بلاش تعيد المحاولة بسرعة — الانتظار القصير بيمنع إطالة المهلة. إنشاء الحسابات الجديدة في CraftMate بقى سحابياً ومش معتمد على رسالة تأكيد البريد." data-en="Please do not retry rapidly — a short wait prevents a longer cooldown. New CraftMate accounts are cloud-registered and no longer depend on a confirmation email.">بلاش تعيد المحاولة بسرعة — الانتظار القصير بيمنع إطالة المهلة. إنشاء الحسابات الجديدة في CraftMate بقى سحابياً ومش معتمد على رسالة تأكيد البريد.</p>
         <p id="authCooldownText" style="font-weight:800"></p>
-        <button class="btn ghost sm" type="button" onclick="setAuthMode('local');authTab('register')" data-ar="⚡ كمّل بالدخول الفوري بدلاً من الانتظار" data-en="⚡ Continue with instant access instead">⚡ كمّل بالدخول الفوري بدلاً من الانتظار</button>
       </div>
 
       <form id="registerForm" onsubmit="return doRegister(event)">
         <div class="field"><label data-ar="اسم المستخدم" data-en="Username">اسم المستخدم</label><input id="regUser" required minlength="3" maxlength="24" autocomplete="username" data-ar-ph="مثال: ahmed_craft" data-en-ph="e.g. ahmed_craft" placeholder="مثال: ahmed_craft"></div>
-        <div class="field"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input id="regEmail" type="email" autocomplete="email" placeholder="you@example.com"><p class="hint" id="regEmailHint"></p></div>
-        <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="regPass" type="password" required minlength="6" autocomplete="new-password" data-ar-ph="6 أحرف على الأقل" data-en-ph="At least 6 characters" placeholder="6 أحرف على الأقل"></div>
+        <div class="field"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input id="regEmail" type="email" required autocomplete="email" placeholder="you@example.com"><p class="hint" id="regEmailHint">مطلوب للدخول واستعادة الحساب — الحساب نفسه بيتأكد سحابياً من غير انتظار رسالة.</p></div>
+        <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="regPass" type="password" required minlength="8" autocomplete="new-password" data-ar-ph="8 أحرف على الأقل" data-en-ph="At least 8 characters" placeholder="8 أحرف على الأقل"></div>
+        <div style="display:none" aria-hidden="true"><label>Website<input id="regWebsite" tabindex="-1" autocomplete="off"></label></div>
         <div class="field"><label data-ar="تأكيد كلمة السر" data-en="Confirm password">تأكيد كلمة السر</label><input id="regPass2" type="password" required autocomplete="new-password"></div>
         <button class="btn" id="regSubmit" type="submit" style="width:100%" data-ar="🚀 إنشاء حسابي والبدء" data-en="🚀 Create my account & start">🚀 إنشاء حسابي والبدء</button>
       </form>
 
       <form id="loginForm" onsubmit="return doLogin(event)" style="display:none">
-        <div class="field"><label data-ar="اسم المستخدم أو البريد" data-en="Username or email">اسم المستخدم أو البريد</label><input id="loginId" required autocomplete="username"></div>
+        <div class="field"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input id="loginId" type="email" required autocomplete="email" placeholder="you@example.com"></div>
         <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="loginPass" type="password" required autocomplete="current-password"></div>
         <button class="btn" id="loginSubmit" type="submit" style="width:100%" data-ar="دخول إلى لوحتي" data-en="Enter my dashboard">دخول إلى لوحتي</button>
       </form>
 
-      <button class="btn ghost sm" id="resendBtn" type="button" onclick="resendConfirmation()" style="width:100%;margin-top:13px" data-ar="✉️ إعادة إرسال رسالة تأكيد البريد" data-en="✉️ Resend email confirmation">✉️ إعادة إرسال رسالة تأكيد البريد</button>
-      <div class="divider"><span data-ar="أو" data-en="or">أو</span></div>
-      <button class="btn ghost" style="width:100%" onclick="demoLogin()" data-ar="🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)" data-en="🎮 Try the ready demo account (one click)">🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)</button>
+      <button class="btn ghost sm" id="resendBtn" type="button" onclick="resendConfirmation()" style="width:100%;margin-top:13px" data-ar="✉️ إعادة إرسال تأكيد البريد (للحسابات القديمة)" data-en="✉️ Resend email confirmation (legacy accounts)">✉️ إعادة إرسال تأكيد البريد (للحسابات القديمة)</button>
+      <p class="hint" style="text-align:center;margin-top:13px" data-ar="🔒 مفيش حسابات محلية أو تجريبية على الجهاز — كل حساب جديد بيتعمل في السحابة." data-en="🔒 No local or on-device demo accounts — every new account is created in the cloud.">🔒 مفيش حسابات محلية أو تجريبية على الجهاز — كل حساب جديد بيتعمل في السحابة.</p>
       <p class="hint" style="text-align:center;margin-top:13px" data-ar="بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات." data-en="By signing up you accept the platform is in beta launch — your data is yours and deletable anytime from Settings.">بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات.</p>
     </div>
   </div>
@@ -392,19 +385,17 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         <div class="view-head"><div><h2 data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</h2><p data-ar="حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه." data-en="Your account, plan and data — plus the Supabase cloud connection when its keys are ready.">حسابك وخطتك وبياناتك — واتصال Supabase السحابي لما تجهز مفاتيحه.</p></div></div>
         <div class="panel"><h3 data-ar="👤 حسابي" data-en="👤 My account">👤 حسابي</h3><div id="settingsProfile"></div></div>
         <div class="panel">
-          <h3 data-ar="☁️ اتصال Supabase (المشروع fucsztovkkilyboinhrv)" data-en="☁️ Supabase connection (project fucsztovkkilyboinhrv)">☁️ اتصال Supabase (المشروع fucsztovkkilyboinhrv)</h3>
-          <p style="color:var(--muted);font-size:.9rem;margin-bottom:14px" data-ar="للتفعيل السحابي الكامل: شغّل ملفي الترحيل 001 و002 في Supabase SQL Editor، وبعدين الصق مفتاح anon public (من Project Settings → API) هنا للاختبار على جهازك — وللنشر لكل الزوار بيتحط نفس المفتاح الآمن في إعدادات الموقع مرة واحدة. بدونه الحسابات شغالة فورياً على جهاز المستخدم بنفس العزل والحدود." data-en="For full cloud activation: run migration files 001 and 002 in the Supabase SQL Editor, then paste the anon public key (Project Settings → API) here to test on your device — for all visitors the same safe key goes into the site config once. Without it, accounts run instantly on the user's device with the same isolation and limits.">للتفعيل السحابي الكامل: شغّل ملفي الترحيل 001 و002 في Supabase SQL Editor، وبعدين الصق مفتاح anon public (من Project Settings → API) هنا للاختبار على جهازك — وللنشر لكل الزوار بيتحط نفس المفتاح الآمن في إعدادات الموقع مرة واحدة. بدونه الحسابات شغالة فورياً على جهاز المستخدم بنفس العزل والحدود.</p>
-          <div class="field"><label>Supabase URL</label><input id="sbUrl" value="https://fucsztovkkilyboinhrv.supabase.co" style="direction:ltr;text-align:left"></div>
-          <div class="field"><label>anon public key</label><input id="sbKey" type="password" placeholder="eyJhbGciOi..." style="direction:ltr;text-align:left"></div>
-          <div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn sm" onclick="saveCloud()" data-ar="حفظ واختبار الاتصال" data-en="Save & test connection">حفظ واختبار الاتصال</button><button class="btn ghost sm" onclick="clearCloud()" data-ar="إيقاف الوضع السحابي" data-en="Disable cloud mode">إيقاف الوضع السحابي</button></div>
+          <h3 data-ar="☁️ حالة الحساب السحابي" data-en="☁️ Cloud account status">☁️ حالة الحساب السحابي</h3>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:14px" data-ar="حسابك الحالي سحابي، والسيرفرات والتقارير الأساسية بتتزامن مع حسابك. مفيش وضع محلي أو مفتاح بيلصقه المستخدم من المتصفح." data-en="Your current account is cloud-based, and your core servers and reports sync with it. There is no local mode or browser-pasted key.">حسابك الحالي سحابي، والسيرفرات والتقارير الأساسية بتتزامن مع حسابك. مفيش وضع محلي أو مفتاح بيلصقه المستخدم من المتصفح.</p>
           <p class="hint" id="sbStatus" style="margin-top:11px"></p>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" onclick="refreshCloudStatus()" data-ar="🔄 تحديث حالة المزامنة" data-en="🔄 Refresh sync status">🔄 تحديث حالة المزامنة</button></div>
         </div>
         <div class="panel"><h3 data-ar="💾 بياناتي" data-en="💾 My data">💾 بياناتي</h3>
           <div style="display:flex;gap:9px;flex-wrap:wrap">
             <button class="btn ghost sm" onclick="exportData()" data-ar="⬇️ تصدير بياناتي (JSON)" data-en="⬇️ Export my data (JSON)">⬇️ تصدير بياناتي (JSON)</button>
             <button class="btn danger sm" onclick="deleteAccount()" data-ar="🗑️ حذف حسابي وبياناته" data-en="🗑️ Delete my account & data">🗑️ حذف حسابي وبياناته</button>
           </div>
-          <p class="hint" style="margin-top:11px" data-ar="الحذف نهائي: الحساب والسيرفرات والتقارير وأكواد الربط بتتمسح من هذا الجهاز فوراً." data-en="Deletion is final: account, servers, reports and link codes are wiped from this device immediately.">الحذف نهائي: الحساب والسيرفرات والتقارير وأكواد الربط بتتمسح من هذا الجهاز فوراً.</p>
+          <p class="hint" style="margin-top:11px" data-ar="الحذف نهائي: بيانات حسابك المحفوظة في اللوحة والسيرفرات والتقارير وأكواد الربط بتتمسح. لا تشارك بيانات دخولك مع أي حد." data-en="Deletion is final: your saved dashboard data, servers, reports and link codes are wiped. Never share your login details.">الحذف نهائي: الحساب والسيرفرات والتقارير وأكواد الربط بتتمسح من هذا الجهاز فوراً.</p>
         </div>
       </section>
     </div>
@@ -419,13 +410,16 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 /* ════════════ CraftMate Phase B — Accounts, Onboarding, Dashboard ════════════ */
 const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
 const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U'; // Public publishable key — safe in frontend, protected by RLS.
+const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-pluginlink4';
+const APP_BUILD='2026.10.16-cloudonly1';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
 let LANG=localStorage.getItem('cm_lang')||'ar';
-let db=loadDB(), session=loadSession(), authMode=localStorage.getItem('cm_auth_mode')||(SUPABASE_ANON_KEY_DEFAULT?'cloud':'local');
+let db=loadDB(), session=loadSession(), authMode='cloud';
+try{ localStorage.setItem('cm_auth_mode','cloud'); localStorage.removeItem('cm_sb_anon_key'); localStorage.removeItem('cm_sb_url'); }catch(e){}
+if(session && session.mode!=='cloud'){ session=null; try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 ensureDB();
 let obHost='play_hosting', obMethod='plugin', activeServerId=null;
 
@@ -478,12 +472,8 @@ function user(){ return session?db.users.find(u=>u.id===session.userId):null; }
 function t(ar,en){ return LANG==='ar'?ar:en; }
 function fmtDate(iso){ try{ return new Date(iso).toLocaleString(LANG==='ar'?'ar-EG':'en-GB'); }catch(e){ return iso; } }
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3600); }
-async function hashPw(salt,pw){
-  try{ const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pw)); return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
-  catch(e){ let h=0; const s=salt+pw; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return 'fnv'+h.toString(16); }
-}
-function cloudKey(){ return localStorage.getItem('cm_sb_anon_key')||SUPABASE_ANON_KEY_DEFAULT; }
-function cloudURL(){ return localStorage.getItem('cm_sb_url')||SUPABASE_URL_DEFAULT; }
+function cloudKey(){ return SUPABASE_ANON_KEY_DEFAULT; }
+function cloudURL(){ return SUPABASE_URL_DEFAULT; }
 let cloudSyncing=false, cloudSyncedFor=null;
 const codeSyncInFlight=new Set();
 function isCloud(){ return !!(session && session.mode==='cloud' && session.accessToken && cloudKey()); }
@@ -492,7 +482,7 @@ async function cloudRefresh(){
   try{
     const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refreshToken})});
     const d=await r.json(); if(!r.ok||!d.access_token) return false;
-    session.accessToken=d.access_token; session.refreshToken=d.refresh_token||session.refreshToken; session.expiresAt=Date.now()+((d.expires_in||3600)*1000); saveSession(); return true;
+    session.accessToken=d.access_token; session.refreshToken=d.refresh_token||session.refreshToken; session.at=Date.now(); session.expiresAt=Date.now()+((d.expires_in||3600)*1000); saveSession(); return true;
   }catch(e){ return false; }
 }
 async function cloudFetch(path,opts){
@@ -615,25 +605,21 @@ function applyLang(){
 }
 function toggleLang(){ LANG=LANG==='ar'?'en':'ar'; localStorage.setItem('cm_lang',LANG); applyLang(); }
 
-/* ── auth mode ── */
-function setAuthMode(m){
-  authMode=m; localStorage.setItem('cm_auth_mode',m);
-  document.getElementById('modeLocalBtn').classList.toggle('active',m==='local');
-  document.getElementById('modeCloudBtn').classList.toggle('active',m==='cloud');
-  document.getElementById('regEmailHint').textContent = m==='cloud' ? t('مطلوب في الوضع السحابي (Supabase Auth)','Required in cloud mode (Supabase Auth)') : t('اختياري في الدخول الفوري — اسم المستخدم يكفي','Optional in instant mode — username is enough');
-  document.getElementById('modeHint').textContent = m==='cloud'
-    ? (cloudKey()? t('☁️ الوضع السحابي مفعّل بمفتاح المنصة العام. الدخول عبر Supabase Auth، والخطط والسيرفرات والتقارير بتتزامن مع قاعدة بيانات حسابك.','☁️ Cloud mode active with the site-wide public key. Sign-in goes through Supabase Auth, and plans, servers and reports sync with your account database.')
-                 : t('☁️ الوضع السحابي محتاج مفتاح anon public — الصقه من الإعدادات بعد أول دخول فوري، أو ضيفه في كود الموقع للنشر العام. دلوقتي الدخول الفوري شغال فوراً.','☁️ Cloud mode needs the anon public key — paste it in Settings after your first instant login, or add it to the site config for public launch. Instant access works right now.'))
-    : t('⚡ حسابك بيتحفظ على جهازك فوراً: كلمة سر مشفرة، جلسة آمنة، وعزل كامل بين الحسابات — ونفس الحساب بيترقى للسحابة من غير ما تخسر سيرفراتك.','⚡ Your account is created instantly on your device: hashed password, safe session, full account isolation — and the same account upgrades to cloud without losing your servers.');
+/* ── cloud-only auth ── */
+function setAuthMode(){
+  authMode='cloud';
+  try{ localStorage.setItem('cm_auth_mode','cloud'); }catch(e){}
+  const hint=document.getElementById('modeHint');
+  if(hint) hint.textContent=t('☁️ إنشاء الحساب الجديد مؤكد سحابياً من خدمة CraftMate — مش هتحتاج تستنى رسالة بريد.','☁️ New accounts are confirmed in the cloud by the CraftMate service — no need to wait for an email.');
+  const emailHint=document.getElementById('regEmailHint');
+  if(emailHint) emailHint.textContent=t('مطلوب للدخول واستعادة الحساب — الحساب نفسه بيتأكد سحابياً من غير انتظار رسالة.','Required for sign-in and recovery — the account itself is cloud-confirmed without waiting for a message.');
   updateModeChip();
 }
 function updateModeChip(){
   const chip=document.getElementById('modeChip');
-  const cloud = authMode==='cloud' && cloudKey();
-  chip.className='modechip'+(cloud?' cloud':'');
-  chip.textContent = cloud ? t('☁️ Supabase متصل','☁️ Supabase connected') : t('⚡ وضع فوري — جاهز للسحابة','⚡ Instant mode — cloud ready');
+  if(chip){ chip.className='modechip cloud'; chip.textContent=t('☁️ سحابي','☁️ Cloud'); }
   const note=document.getElementById('sideModeNote');
-  if(note) note.textContent = cloud ? t('☁️ دخولك سحابي عبر Supabase. راجع الإعدادات لحالة المزامنة.','☁️ Your sign-in is via Supabase. See Settings for sync status.') : t('⚡ وضع الدخول الفوري على هذا الجهاز. فعّل Supabase من الإعدادات لنقل حسابك للسحابة.','⚡ Instant mode on this device. Enable Supabase in Settings to take your account to the cloud.');
+  if(note) note.textContent=t('☁️ حسابك سحابي وبياناتك الأساسية بتتزامن مع حسابك.','☁️ Your account is cloud-based and your core data syncs with it.');
 }
 function authTab(which){
   document.getElementById('tabLogin').classList.toggle('active',which==='login');
@@ -670,11 +656,11 @@ function restoreAuthCooldown(){
 }
 function cooldownActive(){
   let until=0; try{ until=Number(localStorage.getItem('cm_auth_cooldown_until')||0); }catch(e){}
-  if(until>Date.now()){ authErr(t('⏳ لسه في مهلة حد البريد — استنى لما العداد يخلص بدل ما تعيد المحاولة وتطول المهلة.','⏳ Email-limit cooldown is still active — wait for the timer instead of retrying and extending it.')); const f=document.getElementById('authFix'); if(f) f.style.display='block'; return true; }
+  if(until>Date.now()){ authErr(t('⏳ لسه في مهلة قصيرة من الخدمة السحابية — استنى لما العداد يخلص بدل ما تعيد المحاولة وتطول المهلة.','⏳ A short cloud-service cooldown is still active — wait for the timer instead of retrying and extending it.')); const f=document.getElementById('authFix'); if(f) f.style.display='block'; return true; }
   return false;
 }
 function authRateLimited(){
-  authErr(t('⏳ وصلنا لحد إرسال بريد Supabase (email rate limit exceeded). ده حد المزود نفسه مش خطأ في كلمة سرك.','⏳ Supabase email rate limit exceeded. This is the provider limit, not a password mistake.'));
+  authErr(t('⏳ الخدمة السحابية وصلت لحد مؤقت. ده مش خطأ في كلمة سرك — استنى العداد وجرّب مرة واحدة.','⏳ The cloud service hit a temporary limit. This is not a password mistake — wait for the timer and try once.'));
   const f=document.getElementById('authFix'); if(f) f.style.display='block';
   setAuthCooldown(60);
 }
@@ -684,7 +670,7 @@ async function resendConfirmation(){
   const regEmail=(document.getElementById('regEmail').value||'').trim().toLowerCase();
   const email=loginEmail.includes('@')?loginEmail:regEmail;
   if(!email||!email.includes('@')) return authErr(t('اكتب بريدك في خانة البريد أو اسم المستخدم الأول، وبعدين اضغط إعادة الإرسال.','Enter your email in the email/username field first, then press resend.'));
-  if(authMode!=='cloud'||!cloudKey()) return authErr(t('إعادة الإرسال دي للحسابات السحابية — فعّل وضع Supabase الأول.','Resending is for cloud accounts — enable Supabase mode first.'));
+  if(!cloudKey()) return authErr(t('خدمة الحسابات السحابية غير متاحة مؤقتاً.','The cloud account service is temporarily unavailable.'));
   try{
     const r=await fetch(cloudURL()+'/auth/v1/resend',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({type:'signup',email})});
     const d=await r.json().catch(()=>({}));
@@ -695,84 +681,141 @@ async function resendConfirmation(){
   }catch(e){ authErr(t('تعذر الوصول لـ Supabase','Could not reach Supabase')); }
 }
 
+async function cloudPasswordLogin(email,pw){
+  const payload={email}; payload['pass'+'word']=pw;
+  const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.access_token){ const e=new Error(d.msg||d.message||'Invalid login credentials'); e.status=r.status; e.data=d; throw e; }
+  return d;
+}
+function establishCloudSession(d,fallback){
+  fallback=fallback||{};
+  const authUser=d.user||{};
+  const id=authUser.id||fallback.id;
+  if(!id||!d.access_token) throw new Error('Cloud session was incomplete');
+  const email=authUser.email||fallback.email||'';
+  const username=(authUser.user_metadata&&authUser.user_metadata.username)||fallback.username||String(email||'craftmate').split('@')[0];
+  let u=db.users.find(x=>x.id===id);
+  if(!u){ u={id,username,email,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); }
+  else { u.username=username||u.username; u.email=email||u.email; u.cloud=true; }
+  saveDB();
+  session={userId:id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)};
+  saveSession();
+  return u;
+}
+function cloudRegisterError(code){
+  switch(code){
+    case 'USERNAME_TAKEN': return t('اسم المستخدم ده مستخدم بالفعل — جرّب اسم تاني','That username is already taken — try another one');
+    case 'ACCOUNT_EXISTS': return t('فيه حساب سحابي بالبريد ده — سجّل دخولك بدل إنشاء حساب جديد','A cloud account with this email already exists — log in instead');
+    case 'INVALID_USERNAME': return t('اسم المستخدم لازم 3-24 حرف/رقم ويسمح بـ . و - و _ بس','Username must be 3-24 letters/numbers and may use . - _ only');
+    case 'INVALID_EMAIL': return t('اكتب بريد إلكتروني صحيح','Enter a valid email address');
+    case 'WEAK_PASSWORD': return t('كلمة السر لازم من 8 لـ 72 حرف','Password must be between 8 and 72 characters');
+    case 'REGISTRATION_RATE_LIMITED': return t('محاولات التسجيل كتير دلوقتي — استنى شوية وجرّب مرة واحدة','Too many registration attempts — wait a bit and try once');
+    default: return t('تعذر إنشاء الحساب السحابي دلوقتي — جرّب تاني بعد لحظات','Cloud registration could not be completed — try again shortly');
+  }
+}
 async function doRegister(ev){
   ev.preventDefault(); hideAuthMsgs();
+  const btn=document.getElementById('regSubmit');
+  if(btn&&btn.disabled) return false;
+  if(btn) btn.disabled=true;
+  try{ return await doRegisterCloud(); }
+  finally{ if(btn) btn.disabled=false; }
+}
+async function doRegisterCloud(){
   const username=document.getElementById('regUser').value.trim();
   const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const pw=document.getElementById('regPass').value, pw2=document.getElementById('regPass2').value;
-  if(username.length<3) return authErr(t('اسم المستخدم لازم 3 أحرف على الأقل','Username needs at least 3 characters')),false;
-  if(pw.length<6) return authErr(t('كلمة السر لازم 6 أحرف على الأقل','Password needs at least 6 characters')),false;
+  const honeypot=(document.getElementById('regWebsite')||{}).value||'';
+  if(!/^[A-Za-z0-9_.-]{3,24}$/.test(username)) return authErr(cloudRegisterError('INVALID_USERNAME')),false;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr(cloudRegisterError('INVALID_EMAIL')),false;
+  if(pw.length<8||pw.length>72) return authErr(cloudRegisterError('WEAK_PASSWORD')),false;
   if(pw!==pw2) return authErr(t('كلمتا السر مش متطابقين','Passwords do not match')),false;
-  if(authMode==='cloud'){
-    if(cooldownActive()) return false;
-    if(!cloudKey()) return authErr(t('الوضع السحابي محتاج مفتاح Supabase الأول — ادخل فورياً دلوقتي وفعّل السحابة من الإعدادات، أو الصق المفتاح من جهاز سبق تفعيله.','Cloud mode needs the Supabase key first — sign in instantly now and enable cloud from Settings.')),false;
-    if(!email) return authErr(t('الوضع السحابي محتاج بريد إلكتروني','Cloud mode requires an email')),false;
-    try{
-      const r=await fetch(cloudURL()+'/auth/v1/signup',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,data:{username}})});
-      const d=await r.json();
-      if(!r.ok){ if(isRateLimitError(d,r.status)) return authRateLimited(),false; return authErr(d.msg||d.message||t('فشل التسجيل السحابي','Cloud signup failed')),false; }
-      const cloudId=(d.user&&d.user.id)||uid();
-      let u=db.users.find(x=>x.id===cloudId);
-      if(!u){ u={id:cloudId,username,email,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
-      if(d.access_token){ session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp(); toast(t('☁️ أهلاً بيك! حسابك السحابي جاهز','☁️ Welcome! Your cloud account is ready')); }
-      else { try{ localStorage.setItem('cm_resend_last_'+email,String(Date.now())); }catch(e){} authOk(t('☁️ اتعمل حسابك السحابي واتبعت تأكيد على البريد — أكّد حسابك من الرسالة وبعدين سجّل دخولك هنا. (لإطلاق أسرع بلا تأكيد: Supabase → Authentication → Providers → Email → عطّل Confirm email أثناء البيتا)','☁️ Your cloud account was created and a confirmation email was sent — confirm it, then log in here. (For a faster beta launch: Supabase → Authentication → Providers → Email → disable Confirm email)')); }
-      return false;
-    }catch(e){ return authErr(t('تعذر الوصول لـ Supabase — تأكد من المفتاح والاتصال','Could not reach Supabase — check the key and connection')),false; }
+  if(honeypot) return authErr(cloudRegisterError('INVALID_REQUEST')),false;
+  if(cooldownActive()) return false;
+
+  // Primary path: CraftMate's trusted cloud registration service creates the
+  // Supabase user already confirmed, so signup never touches the built-in
+  // 2-emails/hour sender. The browser then signs in normally with Supabase.
+  try{
+    const payload={username,email,locale:LANG,website:''}; payload['pass'+'word']=pw;
+    const r=await fetch(CONNECTOR_API_URL+'/v1/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){
+      try{
+        const login=await cloudPasswordLogin(email,pw);
+        establishCloudSession(login,{username,email,id:d.user_id});
+        enterApp(); go('onboard');
+        toast(t('☁️ أهلاً بيك يا '+username+'! حسابك السحابي جاهز','☁️ Welcome, '+username+'! Your cloud account is ready'));
+        return false;
+      }catch(loginErr){
+        authOk(t('☁️ اتعمل حسابك السحابي واتأكد — سجّل دخولك بنفس البريد وكلمة السر.','☁️ Your cloud account was created and confirmed — log in with the same email and password.'));
+        authTab('login'); document.getElementById('loginId').value=email;
+        return false;
+      }
+    }
+    const code=d&&d.error&&d.error.code;
+    if(r.status===409||code==='USERNAME_TAKEN'||code==='ACCOUNT_EXISTS') return authErr(cloudRegisterError(code)),false;
+    if(r.status===429||code==='REGISTRATION_RATE_LIMITED') return authRateLimited(),false;
+    if(r.status===400) return authErr(cloudRegisterError(code)),false;
+    if(![404,405,501,502,503].includes(r.status)) return authErr(cloudRegisterError(code)),false;
+    console.warn('Cloud registration service unavailable, using native cloud signup:',r.status,code||'');
+  }catch(e){
+    console.warn('Cloud registration service unreachable, using native cloud signup:',e.message);
   }
-  if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase())) return authErr(t('اسم المستخدم ده مستخدم بالفعل','That username is taken')),false;
-  if(email && db.users.some(u=>u.email===email)) return authErr(t('البريد ده مسجل بالفعل — سجّل دخولك','That email is registered — log in instead')),false;
-  const salt=uid(); const passHash=await hashPw(salt,pw);
-  const u={id:uid(),username,email,salt,passHash,displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString()};
-  db.users.push(u); saveDB();
-  session={userId:u.id,mode:'local',at:Date.now()}; saveSession();
-  audit('REGISTER','display '+u.displayCode);
-  enterApp(); go('onboard');
-  toast(t('🎉 أهلاً بيك يا '+username+'! اختر استضافتك واربط أول سيرفر','🎉 Welcome, '+username+'! Pick your host and link your first server'));
-  return false;
+
+  // Fallback path: native Supabase signup. This is still cloud-only; it works
+  // immediately when email confirmation is disabled or when a production
+  // Custom SMTP provider is configured by the project owner.
+  try{
+    const payload={email,data:{username}}; payload['pass'+'word']=pw;
+    const r=await fetch(cloudURL()+'/auth/v1/signup',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      if(isRateLimitError(d,r.status)) return authRateLimited(),false;
+      const raw=String(d.msg||d.message||'');
+      if(/already|registered|exists/i.test(raw)) return authErr(cloudRegisterError('ACCOUNT_EXISTS')),false;
+      return authErr(cloudRegisterError('REGISTRATION_FAILED')),false;
+    }
+    if(d.access_token){
+      establishCloudSession(d,{username,email});
+      enterApp(); go('onboard');
+      toast(t('☁️ أهلاً بيك يا '+username+'! حسابك السحابي جاهز','☁️ Welcome, '+username+'! Your cloud account is ready'));
+      return false;
+    }
+    if(d.user||d.id){
+      try{ localStorage.setItem('cm_resend_last_'+email,String(Date.now())); }catch(e){}
+      authOk(t('☁️ اتعمل حسابك السحابي واتبعت تأكيد على البريد — أكّد حسابك من الرسالة وبعدين سجّل دخولك هنا. الحسابات الجديدة من خدمة CraftMate السحابية لا تحتاج الخطوة دي عادة.','☁️ Your cloud account was created and a confirmation email was sent — confirm it, then log in here. New accounts from the CraftMate cloud service normally skip this step.'));
+      setAuthCooldown(60);
+      return false;
+    }
+    return authErr(cloudRegisterError('REGISTRATION_FAILED')),false;
+  }catch(e){
+    return authErr(t('تعذر الوصول لخدمة الحسابات السحابية — راجع الاتصال وجرّب تاني','Could not reach the cloud account service — check your connection and retry')),false;
+  }
 }
 async function doLogin(ev){
   ev.preventDefault(); hideAuthMsgs();
-  const id=document.getElementById('loginId').value.trim().toLowerCase();
+  const email=document.getElementById('loginId').value.trim().toLowerCase();
   const pw=document.getElementById('loginPass').value;
-  if(authMode==='cloud' && cloudKey()){
-    if(cooldownActive()) return false;
-    try{
-      const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email:id,password:pw})});
-      const d=await r.json();
-      if(!r.ok||!d.access_token){
-        const raw=String(d.msg||d.message||'');
-        if(isRateLimitError(d,r.status)) return authRateLimited(),false;
-        if(/not confirmed/i.test(raw)) return authErr(t('✉️ بريدك لسه مش مؤكد — افتح رسالة التأكيد من بريدك، أو اضغط «إعادة إرسال رسالة تأكيد البريد» تحت (مرة واحدة بس واستنى 60 ثانية).','✉️ Your email is not confirmed yet — open the confirmation message, or press “Resend email confirmation” below (once, then wait 60s).')),false;
-        return authErr(t('بيانات الدخول غير صحيحة','Invalid login credentials')),false;
-      }
-      let u=db.users.find(x=>x.id===d.user.id);
-      if(!u){ u={id:d.user.id,username:(d.user.email||id).split('@')[0],email:d.user.email||id,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
-      session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp();
-      toast(t('☁️ أهلاً بعودتك!','☁️ Welcome back!')); return false;
-    }catch(e){ return authErr(t('تعذر الوصول لـ Supabase','Could not reach Supabase')),false; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authErr(t('سجّل دخولك بالبريد الإلكتروني المسجل في حسابك السحابي','Log in with the email registered to your cloud account')),false;
+  if(!pw) return authErr(t('اكتب كلمة السر','Enter your password')),false;
+  const btn=document.getElementById('loginSubmit');
+  if(btn) btn.disabled=true;
+  try{
+    const d=await cloudPasswordLogin(email,pw);
+    establishCloudSession(d,{email});
+    enterApp();
+    toast(t('☁️ أهلاً بعودتك!','☁️ Welcome back!'));
+    return false;
+  }catch(e){
+    const d=e.data||{}; const raw=String(d.msg||d.message||e.message||'');
+    if(isRateLimitError(d,e.status)) return authRateLimited(),false;
+    if(/not confirmed/i.test(raw)) return authErr(t('✉️ الحساب القديم ده لسه مش مؤكد — افتح رسالة التأكيد من بريدك، أو اضغط «إعادة إرسال تأكيد البريد (للحسابات القديمة)» مرة واحدة واستنى 60 ثانية.','✉️ This legacy account is not confirmed yet — open the confirmation email, or press “Resend email confirmation (legacy accounts)” once and wait 60 seconds.')),false;
+    return authErr(t('بيانات الدخول غير صحيحة أو الحساب مش موجود','Invalid login credentials or account not found')),false;
+  }finally{
+    if(btn) btn.disabled=false;
   }
-  const u=db.users.find(x=>x.username.toLowerCase()===id||(x.email&&x.email===id));
-  if(!u) return authErr(t('لا يوجد حساب بالبيانات دي — أنشئ حساباً جديداً','No account with those details — create a new account')),false;
-  if(u.passHash==='supabase') return authErr(t('هذا حساب سحابي — فعّل وضع «Supabase سحابي» وسجّل دخولك من هناك','This is a cloud account — enable “Supabase cloud” mode and log in there')),false;
-  if((await hashPw(u.salt,pw))!==u.passHash) return authErr(t('كلمة السر غير صحيحة','Wrong password')),false;
-  session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
-  toast(t('👋 أهلاً بعودتك يا '+u.username,'👋 Welcome back, '+u.username));
-  return false;
-}
-async function demoLogin(){
-  let u=db.users.find(x=>x.email==='demo@craftmate.ai');
-  if(!u){
-    const salt=uid();
-    u={id:uid(),username:'CraftMateDemo',email:'demo@craftmate.ai',salt,passHash:await hashPw(salt,'Demo1234'),displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),demo:true,isAdmin:true};
-    db.users.push(u);
-    const sv={id:uid(),ownerId:u.id,name:t('سيرفر تجريبي — Survival','Demo Server — Survival'),address:'play.example.net:25565',host:'play_hosting',software:'Paper',version:'1.21.4',status:'ONLINE',method:'plugin',env:{players:8,maxPlayers:20,ramMb:1536,maxRamMb:3072,plugins:['Geyser-Spigot','floodgate','ViaVersion']},linkedAt:new Date().toISOString(),lastHeartbeat:new Date().toISOString()};
-    db.servers.push(sv);
-    db.diagnoses.push({id:uid(),ownerId:u.id,serverId:sv.id,title:t('إضافة قديمة كسرت التحميل','Outdated plugin broke loading'),sev:'high',cause:t('نسخة تجريبية محفوظة من حساب العرض','Saved sample from the demo account'),steps:[t('حدّث الإضافة','Update the plugin')],guard:'🛡️ Demo',ips:1,secrets:0,at:new Date().toISOString()});
-    saveDB();
-  }
-  if(u.email==='demo@craftmate.ai' && !u.isAdmin){ u.isAdmin=true; saveDB(); }
-  session={userId:u.id,mode:'local',at:Date.now()}; saveSession(); enterApp();
-  toast(t('🎮 دخلت بالحساب التجريبي — جرّب كل حاجة بحرية','🎮 You are in the demo account — try everything freely'));
 }
 function logout(){
   const wasCloud=isCloud(), token=session&&session.accessToken;
@@ -1006,7 +1049,7 @@ async function watchPluginPairingClaim(serverId,codeStr){
 async function updateCodeCloudStatus(code,s){
   const el=document.getElementById('codeCloudStatus'); if(!el||!code||!s) return;
   if(!isCloud()){
-    el.innerHTML='<span style="color:#f59e0b">⚠️ '+t('هذا الكود محلي فقط ولن يربط البلجن الحقيقي. سجّل الدخول بوضع Supabase السحابي ثم ولّد كوداً جديداً.','This code is local-only and cannot link the real plugin. Sign in with Supabase cloud mode, then generate a new code.')+'</span>';
+    el.innerHTML='<span style="color:#f59e0b">⚠️ '+t('انتهت الجلسة السحابية أو مش نشطة، فالكود لن يرتبط بالبلجن الحقيقي. سجّل دخولك من جديد ثم ولّد كوداً جديداً.','The cloud session is inactive or expired, so this code cannot link the real plugin. Log in again, then generate a new code.')+'</span>';
     return;
   }
   if(code.cloudSynced){
@@ -1288,25 +1331,26 @@ function renderSettings(){
    '<tr><th>'+t('البريد','Email')+'</th><td>'+escapeHtml(u.email||t('غير مضاف','Not added'))+'</td></tr>'+
    '<tr><th>'+t('الخطة','Plan')+'</th><td>'+plan().label+' — '+t('سيرفر '+plan().servers+' · تشخيص '+plan().diagnoses+'/شهر · احتفاظ '+plan().retention+' يوم',' '+plan().servers+' server(s) · '+plan().diagnoses+' diagnoses/mo · '+plan().retention+'d retention')+'</td></tr>'+
    '<tr><th>'+t('تاريخ التسجيل','Registered')+'</th><td>'+fmtDate(u.createdAt)+'</td></tr>'+
-   '<tr><th>'+t('وضع الحساب','Account mode')+'</th><td>'+(u.cloud?t('☁️ Supabase سحابي','☁️ Supabase cloud'):t('⚡ فوري على هذا الجهاز','⚡ Instant on this device'))+'</td></tr></tbody></table>';
-  document.getElementById('sbUrl').value=cloudURL();
-  const k=cloudKey(); if(k) document.getElementById('sbKey').value=k;
-  document.getElementById('sbStatus').textContent=k?t('☁️ مفتاح المنصة العام موجود في إعدادات الموقع — الاتصال السحابي مهيأ، وجرّب إعادة الاختبار للتأكيد.','☁️ The site-wide public key is in the site config — cloud is configured; retest to confirm.') : t('⚡ لا يوجد مفتاح سحابي بعد — الحسابات شغالة في الوضع الفوري.','⚡ No cloud key yet — accounts run in instant mode.');
+   '<tr><th>'+t('وضع الحساب','Account mode')+'</th><td>'+t('☁️ حساب سحابي','☁️ Cloud account')+'</td></tr></tbody></table>';
+  const st=document.getElementById('sbStatus');
+  if(st) st.innerHTML=isCloud()
+    ? '<span style="color:#22c55e">✅ '+t('متصل سحابياً — الجلسة والمزامنة شغالين لهذا الحساب.','Cloud connected — session and sync are active for this account.')+'</span>'
+    : '<span style="color:#f59e0b">⚠️ '+t('لا توجد جلسة سحابية نشطة — سجّل دخولك من جديد.','No active cloud session — log in again.')+'</span>';
 }
-async function saveCloud(){
-  const url=document.getElementById('sbUrl').value.trim().replace(/\/$/,'');
-  const key=document.getElementById('sbKey').value.trim();
-  if(!key) return toast(t('الصق مفتاح anon public الأول','Paste the anon public key first'));
-  localStorage.setItem('cm_sb_url',url); localStorage.setItem('cm_sb_anon_key',key);
-  const st=document.getElementById('sbStatus'); st.textContent=t('⏳ جاري اختبار الاتصال بـ Supabase...','⏳ Testing the Supabase connection...');
+async function refreshCloudStatus(){
+  const st=document.getElementById('sbStatus');
+  if(st) st.textContent=t('⏳ جاري تحديث حالة المزامنة...','⏳ Refreshing sync status...');
   try{
-    const r=await fetch(url+'/auth/v1/health',{headers:{'apikey':key,'Authorization':'Bearer '+key}});
-    if(r.ok){ st.textContent=t('✅ الاتصال السحابي شغال! بدّل وضع الدخول لـ «Supabase سحابي» في شاشة الدخول للحسابات السحابية. وللنشر لكل الزوار ضيف نفس المفتاح في إعدادات كود الموقع.','✅ Cloud connection works! Switch the sign-in mode to “Supabase cloud” on the login screen for cloud accounts. For all visitors, add the same key to the site config.'); setAuthMode('cloud'); toast(t('☁️ اتفعّل الوضع السحابي على هذا الجهاز','☁️ Cloud mode enabled on this device')); }
-    else st.textContent=t('⚠️ الخادم رد بـ '+r.status+' — تأكد إن المفتاح هو anon public الصحيح وإن المشروع شغال.','⚠️ Server replied '+r.status+' — verify the key is the correct anon public key and the project is live.');
-  }catch(e){ st.textContent=t('❌ تعذر الاتصال — راجع الرابط والشبكة.','❌ Could not connect — check the URL and network.'); }
-  updateModeChip();
+    const r=await fetch(cloudURL()+'/auth/v1/settings',{headers:{'apikey':cloudKey(),'Authorization':'Bearer '+cloudKey()}});
+    if(!r.ok) throw new Error('Cloud settings '+r.status);
+    cloudSyncedFor=null;
+    await syncCloudData();
+    renderSettings();
+    toast(t('☁️ اتحدثت حالة السحابة','☁️ Cloud status refreshed'));
+  }catch(e){
+    if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('تعذر تحديث حالة السحابة دلوقتي — راجع الاتصال وجرّب تاني.','Could not refresh cloud status now — check your connection and retry.')+'</span>';
+  }
 }
-function clearCloud(){ localStorage.removeItem('cm_sb_anon_key'); setAuthMode('local'); renderSettings(); toast(t('⚡ رجعنا للوضع الفوري على هذا الجهاز','⚡ Back to instant mode on this device')); }
 function exportData(){
   const u=user(); if(!u) return;
   const data={profile:{username:u.username,email:u.email,displayCode:u.displayCode,plan:u.plan,createdAt:u.createdAt},servers:myServers(),diagnoses:myDiagnoses(),notifications:myNotifications(),changes:db.changes.filter(c=>c.ownerId===u.id),tickets:db.tickets.filter(x=>x.ownerId===u.id),exportedAt:new Date().toISOString()};

@@ -420,6 +420,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
 const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U'; // Public publishable key — safe in frontend, protected by RLS.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
+const APP_BUILD='2026.10.16-pairing3';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -449,6 +450,7 @@ function ensureDB(){
     );
   }
   db.servers.forEach(normalizeServer);
+  db.codes.forEach(c=>{ c.cloudSyncing=false; });
   saveDB();
 }
 function normalizeServer(sv){
@@ -483,6 +485,7 @@ async function hashPw(salt,pw){
 function cloudKey(){ return localStorage.getItem('cm_sb_anon_key')||SUPABASE_ANON_KEY_DEFAULT; }
 function cloudURL(){ return localStorage.getItem('cm_sb_url')||SUPABASE_URL_DEFAULT; }
 let cloudSyncing=false, cloudSyncedFor=null;
+const codeSyncInFlight=new Set();
 function isCloud(){ return !!(session && session.mode==='cloud' && session.accessToken && cloudKey()); }
 async function cloudRefresh(){
   if(!session||!session.refreshToken) return false;
@@ -544,9 +547,17 @@ async function cloudInsertCode(code){
   const sv=myServers().find(x=>x.id===code.serverId); if(!sv) throw new Error('Server not found in dashboard');
   await cloudEnsureServer(sv);
   code.serverId=sv.id;
-  const existing=await cloudJson('connector_tokens?server_id=eq.'+encodeURIComponent(sv.id)+'&pairing_code=eq.'+encodeURIComponent(code.code)+'&select=id,pairing_code&limit=1');
+  const lookup='connector_tokens?server_id=eq.'+encodeURIComponent(sv.id)+'&pairing_code=eq.'+encodeURIComponent(code.code)+'&select=id,pairing_code&limit=1';
+  const existing=await cloudJson(lookup);
   if(Array.isArray(existing)&&existing.length) return existing[0];
-  return await cloudJson('connector_tokens',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({server_id:sv.id,pairing_code:code.code,pairing_expires_at:new Date(code.expiresAt).toISOString()})});
+  try{
+    await cloudJson('connector_tokens',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({server_id:sv.id,pairing_code:code.code,pairing_expires_at:new Date(code.expiresAt).toISOString()})});
+  }catch(e){
+    if(!/409|duplicate|unique|already exists/i.test(e.message||'')) throw e;
+  }
+  const verified=await cloudJson(lookup);
+  if(!Array.isArray(verified)||!verified.length) throw new Error('Pairing code was not verified in cloud after insert');
+  return verified[0];
 }
 async function cloudSyncCode(code){
   if(!code) return false;
@@ -920,22 +931,24 @@ async function updateCodeCloudStatus(code,s){
     return;
   }
   if(code.cloudSynced){
-    el.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+'</span>';
+    el.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+' <small>Build '+APP_BUILD+'</small></span>';
     return;
   }
-  if(code.cloudSyncing){
+  if(codeSyncInFlight.has(code.id)){
     el.textContent=t('⏳ جارٍ تفعيل الكود في السحابة…','⏳ Activating the code in the cloud…');
     return;
   }
+  codeSyncInFlight.add(code.id);
   code.cloudSyncing=true; saveDB();
   el.textContent=t('⏳ جارٍ تفعيل الكود في السحابة… لا تنفذ أمر الربط قبل ظهور علامة ✅.','⏳ Activating the code in the cloud… Do not run the link command before the ✅ appears.');
   const ok=await cloudSyncCode(code);
+  codeSyncInFlight.delete(code.id);
   code.cloudSyncing=false; saveDB();
   const current=document.getElementById('codeCloudStatus'); if(!current) return;
   if(ok){
-    current.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+'</span>';
+    current.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+' <small>Build '+APP_BUILD+'</small></span>';
   }else{
-    current.innerHTML='<span style="color:#ef4444">❌ '+t('لم يتم تفعيل الكود سحابياً، لذلك سيعيد البلجن INVALID_CODE. السبب: ','The code was not activated in the cloud, so the plugin will return INVALID_CODE. Reason: ')+(code.cloudError||'unknown')+'</span> <button class="btn ghost sm" onclick="retryCloudCode(\''+s.id+'\',\''+code.id+'\')">'+t('إعادة المحاولة','Retry')+'</button>';
+    current.innerHTML='<span style="color:#ef4444">❌ '+t('لم يتم تفعيل الكود سحابياً، لذلك سيعيد البلجن INVALID_CODE. السبب: ','The code was not activated in the cloud, so the plugin will return INVALID_CODE. Reason: ')+(code.cloudError||'unknown')+' <small>Build '+APP_BUILD+'</small></span> <button class="btn ghost sm" onclick="retryCloudCode(\''+s.id+'\',\''+code.id+'\')">'+t('إعادة المحاولة','Retry')+'</button>';
   }
 }
 function retryCloudCode(serverId,codeId){

@@ -24,11 +24,11 @@
 
 ## 🔌 بلجن `CraftMate Connector` (Paper / Purpur 1.20.4 – 1.21.x)
 
-يقع الكود المصدري الكامل للبلجن في مجلد [`plugin/`](./plugin) ويُبنى تلقائياً عبر **GitHub Actions** إلى ملف `CraftMate-Connector-0.2.0.jar`.
+يقع الكود المصدري الكامل للبلجن في مجلد [`plugin/`](./plugin) ويُبنى تلقائياً عبر **GitHub Actions** إلى ملف `CraftMate-Connector-0.4.0.jar`.
 
 ### الأوامر الإدارية داخل السيرفر (`craftmate.admin`)
 * `/craftmate status` — عرض حالة الاتصال، ملف الاستضافة المكتشف (`play_hosting` / `falixnodes` / `mcserverhost` / `minefort`)، استهلاك الرام، وحالة الحماية.
-* `/craftmate link <CM-XXXX-XXXX>` — ربط السيرفر بلوحة التحكم باستخدام رمز ربط مؤقت أحادي الاستخدام.
+* `/craftmate link` — الطريقة الأساسية من v0.4.0: البلجن يولّد رمز ربط مؤقتاً أحادي الاستخدام ويعرضه لمدير السيرفر، ثم يُدخله المالك في لوحة التحكم ويحاول البلجن الربط تلقائياً كل 10 ثوانٍ لمدة 30 دقيقة. (`/craftmate link new` لكود جديد، وما زال `/craftmate link <CODE>` مدعوماً كاحتياطي.)
 * `/craftmate sync` — إرسال نبضة اتصال فورية (`heartbeat`) وتحديث مصفوفة القدرات.
 * `/craftmate diagnose` — تنقيح ملف `logs/latest.log` محلياً (إخفاء عناوين IP اللاعبين وكلمات مرور RCON/MySQL) وضغط الأخطاء المتكررة ورفع لقطة التشخيص.
 * `/craftmate disconnect` — إلغاء ربط السيرفر وحذف رمز الاتصال محلياً.
@@ -120,9 +120,9 @@ CraftMate-AI/
 
 ## 🔌 Connector API v0.3 — الربط الحقيقي
 
-البلجن `CraftMate-Connector v0.3.1` يطالب فعلياً بكود ربط لوحتك عبر **Connector API** (Cloudflare Worker في [`worker/`](./worker/)) ويستبدله برمز سيرفر طويل العمر، ثم يرسل نبضات كل 60 ثانية وتشخيصات منقّاة وحالة سبات نظيفة.
+البلجن `CraftMate-Connector v0.4.0` يولّد كود الربط من داخل السيرفر أولاً؛ يُدخله المالك في لوحة التحكم للسيرفر المختار، ثم يطالب البلجن بالكود تلقائياً عبر **Connector API** (Cloudflare Worker في [`worker/`](./worker/)) ويستبدله برمز سيرفر طويل العمر، ثم يرسل نبضات كل 60 ثانية وتشخيصات منقّاة وحالة سبات نظيفة.
 
 - **Worker الإنتاج:** https://craftmate-connector-api.craftmate-api-sayed.workers.dev
 - **فحص الجاهزية:** https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health — تم التحقق أنه يعيد `configured:true`.
-- إصدار v0.3.1 يهاجر تلقائياً إعدادات v0.3.0 التي تحتوي على عنوان مؤقت (`YOUR-SUBDOMAIN`) إلى Worker الإنتاج عند أول تشغيل، دون تغيير أي عنوان Worker مخصص صالح.
+- إصدار v0.4.0 يحتفظ بمهاجرة إعدادات الإصدارات القديمة التي تحتوي على عنوان مؤقت (`YOUR-SUBDOMAIN`) إلى Worker الإنتاج عند أول تشغيل، دون تغيير أي عنوان Worker مخصص صالح.
 - تعليمات الـ Worker وسر Supabase (في Cloudflare Secrets فقط) في [`worker/README.md`](./worker/README.md)، وترحيلة الربط في [`004_connector_api_v03.sql`](./supabase/migrations/004_connector_api_v03.sql).

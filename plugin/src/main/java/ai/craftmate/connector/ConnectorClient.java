@@ -10,7 +10,9 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.security.SecureRandom;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * CraftMate Connector API Client v0.3.
@@ -26,12 +28,16 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class ConnectorClient {
 
-    public static final String CONNECTOR_VERSION = "0.3.1";
+    public static final String CONNECTOR_VERSION = "0.4.0";
     public static final String DEFAULT_API_URL = "https://craftmate-connector-api.craftmate-api-sayed.workers.dev";
+    private static final String PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final long PENDING_PAIRING_TTL_MILLIS = 30L * 60L * 1000L;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final CraftMateConnectorPlugin plugin;
     private final EnvironmentDetector detector;
     private final HttpClient httpClient;
+    private final AtomicBoolean claimInFlight = new AtomicBoolean(false);
     private volatile String lastSyncStatus = "NOT_LINKED";
     private volatile String lastSyncTimestamp = "Never";
 
@@ -61,6 +67,61 @@ public final class ConnectorClient {
 
     public String getServerId() {
         return serverId();
+    }
+
+    /** Returns the locally generated reverse-link code, creating one when needed. */
+    public synchronized String getOrCreatePendingPairingCode(boolean forceNew) {
+        if (isLinked()) return "";
+        String existing = pendingPairingCode();
+        long expiresAt = pendingPairingExpiresAtMillis();
+        if (!forceNew && isPairingCodeFormat(existing) && expiresAt > System.currentTimeMillis()) {
+            return existing;
+        }
+        String code = generatePairingCode();
+        plugin.getConfig().set("linking.pending-pairing-code", code);
+        plugin.getConfig().set("linking.pending-pairing-expires-at", System.currentTimeMillis() + PENDING_PAIRING_TTL_MILLIS);
+        plugin.getConfig().set("linking.pending-pairing-created-at", Instant.now().toString());
+        plugin.saveConfig();
+        this.lastSyncStatus = "PENDING_LINK_CODE_READY";
+        return code;
+    }
+
+    public String pendingPairingCode() {
+        String code = plugin.getConfig().getString("linking.pending-pairing-code", "");
+        return code == null ? "" : code.trim().toUpperCase();
+    }
+
+    public long pendingPairingExpiresAtMillis() {
+        return plugin.getConfig().getLong("linking.pending-pairing-expires-at", 0L);
+    }
+
+    public boolean hasValidPendingPairingCode() {
+        return !isLinked()
+                && isPairingCodeFormat(pendingPairingCode())
+                && pendingPairingExpiresAtMillis() > System.currentTimeMillis();
+    }
+
+    public synchronized void clearPendingPairingCode() {
+        plugin.getConfig().set("linking.pending-pairing-code", "");
+        plugin.getConfig().set("linking.pending-pairing-expires-at", 0L);
+        plugin.getConfig().set("linking.pending-pairing-created-at", "");
+        plugin.saveConfig();
+    }
+
+    private static boolean isPairingCodeFormat(String code) {
+        return code != null && code.matches("CM-[A-Z0-9]{4}-[A-Z0-9]{4}");
+    }
+
+    private static String generatePairingCode() {
+        return "CM-" + randomPairingSegment() + "-" + randomPairingSegment();
+    }
+
+    private static String randomPairingSegment() {
+        StringBuilder out = new StringBuilder(4);
+        for (int i = 0; i < 4; i++) {
+            out.append(PAIRING_ALPHABET.charAt(SECURE_RANDOM.nextInt(PAIRING_ALPHABET.length())));
+        }
+        return out.toString();
     }
 
     private String token() {
@@ -135,8 +196,20 @@ public final class ConnectorClient {
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
 
-    /** Exchanges a short-lived dashboard pairing code for a long-lived server token. */
+    /** Exchanges a short-lived pairing code for a long-lived server token. */
     public CompletableFuture<Boolean> registerWithPairingCode(String pairingCode, int onlinePlayers) {
+        return claimPairingCode(pairingCode, onlinePlayers, false);
+    }
+
+    /** Quietly retries the plugin-generated code until the owner registers it in the dashboard. */
+    public CompletableFuture<Boolean> attemptPendingPairingClaim(int onlinePlayers) {
+        if (!hasValidPendingPairingCode()) return CompletableFuture.completedFuture(false);
+        if (!claimInFlight.compareAndSet(false, true)) return CompletableFuture.completedFuture(false);
+        return claimPairingCode(pendingPairingCode(), onlinePlayers, true)
+                .whenComplete((ignored, error) -> claimInFlight.set(false));
+    }
+
+    private CompletableFuture<Boolean> claimPairingCode(String pairingCode, int onlinePlayers, boolean quiet) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 JsonObject payload = new JsonObject();
@@ -152,14 +225,19 @@ public final class ConnectorClient {
                 plugin.getConfig().set("backend.server-id", result.get("server_id").getAsString());
                 plugin.getConfig().set("backend.connector-token", result.get("connector_token").getAsString());
                 plugin.saveConfig();
+                clearPendingPairingCode();
 
                 this.lastSyncStatus = "LINKED_ONLINE (" + detector.detectHostProvider() + ")";
                 this.lastSyncTimestamp = Instant.now().toString();
                 plugin.getLogger().info("[CraftMate] Server claimed successfully. Server ID: " + result.get("server_id").getAsString());
                 return true;
             } catch (Exception e) {
-                this.lastSyncStatus = "LINK_FAILED";
-                plugin.getLogger().warning("[CraftMate] Pairing failed: " + e.getMessage());
+                this.lastSyncStatus = quiet ? "PENDING_LINK_WAITING" : "LINK_FAILED";
+                if (quiet) {
+                    plugin.getLogger().fine("[CraftMate] Pending link is waiting for dashboard registration: " + e.getMessage());
+                } else {
+                    plugin.getLogger().warning("[CraftMate] Pairing failed: " + e.getMessage());
+                }
                 return false;
             }
         });
@@ -247,6 +325,7 @@ public final class ConnectorClient {
                 plugin.getConfig().set("backend.connector-token", "");
                 plugin.getConfig().set("backend.server-id", "");
                 plugin.saveConfig();
+                clearPendingPairingCode();
                 this.lastSyncStatus = "UNLINKED";
                 return true;
             } catch (Exception e) {
@@ -254,6 +333,7 @@ public final class ConnectorClient {
                 plugin.getConfig().set("backend.connector-token", "");
                 plugin.getConfig().set("backend.server-id", "");
                 plugin.saveConfig();
+                clearPendingPairingCode();
                 this.lastSyncStatus = "UNLINKED_LOCAL";
                 return false;
             }

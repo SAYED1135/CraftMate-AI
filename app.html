@@ -420,7 +420,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
 const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U'; // Public publishable key — safe in frontend, protected by RLS.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-pairing3';
+const APP_BUILD='2026.10.16-pluginlink4';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -910,19 +910,98 @@ function showConnectPanel(s,fresh){
     return;
   }
   const code=activeCode(s.id)||newLinkCode(s.id);
-  const jar='https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.3.1/CraftMate-Connector-0.3.1.jar';
+  const jar='https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.4.0/CraftMate-Connector-0.4.0.jar';
   box.innerHTML=
-   '<p style="color:var(--muted)">'+t('حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Download the plugin, drop it in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
+   '<div style="border:1px solid var(--border2);border-radius:14px;padding:16px;background:var(--card3);margin-bottom:16px">'+
+   '<h4 style="margin-bottom:8px">'+t('🔗 الطريقة الجديدة v0.4: البلجن يولّد الكود','🔗 New in v0.4: the plugin generates the code')+'</h4>'+
+   '<p class="hint" style="margin-bottom:11px">'+t('دي الطريقة الأساسية دلوقتي: حمّل v0.4.0، شغّل سيرفرك، نفّذ الأمر /craftmate link جوه اللعبة أو الكونسول، والبلجن هيعرض كوداً خاصاً به. انسخ الكود هنا وسيحاول البلجن الربط تلقائياً كل 10 ثوانٍ لمدة 30 دقيقة.','This is now the primary flow: install v0.4.0, start your server, run /craftmate link in-game or in console, and the plugin will show its own code. Paste that code here; the plugin retries automatically every 10 seconds for 30 minutes.')+'</p>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:11px"><a class="btn sm" href="'+jar+'" target="_blank" rel="noopener">'+t('⬇️ تحميل بلجن v0.4.0','⬇️ Download plugin v0.4.0')+'</a><button class="btn ghost sm" onclick="copyText(\'/craftmate link\')">'+t('📋 انسخ أمر توليد الكود','📋 Copy code command')+'</button></div>'+
+   '<div class="codecmd">/craftmate link</div>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px"><input id="pluginPairCode" placeholder="CM-XXXX-XXXX" autocomplete="off" style="flex:1;min-width:210px;background:var(--card);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px;direction:ltr;text-transform:uppercase"><button class="btn sm" onclick="registerPluginPairingCode(\''+s.id+'\')">'+t('✅ سجّل كود البلجن وانتظر الربط','✅ Register plugin code & wait')+'</button></div>'+
+   '<div id="pluginCodeStatus" class="hint" style="margin-top:10px">'+t('أدخل الكود الذي أظهره البلجن بعد تنفيذ /craftmate link. لا تشاركه علناً.','Enter the code shown by the plugin after /craftmate link. Do not share it publicly.')+'</div>'+
+   '</div>'+
+   '<details style="border:1px dashed var(--border);border-radius:12px;padding:13px"><summary style="cursor:pointer;font-weight:800">'+t('طريقة احتياطية قديمة: كود تولّده اللوحة','Fallback: dashboard-generated code')+'</summary>'+
+   '<p style="color:var(--muted);margin-top:12px">'+t('استخدمها فقط مع إصدارات قديمة: حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Use only with older plugin versions: drop the plugin in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
    '<div class="codebox"><b>'+code.code+'</b><span>'+t('صالح 15 دقيقة ولمرة واحدة — بينتهي في ','Valid 15 minutes, single use — expires at ')+new Date(code.expiresAt).toLocaleTimeString()+'</span></div>'+
    '<div class="codecmd">/craftmate link '+code.code+'</div>'+
    '<div id="codeCloudStatus" class="hint" style="margin:10px 0"></div>'+
-   '<p class="hint" style="margin:10px 0">'+t('لو ظهرت رسالة Connector API URL is not configured، فإصدار v0.3.1 يضبط عنوان الـ API تلقائياً؛ ومع v0.3.0 ضع العنوان التالي في backend.api-url داخل plugins/CraftMateConnector/config.yml ثم أعد تشغيل السيرفر قبل تنفيذ أمر الربط:','If Connector API URL is not configured appears, v0.3.1 sets the API URL automatically; on v0.3.0 set the URL below as backend.api-url in plugins/CraftMateConnector/config.yml and restart before linking:')+'</p>'+
+   '<p class="hint" style="margin:10px 0">'+t('إصدار v0.4.0 يضبط عنوان الـ API تلقائياً. مع الإصدارات القديمة ضع العنوان التالي في backend.api-url داخل plugins/CraftMateConnector/config.yml ثم أعد تشغيل السيرفر قبل تنفيذ أمر الربط:','v0.4.0 sets the API URL automatically. On older versions set the URL below as backend.api-url in plugins/CraftMateConnector/config.yml and restart before linking:')+'</p>'+
    '<div class="codecmd" style="font-size:.78rem">https://craftmate-connector-api.craftmate-api-sayed.workers.dev</div>'+
-   '<div style="display:flex;gap:9px;flex-wrap:wrap"><a class="btn sm" href="'+jar+'" target="_blank" rel="noopener">'+t('⬇️ تحميل البلجن','⬇️ Download plugin')+'</a><button class="btn ghost sm" onclick="copyText(\'/craftmate link '+code.code+'\')">'+t('📋 انسخ الأمر','📋 Copy command')+'</button><button class="btn ghost sm" onclick="regenCode(\''+s.id+'\')">'+t('🔄 كود جديد','🔄 New code')+'</button></div>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn ghost sm" onclick="copyText(\'/craftmate link '+code.code+'\')">'+t('📋 انسخ الأمر','📋 Copy command')+'</button><button class="btn ghost sm" onclick="regenCode(\''+s.id+'\')">'+t('🔄 كود جديد','🔄 New code')+'</button></div>'+
+   '</details>'+
    '<div style="margin-top:20px;border-top:1px dashed var(--border);padding-top:18px"><h4 style="margin-bottom:8px">'+t('🧪 معاينة الاتصال هنا (لتجربة اللوحة من غير سيرفر ماينكرافت)','🧪 Preview the connection here (test the dashboard without a Minecraft server)')+'</h4>'+
-   '<p class="hint" style="margin-bottom:11px">'+t('الصق نفس الكود واضغط اتصال — هيتسجل نبض بيئة تجريبي زي ما البلجن الحقيقي هيبعت بالضبط.','Paste the same code and connect — a sample environment heartbeat is recorded exactly as the real plugin will send.')+'</p>'+
-   '<div style="display:flex;gap:9px;flex-wrap:wrap"><input id="simCode" placeholder="CM-XXXX-XXXX" style="flex:1;min-width:200px;background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px;direction:ltr"><button class="btn sm" onclick="simulateLink(\''+s.id+'\')">'+t('🔌 اتصال تجريبي','🔌 Simulate link')+'</button></div></div>';
+   '<p class="hint" style="margin-bottom:11px">'+t('الصق كود اللوحة الاحتياطي واضغط اتصال — هيتسجل نبض بيئة تجريبي زي ما البلجن الحقيقي هيبعت بالضبط.','Paste the dashboard fallback code and connect — a sample environment heartbeat is recorded exactly as the real plugin will send.')+'</p>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap"><input id="simCode" placeholder="CM-XXXX-XXXX" style="flex:1;min-width:200px;background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px;direction:ltr"><button class="btn sm" onclick="simulateLink(\''+s.id+'\')"> '+t('🔌 اتصال تجريبي','🔌 Simulate link')+'</button></div></div>';
   updateCodeCloudStatus(code,s);
+}
+const pluginClaimWatchers=new Set();
+async function registerPluginPairingCode(serverId){
+  const input=document.getElementById('pluginPairCode');
+  const status=document.getElementById('pluginCodeStatus');
+  const s=myServers().find(x=>x.id===serverId);
+  if(!input||!status||!s) return;
+  const normalized=(input.value||'').trim().toUpperCase();
+  input.value=normalized;
+  if(!/^CM-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/.test(normalized)){
+    status.innerHTML='<span style="color:#ef4444">❌ '+t('اكتب الكود بنفس الشكل الظاهر في البلجن: CM-XXXX-XXXX','Enter the code exactly as shown by the plugin: CM-XXXX-XXXX')+'</span>';
+    return;
+  }
+  let code=db.codes.find(c=>c.serverId===s.id&&c.code===normalized);
+  if(code&&code.usedAt){
+    status.innerHTML='<span style="color:#ef4444">❌ '+t('الكود ده اتستخدم قبل كده. نفّذ /craftmate link new في السيرفر وخذ كوداً جديداً.','This code was already used. Run /craftmate link new on the server for a fresh code.')+'</span>';
+    return;
+  }
+  if(!code){
+    code={id:uid(),ownerId:user().id,serverId:s.id,code:normalized,expiresAt:Date.now()+30*60*1000,usedAt:null,cloudSynced:false,cloudSyncing:false,cloudError:'',source:'plugin'};
+    db.codes.push(code);
+  }else{
+    code.expiresAt=Math.max(Number(code.expiresAt||0),Date.now()+30*60*1000);
+    code.cloudSynced=false; code.cloudSyncing=false; code.cloudError=''; code.source='plugin';
+  }
+  saveDB();
+  if(!isCloud()){
+    status.innerHTML='<span style="color:#f59e0b">⚠️ '+t('اتحفظ الكود على هذا الجهاز فقط. سجّل الدخول بالوضع السحابي علشان البلجن الحقيقي يقدر يطالب بيه.','The code was saved on this device only. Sign in with cloud mode so the real plugin can claim it.')+'</span>';
+    return;
+  }
+  status.textContent=t('⏳ جارٍ تسجيل كود البلجن في السحابة والتحقق منه…','⏳ Registering and verifying the plugin code in the cloud…');
+  const ok=await cloudSyncCode(code);
+  if(!ok){
+    status.innerHTML='<span style="color:#ef4444">❌ '+t('لم يتم تسجيل الكود في السحابة. السبب: ','The code was not registered in the cloud. Reason: ')+(code.cloudError||'unknown')+' <small>Build '+APP_BUILD+'</small></span>';
+    return;
+  }
+  status.innerHTML='<span style="color:#22c55e">✅ '+t('تم تسجيل كود البلجن في السحابة والتحقق منه. سيحاول البلجن الربط تلقائياً خلال ثوانٍ — خليك في الصفحة دي ومتقفلش السيرفر.','Plugin code registered and verified in the cloud. The plugin will claim it automatically within seconds — stay on this page and keep the server running.')+' <small>Build '+APP_BUILD+'</small></span>';
+  audit('PLUGIN_CODE_REGISTERED',s.name);
+  watchPluginPairingClaim(code.serverId,normalized);
+}
+async function watchPluginPairingClaim(serverId,codeStr){
+  const key=serverId+':'+codeStr;
+  if(pluginClaimWatchers.has(key)) return;
+  pluginClaimWatchers.add(key);
+  try{
+    for(let i=0;i<30;i++){
+      await new Promise(resolve=>setTimeout(resolve,10000));
+      if(!isCloud()) break;
+      try{
+        const rows=await cloudJson('connector_tokens?server_id=eq.'+encodeURIComponent(serverId)+'&pairing_code=eq.'+encodeURIComponent(codeStr)+'&select=claimed_at,token_hash&limit=1');
+        const row=Array.isArray(rows)?rows[0]:null;
+        if(row&&(row.claimed_at||row.token_hash)){
+          const s=myServers().find(x=>x.id===serverId);
+          const c=db.codes.find(x=>x.serverId===serverId&&x.code===codeStr);
+          if(c) c.usedAt=Date.now();
+          if(s){
+            s.status='ONLINE'; s.linkedAt=s.linkedAt||new Date().toISOString(); s.lastHeartbeat=new Date().toISOString();
+            saveDB(); audit('SERVER_LINKED',s.name); renderAll();
+            const status=document.getElementById('pluginCodeStatus');
+            if(status) status.innerHTML='<span style="color:#22c55e">🎉 '+t('تم الربط! البلجن استلم الكود وسيرفرك بقى متصلاً. جرّب /craftmate status و /craftmate diagnose في السيرفر.','Linked! The plugin claimed the code and your server is connected. Try /craftmate status and /craftmate diagnose on the server.')+'</span>';
+            toast(t('🎉 تم ربط سيرفرك بنجاح','🎉 Your server linked successfully'));
+          }
+          break;
+        }
+      }catch(e){ /* keep waiting while the plugin retries */ }
+    }
+  }finally{
+    pluginClaimWatchers.delete(key);
+  }
 }
 async function updateCodeCloudStatus(code,s){
   const el=document.getElementById('codeCloudStatus'); if(!el||!code||!s) return;
@@ -1109,7 +1188,7 @@ const KB=[
  {k:'crash stop يقفل تعطل',ar:['سيرفري بيقفل كل شوية','ارفع أحدث latest.log في «تشخيص جديد» أو شغّل /craftmate diagnose. أشهر سببين: إضافة غير متوافقة أو رام خنقانة — والتقرير هيفرق فوراً.'],en:['My server keeps stopping','Upload the latest latest.log under New Diagnosis or run /craftmate diagnose. Top two causes: incompatible plugin or starved RAM — the report separates them instantly.']},
  {k:'bedrock جوال geyser mobile crossplay',ar:['ازاي أخلي لاعبي الجوال يدخلوا؟','من موقعنا اختر استضافتك في قسم اللعب المشترك وانسخ إعداد Geyser. وعلى Minefort ممنوع تقفل settings.bungeecord أبداً.'],en:['How do mobile players join?','On our website pick your host in Crossplay and copy the Geyser config. On Minefort never disable settings.bungeecord.']},
  {k:'price سعر مجاني free pro',ar:['السعر كام؟','مجاني أثناء الإطلاق: سيرفر واحد و10 تشخيصات شهرياً. Pro لاحقاً وسعره هيوصل قائمة الانتظار أولاً.'],en:['How much does it cost?','Free during launch: 1 server and 10 diagnoses monthly. Pro comes later and its price reaches the waitlist first.']},
- {k:'plugin بلجن jar install تثبيت',ar:['ازاي أثبت البلجن؟','حمّل الـ jar من الموقع، ارفعه في plugins، شغّل السيرفر، ونفّذ /craftmate link بكود حسابك. FalixNodes المجاني من متجرهم الداخلي أو بمسار رفع السجل.'],en:['How do I install the plugin?','Download the jar from the site, drop it in plugins, start the server, run /craftmate link with your account code. FalixNodes Free uses their built-in store or the log-upload route.']}];
+ {k:'plugin بلجن jar install تثبيت',ar:['ازاي أثبت البلجن؟','حمّل الـ jar من الموقع، ارفعه في plugins، شغّل السيرفر، ونفّذ /craftmate link — البلجن هيعرض كوداً تدخله في حسابك هنا. FalixNodes المجاني من متجرهم الداخلي أو بمسار رفع السجل.'],en:['How do I install the plugin?','Download the jar from the site, drop it in plugins, start the server, run /craftmate link — the plugin shows a code you enter in your account here. FalixNodes Free uses their built-in store or the log-upload route.']}];
 function renderKB(){
   const box=document.getElementById('kbList'); if(!box) return;
   const q=(document.getElementById('kbSearch')||{}).value||'';

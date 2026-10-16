@@ -43,8 +43,19 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase();
         switch (sub) {
             case "link": {
-                if (args.length < 2) {
-                    sender.sendMessage(ChatColor.YELLOW + "Usage: /craftmate link <CM-XXXX-XXXX>");
+                if (args.length < 2 || args[1].equalsIgnoreCase("new")) {
+                    if (client.isLinked()) {
+                        sender.sendMessage(ChatColor.GREEN + "[CraftMate AI] This server is already linked. Use /craftmate disconnect first if you want to link another account.");
+                        return true;
+                    }
+                    boolean forceNew = args.length >= 2;
+                    String generated = client.getOrCreatePendingPairingCode(forceNew);
+                    plugin.startPendingLinkPolling();
+                    sender.sendMessage(ChatColor.AQUA + "[CraftMate AI] Your server-generated link code is:");
+                    sender.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + generated);
+                    sender.sendMessage(ChatColor.GRAY + "Open your CraftMate dashboard, choose this server, and enter the code in the plugin-code field.");
+                    sender.sendMessage(ChatColor.GRAY + "I will keep trying automatically for 30 minutes. Do not share this code publicly.");
+                    sender.sendMessage(ChatColor.GRAY + "Need a fresh code? Run /craftmate link new");
                     return true;
                 }
                 String code = args[1].trim();
@@ -108,6 +119,10 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "Host Profile: " + ChatColor.AQUA + host
                 + (host.equals("minefort") ? ChatColor.YELLOW + " (BungeeCord Guardrail Active)" : ""));
         sender.sendMessage(ChatColor.GRAY + "Connection Status: " + ChatColor.WHITE + client.getLastSyncStatus());
+        if (client.hasValidPendingPairingCode()) {
+            sender.sendMessage(ChatColor.GRAY + "Pending Link: " + ChatColor.YELLOW + "Waiting for dashboard registration (expires "
+                    + new java.util.Date(client.pendingPairingExpiresAtMillis()) + ")");
+        }
         sender.sendMessage(ChatColor.GRAY + "Last Sync: " + ChatColor.WHITE + client.getLastSyncTimestamp());
         sender.sendMessage(ChatColor.GRAY + "JVM Memory: " + ChatColor.WHITE + usedMb + " MB / " + maxMb + " MB");
         sender.sendMessage(ChatColor.GRAY + "Security Mode: " + (readOnly

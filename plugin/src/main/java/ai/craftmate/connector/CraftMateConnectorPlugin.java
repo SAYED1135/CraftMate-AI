@@ -24,6 +24,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
     private AllowlistTaskExecutor taskExecutor;
     private ConnectorClient connectorClient;
     private BukkitTask heartbeatTask;
+    private BukkitTask pendingLinkTask;
 
     @Override
     public void onEnable() {
@@ -57,6 +58,11 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
             );
         }
 
+        if (connectorClient.hasValidPendingPairingCode()) {
+            startPendingLinkPolling();
+            getLogger().info("A pending CraftMate link code is waiting to be registered in the dashboard.");
+        }
+
         String detectedHost = environmentDetector.detectHostProvider();
         getLogger().info("========================================================");
         getLogger().info("CraftMate Connector v" + getDescription().getVersion() + " enabled successfully!");
@@ -66,8 +72,40 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
         getLogger().info("========================================================");
     }
 
+    /** Polls quietly until the owner enters the plugin-generated code in the dashboard. */
+    public synchronized void startPendingLinkPolling() {
+        if (pendingLinkTask != null) return;
+        int intervalSeconds = Math.max(5, getConfig().getInt("linking.auto-claim-interval-seconds", 10));
+        long intervalTicks = intervalSeconds * 20L;
+        pendingLinkTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
+                this,
+                () -> {
+                    if (connectorClient == null || connectorClient.isLinked()) {
+                        stopPendingLinkPolling();
+                        return;
+                    }
+                    if (!connectorClient.hasValidPendingPairingCode()) {
+                        connectorClient.clearPendingPairingCode();
+                        stopPendingLinkPolling();
+                        return;
+                    }
+                    connectorClient.attemptPendingPairingClaim(Bukkit.getOnlinePlayers().size());
+                },
+                40L,
+                intervalTicks
+        );
+    }
+
+    public synchronized void stopPendingLinkPolling() {
+        if (pendingLinkTask != null) {
+            pendingLinkTask.cancel();
+            pendingLinkTask = null;
+        }
+    }
+
     @Override
     public void onDisable() {
+        stopPendingLinkPolling();
         if (this.heartbeatTask != null) {
             this.heartbeatTask.cancel();
         }
@@ -78,7 +116,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
             this.connectorClient.sendCleanShutdownSignal(onlinePlayers);
         }
 
-        getLogger().info("CraftMate Connector v0.3.0 disabled cleanly.");
+        getLogger().info("CraftMate Connector disabled cleanly.");
     }
 
     public AllowlistTaskExecutor getTaskExecutor() {

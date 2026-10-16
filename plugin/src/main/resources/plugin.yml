@@ -1,5 +1,5 @@
 name: CraftMateConnector
-version: '0.3.1'
+version: '0.4.0'
 main: ai.craftmate.connector.CraftMateConnectorPlugin
 api-version: '1.20'
 authors: [CraftMateAI]

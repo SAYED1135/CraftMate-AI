@@ -41,7 +41,7 @@ jobs:
       - name: Upload Built Plugin JAR Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CraftMate-Connector-v0.3.1
+          name: CraftMate-Connector-v0.4.0
           path: plugin/build/libs/CraftMate-Connector-*.jar
           if-no-files-found: error
 
@@ -56,8 +56,8 @@ jobs:
           modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: plugin/build/libs/CraftMate-Connector-*.jar
-          name: "CraftMate Connector v0.3.1 (Paper/Purpur)"
-          version: "0.3.1"
+          name: "CraftMate Connector v0.4.0 (Paper/Purpur)"
+          version: "0.4.0"
           version-type: beta
           loaders: |
             paper

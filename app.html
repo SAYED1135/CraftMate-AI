@@ -171,21 +171,34 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       </div>
       <div class="err" id="authErr"></div>
       <div class="ok" id="authOk"></div>
+      <div class="err" id="authFix" style="background:var(--ambersoft);border-color:rgba(245,158,11,.5);color:#fde68a">
+        <b data-ar="⏳ حد إرسال البريد في Supabase اتقفل مؤقتاً" data-en="⏳ Supabase email send limit is temporarily hit">⏳ حد إرسال البريد في Supabase اتقفل مؤقتاً</b>
+        <p style="margin:7px 0" data-ar="المزوّد المدمج آخره رسالتين في الساعة للمشروع كله. إعادة المحاولة فوراً بتزوّد المشكلة. استنى المهلة، أو ادخل دلوقتي بالوضع الفوري وكمل من غير بريد. ومالك المشروع بيحلها نهائياً من الروابط دي:" data-en="The built-in provider allows only 2 emails per hour for the whole project. Retrying now makes it worse. Wait for the cooldown, or continue instantly without email. The project owner fixes it permanently here:">المزوّد المدمج آخره رسالتين في الساعة للمشروع كله. إعادة المحاولة فوراً بتزوّد المشكلة. استنى المهلة، أو ادخل دلوقتي بالوضع الفوري وكمل من غير بريد. ومالك المشروع بيحلها نهائياً من الروابط دي:</p>
+        <p style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/providers">Auth Providers ↗</a>
+          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/templates">Emails / SMTP ↗</a>
+          <a class="chipbtn" target="_blank" rel="noopener" href="https://supabase.com/dashboard/project/fucsztovkkilyboinhrv/auth/rate-limits">Rate Limits ↗</a>
+          <a class="chipbtn" target="_blank" rel="noopener" href="docs/EMAIL_RATE_LIMIT_FIX.md">📖 دليل الحل الكامل</a>
+        </p>
+        <p id="authCooldownText" style="font-weight:800"></p>
+        <button class="btn ghost sm" type="button" onclick="setAuthMode('local');authTab('register')" data-ar="⚡ كمّل بالدخول الفوري بدلاً من الانتظار" data-en="⚡ Continue with instant access instead">⚡ كمّل بالدخول الفوري بدلاً من الانتظار</button>
+      </div>
 
       <form id="registerForm" onsubmit="return doRegister(event)">
         <div class="field"><label data-ar="اسم المستخدم" data-en="Username">اسم المستخدم</label><input id="regUser" required minlength="3" maxlength="24" autocomplete="username" data-ar-ph="مثال: ahmed_craft" data-en-ph="e.g. ahmed_craft" placeholder="مثال: ahmed_craft"></div>
         <div class="field"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input id="regEmail" type="email" autocomplete="email" placeholder="you@example.com"><p class="hint" id="regEmailHint"></p></div>
         <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="regPass" type="password" required minlength="6" autocomplete="new-password" data-ar-ph="6 أحرف على الأقل" data-en-ph="At least 6 characters" placeholder="6 أحرف على الأقل"></div>
         <div class="field"><label data-ar="تأكيد كلمة السر" data-en="Confirm password">تأكيد كلمة السر</label><input id="regPass2" type="password" required autocomplete="new-password"></div>
-        <button class="btn" type="submit" style="width:100%" data-ar="🚀 إنشاء حسابي والبدء" data-en="🚀 Create my account & start">🚀 إنشاء حسابي والبدء</button>
+        <button class="btn" id="regSubmit" type="submit" style="width:100%" data-ar="🚀 إنشاء حسابي والبدء" data-en="🚀 Create my account & start">🚀 إنشاء حسابي والبدء</button>
       </form>
 
       <form id="loginForm" onsubmit="return doLogin(event)" style="display:none">
         <div class="field"><label data-ar="اسم المستخدم أو البريد" data-en="Username or email">اسم المستخدم أو البريد</label><input id="loginId" required autocomplete="username"></div>
         <div class="field"><label data-ar="كلمة السر" data-en="Password">كلمة السر</label><input id="loginPass" type="password" required autocomplete="current-password"></div>
-        <button class="btn" type="submit" style="width:100%" data-ar="دخول إلى لوحتي" data-en="Enter my dashboard">دخول إلى لوحتي</button>
+        <button class="btn" id="loginSubmit" type="submit" style="width:100%" data-ar="دخول إلى لوحتي" data-en="Enter my dashboard">دخول إلى لوحتي</button>
       </form>
 
+      <button class="btn ghost sm" id="resendBtn" type="button" onclick="resendConfirmation()" style="width:100%;margin-top:13px" data-ar="✉️ إعادة إرسال رسالة تأكيد البريد" data-en="✉️ Resend email confirmation">✉️ إعادة إرسال رسالة تأكيد البريد</button>
       <div class="divider"><span data-ar="أو" data-en="or">أو</span></div>
       <button class="btn ghost" style="width:100%" onclick="demoLogin()" data-ar="🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)" data-en="🎮 Try the ready demo account (one click)">🎮 جرّب بحساب تجريبي جاهز (نقرة واحدة)</button>
       <p class="hint" style="text-align:center;margin-top:13px" data-ar="بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات." data-en="By signing up you accept the platform is in beta launch — your data is yours and deletable anytime from Settings.">بالتسجيل أنت توافق على أن المنصة في إطلاق تجريبي — بياناتك ملكك وتحذفها بنفسك في أي وقت من الإعدادات.</p>
@@ -582,7 +595,56 @@ function authTab(which){
 }
 function authErr(msg){ const e=document.getElementById('authErr'); e.textContent=msg; e.style.display='block'; document.getElementById('authOk').style.display='none'; }
 function authOk(msg){ const e=document.getElementById('authOk'); e.textContent=msg; e.style.display='block'; document.getElementById('authErr').style.display='none'; }
-function hideAuthMsgs(){ document.getElementById('authErr').style.display='none'; document.getElementById('authOk').style.display='none'; }
+function hideAuthMsgs(){ document.getElementById('authErr').style.display='none'; document.getElementById('authOk').style.display='none'; const f=document.getElementById('authFix'); if(f) f.style.display='none'; }
+function isRateLimitError(d,status){
+  const txt=String((d&&(d.code||d.error_code||d.msg||d.message))||'').toLowerCase();
+  return status===429 || txt.includes('over_email_send_rate_limit') || txt.includes('rate limit') || txt.includes('too many');
+}
+let authCooldownTimer=null;
+function setAuthCooldown(seconds){
+  const until=Date.now()+seconds*1000;
+  try{ localStorage.setItem('cm_auth_cooldown_until',String(until)); }catch(e){}
+  const btns=['regSubmit','loginSubmit','resendBtn'].map(id=>document.getElementById(id)).filter(Boolean);
+  btns.forEach(b=>b.disabled=true);
+  if(authCooldownTimer) clearInterval(authCooldownTimer);
+  const tick=()=>{
+    const left=Math.max(0,Math.ceil((until-Date.now())/1000));
+    const el=document.getElementById('authCooldownText');
+    if(el) el.textContent=left>0?t('⏳ إعادة المحاولة متاحة بعد '+left+' ثانية — بلاش تضغط تاني قبلها.','⏳ You can retry in '+left+'s — please do not press again before then.'):'';
+    if(left<=0){ clearInterval(authCooldownTimer); btns.forEach(b=>b.disabled=false); try{ localStorage.removeItem('cm_auth_cooldown_until'); }catch(e){} }
+  };
+  tick(); authCooldownTimer=setInterval(tick,1000);
+}
+function restoreAuthCooldown(){
+  let until=0; try{ until=Number(localStorage.getItem('cm_auth_cooldown_until')||0); }catch(e){}
+  if(until>Date.now()) setAuthCooldown(Math.ceil((until-Date.now())/1000));
+}
+function cooldownActive(){
+  let until=0; try{ until=Number(localStorage.getItem('cm_auth_cooldown_until')||0); }catch(e){}
+  if(until>Date.now()){ authErr(t('⏳ لسه في مهلة حد البريد — استنى لما العداد يخلص بدل ما تعيد المحاولة وتطول المهلة.','⏳ Email-limit cooldown is still active — wait for the timer instead of retrying and extending it.')); const f=document.getElementById('authFix'); if(f) f.style.display='block'; return true; }
+  return false;
+}
+function authRateLimited(){
+  authErr(t('⏳ وصلنا لحد إرسال بريد Supabase (email rate limit exceeded). ده حد المزود نفسه مش خطأ في كلمة سرك.','⏳ Supabase email rate limit exceeded. This is the provider limit, not a password mistake.'));
+  const f=document.getElementById('authFix'); if(f) f.style.display='block';
+  setAuthCooldown(60);
+}
+async function resendConfirmation(){
+  if(cooldownActive()) return;
+  const loginEmail=(document.getElementById('loginId').value||'').trim().toLowerCase();
+  const regEmail=(document.getElementById('regEmail').value||'').trim().toLowerCase();
+  const email=loginEmail.includes('@')?loginEmail:regEmail;
+  if(!email||!email.includes('@')) return authErr(t('اكتب بريدك في خانة البريد أو اسم المستخدم الأول، وبعدين اضغط إعادة الإرسال.','Enter your email in the email/username field first, then press resend.'));
+  if(authMode!=='cloud'||!cloudKey()) return authErr(t('إعادة الإرسال دي للحسابات السحابية — فعّل وضع Supabase الأول.','Resending is for cloud accounts — enable Supabase mode first.'));
+  try{
+    const r=await fetch(cloudURL()+'/auth/v1/resend',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({type:'signup',email})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){ if(isRateLimitError(d,r.status)) return authRateLimited(); return authErr(d.msg||d.message||t('تعذرت إعادة إرسال التأكيد','Could not resend confirmation')); }
+    try{ localStorage.setItem('cm_resend_last_'+email,String(Date.now())); }catch(e){}
+    authOk(t('✉️ اتبعتت رسالة تأكيد جديدة إلى '+email+' — شيك البريد والسبام، واستنى 60 ثانية قبل أي إعادة تانية.','✉️ A new confirmation was sent to '+email+' — check inbox/spam, and wait 60s before resending again.'));
+    setAuthCooldown(60);
+  }catch(e){ authErr(t('تعذر الوصول لـ Supabase','Could not reach Supabase')); }
+}
 
 async function doRegister(ev){
   ev.preventDefault(); hideAuthMsgs();
@@ -593,17 +655,18 @@ async function doRegister(ev){
   if(pw.length<6) return authErr(t('كلمة السر لازم 6 أحرف على الأقل','Password needs at least 6 characters')),false;
   if(pw!==pw2) return authErr(t('كلمتا السر مش متطابقين','Passwords do not match')),false;
   if(authMode==='cloud'){
+    if(cooldownActive()) return false;
     if(!cloudKey()) return authErr(t('الوضع السحابي محتاج مفتاح Supabase الأول — ادخل فورياً دلوقتي وفعّل السحابة من الإعدادات، أو الصق المفتاح من جهاز سبق تفعيله.','Cloud mode needs the Supabase key first — sign in instantly now and enable cloud from Settings.')),false;
     if(!email) return authErr(t('الوضع السحابي محتاج بريد إلكتروني','Cloud mode requires an email')),false;
     try{
       const r=await fetch(cloudURL()+'/auth/v1/signup',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,data:{username}})});
       const d=await r.json();
-      if(!r.ok) return authErr(d.msg||d.message||t('فشل التسجيل السحابي','Cloud signup failed')),false;
+      if(!r.ok){ if(isRateLimitError(d,r.status)) return authRateLimited(),false; return authErr(d.msg||d.message||t('فشل التسجيل السحابي','Cloud signup failed')),false; }
       const cloudId=(d.user&&d.user.id)||uid();
       let u=db.users.find(x=>x.id===cloudId);
       if(!u){ u={id:cloudId,username,email,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
       if(d.access_token){ session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp(); toast(t('☁️ أهلاً بيك! حسابك السحابي جاهز','☁️ Welcome! Your cloud account is ready')); }
-      else authOk(t('☁️ اتعمل حسابك السحابي واتبعت تأكيد على البريد — أكّد حسابك من الرسالة وبعدين سجّل دخولك هنا. (لإطلاق أسرع بلا تأكيد: Supabase → Authentication → Providers → Email → عطّل Confirm email أثناء البيتا)','☁️ Your cloud account was created and a confirmation email was sent — confirm it, then log in here. (For a faster beta launch: Supabase → Authentication → Providers → Email → disable Confirm email)'));
+      else { try{ localStorage.setItem('cm_resend_last_'+email,String(Date.now())); }catch(e){} authOk(t('☁️ اتعمل حسابك السحابي واتبعت تأكيد على البريد — أكّد حسابك من الرسالة وبعدين سجّل دخولك هنا. (لإطلاق أسرع بلا تأكيد: Supabase → Authentication → Providers → Email → عطّل Confirm email أثناء البيتا)','☁️ Your cloud account was created and a confirmation email was sent — confirm it, then log in here. (For a faster beta launch: Supabase → Authentication → Providers → Email → disable Confirm email)')); }
       return false;
     }catch(e){ return authErr(t('تعذر الوصول لـ Supabase — تأكد من المفتاح والاتصال','Could not reach Supabase — check the key and connection')),false; }
   }
@@ -623,10 +686,16 @@ async function doLogin(ev){
   const id=document.getElementById('loginId').value.trim().toLowerCase();
   const pw=document.getElementById('loginPass').value;
   if(authMode==='cloud' && cloudKey()){
+    if(cooldownActive()) return false;
     try{
       const r=await fetch(cloudURL()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':cloudKey(),'Content-Type':'application/json'},body:JSON.stringify({email:id,password:pw})});
       const d=await r.json();
-      if(!r.ok||!d.access_token) return authErr(t('بيانات الدخول غير صحيحة','Invalid login credentials')),false;
+      if(!r.ok||!d.access_token){
+        const raw=String(d.msg||d.message||'');
+        if(isRateLimitError(d,r.status)) return authRateLimited(),false;
+        if(/not confirmed/i.test(raw)) return authErr(t('✉️ بريدك لسه مش مؤكد — افتح رسالة التأكيد من بريدك، أو اضغط «إعادة إرسال رسالة تأكيد البريد» تحت (مرة واحدة بس واستنى 60 ثانية).','✉️ Your email is not confirmed yet — open the confirmation message, or press “Resend email confirmation” below (once, then wait 60s).')),false;
+        return authErr(t('بيانات الدخول غير صحيحة','Invalid login credentials')),false;
+      }
       let u=db.users.find(x=>x.id===d.user.id);
       if(!u){ u={id:d.user.id,username:(d.user.email||id).split('@')[0],email:d.user.email||id,salt:'supabase',passHash:'supabase',displayCode:displayCode(),plan:'free',locale:LANG,createdAt:new Date().toISOString(),cloud:true}; db.users.push(u); saveDB(); }
       session={userId:u.id,mode:'cloud',at:Date.now(),accessToken:d.access_token,refreshToken:d.refresh_token,expiresAt:Date.now()+((d.expires_in||3600)*1000)}; saveSession(); enterApp();
@@ -1095,6 +1164,7 @@ function deleteAccount(){
   const hash=location.hash.replace('#','');
   authTab(hash==='login'?'login':'register');
   setAuthMode(authMode);
+  restoreAuthCooldown();
   applyLang();
   if(user()) enterApp();
 })();

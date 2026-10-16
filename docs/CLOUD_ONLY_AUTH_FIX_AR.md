@@ -1,7 +1,7 @@
 # إصلاح التسجيل السحابي — Cloud-Only Auth
 
 **التاريخ:** 2026-10-16  
-**Build اللوحة:** `2026.10.16-cloudonly1`  
+**Build اللوحة:** `2026.10.16-cloudonly2`  
 **Worker:** CraftMate Connector API `0.4.0`
 
 ## المشكلة
@@ -53,7 +53,19 @@ email rate limit exceeded
 
 ## النشر الوحيد المطلوب من المالك
 
-الكود والموقع يُنشران من GitHub، لكن الـ Worker الحالي على Cloudflare لن يحصل على نقطة `/v1/auth/register` إلا بعد إعادة نشره. شغّل مرة واحدة من جذر المستودع على Windows:
+الكود والموقع يُنشران من GitHub، لكن الـ Worker الحالي على Cloudflare لن يحصل على نقطة `/v1/auth/register` إلا بعد إعادة نشره.
+
+اللوحة الآن تفحص `/health` أولًا. إذا لم تجد `auth_registration:true` ولم يكن Native Signup مضمونًا من دون بريد، فإنها **لا ترسل محاولة Signup أصلًا** ولا تستهلك حد بريد Supabase ولا تقفل التسجيل بعدّاد متصفح قديم. عدّاد الـ 60 ثانية أصبح خاصًا بزر إعادة إرسال البريد للحسابات القديمة فقط.
+
+### أسرع تفعيل من PowerShell
+
+شغّل الأمر التالي مرة واحدة. هيحمّل آخر نسخة من المستودع إلى مجلد مؤقت وينفّذ سكربت النشر:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force; irm https://raw.githubusercontent.com/SAYED1135/CraftMate-AI/main/worker/bootstrap-cloud-auth.ps1 | iex
+```
+
+أو من جذر مستودع محلي محدّث:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\worker\deploy-cloud-auth.ps1

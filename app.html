@@ -411,8 +411,9 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 const SUPABASE_URL_DEFAULT = 'https://fucsztovkkilyboinhrv.supabase.co';
 const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6U'; // Public publishable key — safe in frontend, protected by RLS.
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
+const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-cloudonly1';
+const APP_BUILD='2026.10.16-cloudonly2';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -639,13 +640,13 @@ let authCooldownTimer=null;
 function setAuthCooldown(seconds){
   const until=Date.now()+seconds*1000;
   try{ localStorage.setItem('cm_auth_cooldown_until',String(until)); }catch(e){}
-  const btns=['regSubmit','loginSubmit','resendBtn'].map(id=>document.getElementById(id)).filter(Boolean);
+  const btns=['resendBtn'].map(id=>document.getElementById(id)).filter(Boolean);
   btns.forEach(b=>b.disabled=true);
   if(authCooldownTimer) clearInterval(authCooldownTimer);
   const tick=()=>{
     const left=Math.max(0,Math.ceil((until-Date.now())/1000));
     const el=document.getElementById('authCooldownText');
-    if(el) el.textContent=left>0?t('⏳ إعادة المحاولة متاحة بعد '+left+' ثانية — بلاش تضغط تاني قبلها.','⏳ You can retry in '+left+'s — please do not press again before then.'):'';
+    if(el) el.textContent=left>0?t('⏳ إعادة إرسال رسالة البريد متاحة بعد '+left+' ثانية — بلاش تضغط تاني قبلها.','⏳ Email resend is available in '+left+'s — please do not press again before then.'):'';
     if(left<=0){ clearInterval(authCooldownTimer); btns.forEach(b=>b.disabled=false); try{ localStorage.removeItem('cm_auth_cooldown_until'); }catch(e){} }
   };
   tick(); authCooldownTimer=setInterval(tick,1000);
@@ -660,9 +661,14 @@ function cooldownActive(){
   return false;
 }
 function authRateLimited(){
-  authErr(t('⏳ الخدمة السحابية وصلت لحد مؤقت. ده مش خطأ في كلمة سرك — استنى العداد وجرّب مرة واحدة.','⏳ The cloud service hit a temporary limit. This is not a password mistake — wait for the timer and try once.'));
+  authErr(t('⏳ وصلنا لحد إرسال البريد في مسار التأكيد القديم. ده مش خطأ في كلمة سرك، ومش بيقفل إنشاء الحساب السحابي الجديد أو تسجيل الدخول.','⏳ The legacy email-confirmation path hit its send limit. This is not a password mistake, and it does not lock new cloud registration or sign-in.'));
   const f=document.getElementById('authFix'); if(f) f.style.display='block';
   setAuthCooldown(60);
+}
+function authServiceBusy(){
+  authErr(t('⏳ محاولات كتير في وقت قصير — استنى دقيقة وجرّب مرة واحدة. ده مش خطأ في كلمة سرك.','⏳ Too many attempts in a short time — wait a minute and try once. This is not a password mistake.'));
+  const f=document.getElementById('authFix'); if(f) f.style.display='block';
+  const el=document.getElementById('authCooldownText'); if(el) el.textContent=t('⏳ استنى دقيقة قبل محاولة تانية.','⏳ Wait a minute before trying again.');
 }
 async function resendConfirmation(){
   if(cooldownActive()) return;
@@ -714,6 +720,51 @@ function cloudRegisterError(code){
     default: return t('تعذر إنشاء الحساب السحابي دلوقتي — جرّب تاني بعد لحظات','Cloud registration could not be completed — try again shortly');
   }
 }
+let cloudAuthHealthPromise=null;
+let supabaseAuthSettingsPromise=null;
+async function cloudAuthHealth(){
+  if(!cloudAuthHealthPromise){
+    cloudAuthHealthPromise=(async()=>{
+      try{
+        const r=await fetch(CONNECTOR_API_URL+'/health',{cache:'no-store'});
+        return await r.json().catch(()=>({}));
+      }catch(e){ return {}; }
+    })();
+  }
+  return cloudAuthHealthPromise;
+}
+async function nativeSignupAllowed(){
+  if(ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION) return true;
+  if(!supabaseAuthSettingsPromise){
+    supabaseAuthSettingsPromise=(async()=>{
+      try{
+        const r=await fetch(cloudURL()+'/auth/v1/settings',{headers:{'apikey':cloudKey(),'Authorization':'Bearer '+cloudKey()}});
+        return await r.json().catch(()=>null);
+      }catch(e){ return null; }
+    })();
+  }
+  const settings=await supabaseAuthSettingsPromise;
+  return !!(settings&&settings.mailer_autoconfirm===true);
+}
+function cloudRegistrationNotReady(){
+  const f=document.getElementById('authFix'); if(f) f.style.display='none';
+  authErr(t('⚠️ إنشاء الحسابات الجديدة متوقف مؤقتاً لحد ما مالك المنصة يفعّل تحديث خدمة التسجيل السحابي مرة واحدة. مش هنبعت بريد تأكيد ولا هنضيّع محاولاتك. لو عندك حساب بالفعل، سجّل دخولك عادي.','⚠️ New account creation is paused until the platform owner activates the cloud registration service update once. We will not send a confirmation email or waste your attempts. If you already have an account, sign in normally.'));
+  return false;
+}
+async function refreshCloudRegistrationNotice(){
+  const hint=document.getElementById('modeHint'); if(!hint) return;
+  const health=await cloudAuthHealth();
+  if(health&&health.ok&&health.configured&&health.auth_registration){
+    hint.textContent=t('☁️ إنشاء الحساب الجديد مؤكد سحابياً من خدمة CraftMate — مش هتحتاج تستنى رسالة بريد.','☁️ New accounts are confirmed in the cloud by the CraftMate service — no need to wait for an email.');
+    return;
+  }
+  if(await nativeSignupAllowed()){
+    hint.textContent=t('☁️ التسجيل السحابي جاهز — إنشاء الحساب بيدخّلك مباشرة من غير انتظار بريد.','☁️ Cloud registration is ready — account creation signs you in directly without waiting for email.');
+    return;
+  }
+  hint.textContent=t('⚠️ إنشاء الحسابات الجديدة متوقف مؤقتاً لحد تفعيل تحديث خدمة التسجيل من مالك المنصة. تسجيل دخول الحسابات الحالية شغال.','⚠️ New account creation is paused until the platform owner activates the registration service update. Existing-account sign-in still works.');
+}
+
 async function doRegister(ev){
   ev.preventDefault(); hideAuthMsgs();
   const btn=document.getElementById('regSubmit');
@@ -732,12 +783,15 @@ async function doRegisterCloud(){
   if(pw.length<8||pw.length>72) return authErr(cloudRegisterError('WEAK_PASSWORD')),false;
   if(pw!==pw2) return authErr(t('كلمتا السر مش متطابقين','Passwords do not match')),false;
   if(honeypot) return authErr(cloudRegisterError('INVALID_REQUEST')),false;
-  if(cooldownActive()) return false;
+
+  const health=await cloudAuthHealth();
+  const workerReady=!!(health&&health.ok&&health.configured&&health.auth_registration);
+  if(!workerReady&&!(await nativeSignupAllowed())) return cloudRegistrationNotReady(),false;
 
   // Primary path: CraftMate's trusted cloud registration service creates the
   // Supabase user already confirmed, so signup never touches the built-in
   // 2-emails/hour sender. The browser then signs in normally with Supabase.
-  try{
+  if(workerReady) try{
     const payload={username,email,locale:LANG,website:''}; payload['pass'+'word']=pw;
     const r=await fetch(CONNECTOR_API_URL+'/v1/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json().catch(()=>({}));
@@ -756,11 +810,13 @@ async function doRegisterCloud(){
     }
     const code=d&&d.error&&d.error.code;
     if(r.status===409||code==='USERNAME_TAKEN'||code==='ACCOUNT_EXISTS') return authErr(cloudRegisterError(code)),false;
-    if(r.status===429||code==='REGISTRATION_RATE_LIMITED') return authRateLimited(),false;
+    if(r.status===429||code==='REGISTRATION_RATE_LIMITED') return authServiceBusy(),false;
     if(r.status===400) return authErr(cloudRegisterError(code)),false;
     if(![404,405,501,502,503].includes(r.status)) return authErr(cloudRegisterError(code)),false;
+    if(!(await nativeSignupAllowed())) return cloudRegistrationNotReady(),false;
     console.warn('Cloud registration service unavailable, using native cloud signup:',r.status,code||'');
   }catch(e){
+    if(!(await nativeSignupAllowed())) return cloudRegistrationNotReady(),false;
     console.warn('Cloud registration service unreachable, using native cloud signup:',e.message);
   }
 
@@ -810,7 +866,7 @@ async function doLogin(ev){
     return false;
   }catch(e){
     const d=e.data||{}; const raw=String(d.msg||d.message||e.message||'');
-    if(isRateLimitError(d,e.status)) return authRateLimited(),false;
+    if(isRateLimitError(d,e.status)) return authServiceBusy(),false;
     if(/not confirmed/i.test(raw)) return authErr(t('✉️ الحساب القديم ده لسه مش مؤكد — افتح رسالة التأكيد من بريدك، أو اضغط «إعادة إرسال تأكيد البريد (للحسابات القديمة)» مرة واحدة واستنى 60 ثانية.','✉️ This legacy account is not confirmed yet — open the confirmation email, or press “Resend email confirmation (legacy accounts)” once and wait 60 seconds.')),false;
     return authErr(t('بيانات الدخول غير صحيحة أو الحساب مش موجود','Invalid login credentials or account not found')),false;
   }finally{
@@ -1372,6 +1428,7 @@ function deleteAccount(){
   authTab(hash==='login'?'login':'register');
   setAuthMode(authMode);
   restoreAuthCooldown();
+  refreshCloudRegistrationNotice();
   applyLang();
   if(user()) enterApp();
 })();

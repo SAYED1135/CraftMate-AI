@@ -2,8 +2,8 @@
 
 **مساعد ذكي لتشخيص وإدارة سيرفرات Minecraft (Paper / Purpur) مبني على السياق والقدرات — بتكلفة تشغيل مجانية ($0 Stack).**
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Dashboard-10b981?style=for-the-badge&logo=github)](https://esaye2312-art.github.io/CraftMate-AI/)
-[![Plugin Build](https://img.shields.io/github/actions/workflow/status/esaye2312-art/CraftMate-AI/build-plugin.yml?style=for-the-badge&label=CraftMate%20Connector%20JAR)](https://github.com/esaye2312-art/CraftMate-AI/actions/workflows/build-plugin.yml)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Dashboard-10b981?style=for-the-badge&logo=github)](https://sayed1135.github.io/CraftMate-AI/)
+[![Plugin Build](https://img.shields.io/github/actions/workflow/status/SAYED1135/CraftMate-AI/build-plugin.yml?style=for-the-badge&label=CraftMate%20Connector%20JAR)](https://github.com/SAYED1135/CraftMate-AI/actions/workflows/build-plugin.yml)
 [![PRD Version](https://img.shields.io/badge/PRD-v0.2-3b82f6?style=for-the-badge)](./docs/CraftMate_AI_PRD_v0.2.md)
 [![Supabase](https://img.shields.io/badge/Supabase-fucsztovkkilyboinhrv-3ecf8e?style=for-the-badge&logo=supabase)](https://fucsztovkkilyboinhrv.supabase.co)
 

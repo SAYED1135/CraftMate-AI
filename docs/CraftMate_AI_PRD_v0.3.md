@@ -7,8 +7,8 @@
 | **الإصدار** | v0.3 — Commercial Reset (إعادة تعريف تجارية كاملة) |
 | **التاريخ** | 15 أكتوبر 2026 |
 | **الحالة** | معتمدة للتنفيذ — تحل محل PRD v0.2 كمرجع للمنتج |
-| **المستودع** | https://github.com/esaye2312-art/CraftMate-AI |
-| **الموقع الحالي** | https://esaye2312-art.github.io/CraftMate-AI/ |
+| **المستودع** | https://github.com/SAYED1135/CraftMate-AI |
+| **الموقع الحالي** | https://sayed1135.github.io/CraftMate-AI/ |
 | **قاعدة البيانات** | Supabase — `fucsztovkkilyboinhrv` |
 | **المكوّن المنشور** | CraftMate-Connector v0.2.0 (Paper/Purpur Plugin) — GitHub Release `v0.2.0` |
 | **وثيقة مرجعية** | `docs/BENCHMARK_ahmed_amedo.md` — تحليل المنافس التجاري ahmed-amedo.com |

@@ -62,7 +62,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
         getLogger().info("CraftMate Connector v0.3.0 enabled successfully!");
         getLogger().info("Detected Host Profile : " + detectedHost);
         getLogger().info("Security Read-Only    : " + getConfig().getBoolean("security.read-only-mode", true));
-        getLogger().info("Dashboard & Docs      : https://esaye2312-art.github.io/CraftMate-AI/");
+        getLogger().info("Dashboard & Docs      : https://sayed1135.github.io/CraftMate-AI/");
         getLogger().info("========================================================");
     }
 

@@ -466,6 +466,11 @@ function notify(type,titleAr,titleEn,bodyAr,bodyEn){
 function loadSession(){ try{ const s=JSON.parse(localStorage.getItem(SESSION_KEY)); if(s && s.at && (Date.now()-s.at) > 7*24*60*60*1000){ localStorage.removeItem(SESSION_KEY); return null; } return s; }catch(e){ return null; } }
 function saveSession(){ session?localStorage.setItem(SESSION_KEY,JSON.stringify(session)):localStorage.removeItem(SESSION_KEY); }
 function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function isUuid(v){ return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||'')); }
+function newUuid(){
+  try{ if(crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{ const r=Math.random()*16|0; return (ch==='x'?r:(r&0x3|0x8)).toString(16); });
+}
 function displayCode(){ return 'CM-'+Math.random().toString(36).slice(2,8).toUpperCase(); }
 function user(){ return session?db.users.find(u=>u.id===session.userId):null; }
 function t(ar,en){ return LANG==='ar'?ar:en; }
@@ -503,7 +508,9 @@ function localServerFromCloud(x){
   return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,createdAt:x.created_at,source:'cloud'};
 }
 function cloudServerPayload(sv){
-  return {id:sv.id,owner_id:sv.ownerId,name:sv.name,host_provider:sv.host,server_software:sv.software,mc_version:sv.version,status:sv.status,address:sv.address||null,edition:'java',link_method:sv.method||'plugin',linked_at:sv.linkedAt||null,last_heartbeat_at:sv.lastHeartbeat||null,environment_snapshot:sv.env||{},settings:normalizeServer(sv).settings};
+  const payload={owner_id:sv.ownerId,name:sv.name,host_provider:sv.host,server_software:sv.software,mc_version:sv.version,status:sv.status,address:sv.address||null,edition:'java',link_method:sv.method||'plugin',linked_at:sv.linkedAt||null,last_heartbeat_at:sv.lastHeartbeat||null,environment_snapshot:sv.env||{},settings:normalizeServer(sv).settings};
+  if(isUuid(sv.id)) payload.id=sv.id;
+  return payload;
 }
 async function cloudUpsertServer(sv){
   if(!isCloud()) return null;
@@ -519,10 +526,41 @@ async function cloudInsertDiagnosis(rec,titleFallback){
   const data=await cloudJson('diagnostic_reports',{method:'POST',headers:{'Prefer':'return=representation'},body:JSON.stringify(payload)});
   return Array.isArray(data)?data[0]:data;
 }
+async function cloudEnsureServer(sv){
+  if(!isCloud()||!sv) return false;
+  if(sv.source==='cloud'&&isUuid(sv.id)) return true;
+  const oldId=sv.id;
+  const created=await cloudUpsertServer(sv);
+  if(!created||!isUuid(created.id)) throw new Error('Cloud server did not return a UUID');
+  if(created.id!==oldId){
+    db.codes.forEach(c=>{ if(c.serverId===oldId) c.serverId=created.id; });
+    if(activeServerId===oldId) activeServerId=created.id;
+    sv.id=created.id;
+  }
+  sv.source='cloud'; saveDB(); return true;
+}
 async function cloudInsertCode(code){
-  if(!isCloud()) return;
-  const sv=myServers().find(x=>x.id===code.serverId); if(!sv||sv.source!=='cloud') return;
-  await cloudJson('connector_tokens',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({server_id:sv.id,pairing_code:code.code,pairing_expires_at:new Date(code.expiresAt).toISOString()})});
+  if(!isCloud()) throw new Error('Not in cloud mode');
+  const sv=myServers().find(x=>x.id===code.serverId); if(!sv) throw new Error('Server not found in dashboard');
+  await cloudEnsureServer(sv);
+  code.serverId=sv.id;
+  const existing=await cloudJson('connector_tokens?server_id=eq.'+encodeURIComponent(sv.id)+'&pairing_code=eq.'+encodeURIComponent(code.code)+'&select=id,pairing_code&limit=1');
+  if(Array.isArray(existing)&&existing.length) return existing[0];
+  return await cloudJson('connector_tokens',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify({server_id:sv.id,pairing_code:code.code,pairing_expires_at:new Date(code.expiresAt).toISOString()})});
+}
+async function cloudSyncCode(code){
+  if(!code) return false;
+  if(code.cloudSynced) return true;
+  if(!isCloud()){ code.cloudError='LOCAL_MODE'; saveDB(); return false; }
+  try{
+    await cloudInsertCode(code);
+    code.cloudSynced=true; code.cloudError=''; saveDB(); return true;
+  }catch(e){
+    if(/409|duplicate|unique|already exists/i.test(e.message||'')){
+      code.cloudSynced=true; code.cloudError=''; saveDB(); return true;
+    }
+    code.cloudSynced=false; code.cloudError=String(e.message||e).slice(0,240); saveDB(); return false;
+  }
 }
 async function syncCloudData(){
   if(!isCloud()||cloudSyncing||cloudSyncedFor===session.userId) return;
@@ -826,7 +864,7 @@ function setMethod(m){
 function newLinkCode(serverId){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const p=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
-  const code={id:uid(),ownerId:user().id,serverId,code:'CM-'+p()+'-'+p(),expiresAt:Date.now()+15*60*1000,usedAt:null};
+  const code={id:uid(),ownerId:user().id,serverId,code:'CM-'+p()+'-'+p(),expiresAt:Date.now()+15*60*1000,usedAt:null,cloudSynced:false,cloudSyncing:false,cloudError:''};
   db.codes.push(code); saveDB(); return code;
 }
 function activeCode(serverId){
@@ -837,13 +875,12 @@ async function createServer(){
   const u=user(); if(!u) return;
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=document.getElementById('obName').value.trim()||t('سيرفري','My Server');
-  const s={id:uid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:obMethod,env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
+  const s={id:newUuid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:obMethod,env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
   if(isCloud()){
     try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
     catch(e){ toast(t('⚠️ تعذر الحفظ السحابي — اتحفظ على هذا الجهاز مؤقتاً ('+e.message.slice(0,80)+')','⚠️ Cloud save failed — saved on this device temporarily')); }
   }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
-  if(s.source==='cloud'){ const c=activeCode(s.id); if(c) cloudInsertCode(c).catch(()=>{}); }
   activeServerId=s.id;
   showConnectPanel(s,true);
   toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step'));
@@ -861,16 +898,50 @@ function showConnectPanel(s,fresh){
     box.innerHTML='<p style="color:var(--muted)">'+t('تمام — سيرفرك محفوظ بحالة «غير مرتبط». ارجع له في أي وقت من «سيرفراتي» وولّد كود ربط لما تجهز.','Done — your server is saved as “Unlinked”. Return anytime under “My servers” and generate a link code when ready.')+'</p><br><button class="btn" onclick="go(\'servers\')">'+t('🗂️ افتح سيرفراتي','🗂️ Open my servers')+'</button>';
     return;
   }
-  const code=activeCode(s.id)||newLinkCode(s.id); if(isCloud()&&s.source==='cloud') cloudInsertCode(code).catch(()=>{});
+  const code=activeCode(s.id)||newLinkCode(s.id);
   const jar='https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.3.0/CraftMate-Connector-0.3.0.jar';
   box.innerHTML=
    '<p style="color:var(--muted)">'+t('حمّل البلجن وارفعه في مجلد plugins وشغّل سيرفرك، وبعدين اكتب الأمر ده في اللعبة أو الكونسول:','Download the plugin, drop it in your plugins folder, start your server, then type this in-game or in console:')+'</p>'+
    '<div class="codebox"><b>'+code.code+'</b><span>'+t('صالح 15 دقيقة ولمرة واحدة — بينتهي في ','Valid 15 minutes, single use — expires at ')+new Date(code.expiresAt).toLocaleTimeString()+'</span></div>'+
    '<div class="codecmd">/craftmate link '+code.code+'</div>'+
+   '<div id="codeCloudStatus" class="hint" style="margin:10px 0"></div>'+
+   '<p class="hint" style="margin:10px 0">'+t('لو ظهرت رسالة Connector API URL is not configured، فإصدار v0.3.1 يضبط عنوان الـ API تلقائياً؛ ومع v0.3.0 ضع العنوان التالي في backend.api-url داخل plugins/CraftMateConnector/config.yml ثم أعد تشغيل السيرفر قبل تنفيذ أمر الربط:','If Connector API URL is not configured appears, v0.3.1 sets the API URL automatically; on v0.3.0 set the URL below as backend.api-url in plugins/CraftMateConnector/config.yml and restart before linking:')+'</p>'+
+   '<div class="codecmd" style="font-size:.78rem">https://craftmate-connector-api.craftmate-api-sayed.workers.dev</div>'+
    '<div style="display:flex;gap:9px;flex-wrap:wrap"><a class="btn sm" href="'+jar+'" target="_blank" rel="noopener">'+t('⬇️ تحميل البلجن','⬇️ Download plugin')+'</a><button class="btn ghost sm" onclick="copyText(\'/craftmate link '+code.code+'\')">'+t('📋 انسخ الأمر','📋 Copy command')+'</button><button class="btn ghost sm" onclick="regenCode(\''+s.id+'\')">'+t('🔄 كود جديد','🔄 New code')+'</button></div>'+
    '<div style="margin-top:20px;border-top:1px dashed var(--border);padding-top:18px"><h4 style="margin-bottom:8px">'+t('🧪 معاينة الاتصال هنا (لتجربة اللوحة من غير سيرفر ماينكرافت)','🧪 Preview the connection here (test the dashboard without a Minecraft server)')+'</h4>'+
    '<p class="hint" style="margin-bottom:11px">'+t('الصق نفس الكود واضغط اتصال — هيتسجل نبض بيئة تجريبي زي ما البلجن الحقيقي هيبعت بالضبط.','Paste the same code and connect — a sample environment heartbeat is recorded exactly as the real plugin will send.')+'</p>'+
    '<div style="display:flex;gap:9px;flex-wrap:wrap"><input id="simCode" placeholder="CM-XXXX-XXXX" style="flex:1;min-width:200px;background:var(--card3);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:12px;direction:ltr"><button class="btn sm" onclick="simulateLink(\''+s.id+'\')">'+t('🔌 اتصال تجريبي','🔌 Simulate link')+'</button></div></div>';
+  updateCodeCloudStatus(code,s);
+}
+async function updateCodeCloudStatus(code,s){
+  const el=document.getElementById('codeCloudStatus'); if(!el||!code||!s) return;
+  if(!isCloud()){
+    el.innerHTML='<span style="color:#f59e0b">⚠️ '+t('هذا الكود محلي فقط ولن يربط البلجن الحقيقي. سجّل الدخول بوضع Supabase السحابي ثم ولّد كوداً جديداً.','This code is local-only and cannot link the real plugin. Sign in with Supabase cloud mode, then generate a new code.')+'</span>';
+    return;
+  }
+  if(code.cloudSynced){
+    el.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+'</span>';
+    return;
+  }
+  if(code.cloudSyncing){
+    el.textContent=t('⏳ جارٍ تفعيل الكود في السحابة…','⏳ Activating the code in the cloud…');
+    return;
+  }
+  code.cloudSyncing=true; saveDB();
+  el.textContent=t('⏳ جارٍ تفعيل الكود في السحابة… لا تنفذ أمر الربط قبل ظهور علامة ✅.','⏳ Activating the code in the cloud… Do not run the link command before the ✅ appears.');
+  const ok=await cloudSyncCode(code);
+  code.cloudSyncing=false; saveDB();
+  const current=document.getElementById('codeCloudStatus'); if(!current) return;
+  if(ok){
+    current.innerHTML='<span style="color:#22c55e">✅ '+t('تم تفعيل الكود في السحابة — نفّذ أمر الربط الآن قبل انتهاء 15 دقيقة.','Code activated in the cloud — run the link command now, within 15 minutes.')+'</span>';
+  }else{
+    current.innerHTML='<span style="color:#ef4444">❌ '+t('لم يتم تفعيل الكود سحابياً، لذلك سيعيد البلجن INVALID_CODE. السبب: ','The code was not activated in the cloud, so the plugin will return INVALID_CODE. Reason: ')+(code.cloudError||'unknown')+'</span> <button class="btn ghost sm" onclick="retryCloudCode(\''+s.id+'\',\''+code.id+'\')">'+t('إعادة المحاولة','Retry')+'</button>';
+  }
+}
+function retryCloudCode(serverId,codeId){
+  const s=myServers().find(x=>x.id===serverId); const c=db.codes.find(x=>x.id===codeId);
+  if(!s||!c) return;
+  c.cloudSynced=false; c.cloudSyncing=false; c.cloudError=''; saveDB(); showConnectPanel(s,true);
 }
 function regenCode(serverId){ db.codes.push({id:uid(),ownerId:user().id,serverId,code:'X',expiresAt:0,usedAt:Date.now()}); const s=myServers().find(x=>x.id===serverId); const c=newLinkCode(serverId); saveDB(); showConnectPanel(s,true); toast(t('🔄 اتولد كود جديد','🔄 A new code was generated')); }
 function showLinkFor(serverId){ const s=myServers().find(x=>x.id===serverId); if(!s) return; activeServerId=s.id; go('onboard'); setTimeout(()=>showConnectPanel(s,true),60); }

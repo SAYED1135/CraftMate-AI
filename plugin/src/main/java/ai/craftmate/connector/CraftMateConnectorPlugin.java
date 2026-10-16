@@ -59,7 +59,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
 
         String detectedHost = environmentDetector.detectHostProvider();
         getLogger().info("========================================================");
-        getLogger().info("CraftMate Connector v0.3.0 enabled successfully!");
+        getLogger().info("CraftMate Connector v" + getDescription().getVersion() + " enabled successfully!");
         getLogger().info("Detected Host Profile : " + detectedHost);
         getLogger().info("Security Read-Only    : " + getConfig().getBoolean("security.read-only-mode", true));
         getLogger().info("Dashboard & Docs      : https://sayed1135.github.io/CraftMate-AI/");

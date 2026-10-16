@@ -104,7 +104,7 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
         boolean readOnly = plugin.getConfig().getBoolean("security.read-only-mode", true);
 
         sender.sendMessage(ChatColor.DARK_GRAY + "================================================");
-        sender.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "⚡ CraftMate AI Connector v0.3.0");
+        sender.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "⚡ CraftMate AI Connector v" + plugin.getDescription().getVersion());
         sender.sendMessage(ChatColor.GRAY + "Host Profile: " + ChatColor.AQUA + host
                 + (host.equals("minefort") ? ChatColor.YELLOW + " (BungeeCord Guardrail Active)" : ""));
         sender.sendMessage(ChatColor.GRAY + "Connection Status: " + ChatColor.WHITE + client.getLastSyncStatus());

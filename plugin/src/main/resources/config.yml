@@ -1,5 +1,5 @@
 # ============================================================================
-# CraftMate Connector v0.3.0 — Configuration
+# CraftMate Connector v0.3.1 — Configuration
 # Dashboard: https://sayed1135.github.io/CraftMate-AI/app.html
 # Docs: https://github.com/SAYED1135/CraftMate-AI
 # ============================================================================
@@ -14,9 +14,8 @@ host-provider: "auto"
 
 backend:
   # CraftMate Connector API (Cloudflare Worker) base URL — NO trailing slash.
-  # The project owner deploys worker/ once and publishes this URL here and on
-  # the website. Example: https://craftmate-connector-api.example.workers.dev
-  api-url: "https://craftmate-connector-api.YOUR-SUBDOMAIN.workers.dev"
+  # Production Worker for CraftMate AI. Do not put a Supabase URL or any key here.
+  api-url: "https://craftmate-connector-api.craftmate-api-sayed.workers.dev"
   # Backwards-compatible fallback if api-url is removed:
   endpoint-url: ""
   project-ref: "fucsztovkkilyboinhrv"

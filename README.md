@@ -120,4 +120,9 @@ CraftMate-AI/
 
 ## 🔌 Connector API v0.3 — الربط الحقيقي
 
-البلجن `CraftMate-Connector v0.3.0` يطالب فعلياً بكود ربط لوحتك عبر **Connector API** (Cloudflare Worker في [`worker/`](./worker/)) ويستبدله برمز سيرفر طويل العمر، ثم يرسل نبضات كل 60 ثانية وتشخيصات منقّاة وحالة سبات نظيفة. تعليمات نشر الـ Worker مرة واحدة (مع سر Supabase في Cloudflare Secrets فقط) في [`worker/README.md`](./worker/README.md)، وترحيلة الربط في [`004_connector_api_v03.sql`](./supabase/migrations/004_connector_api_v03.sql).
+البلجن `CraftMate-Connector v0.3.1` يطالب فعلياً بكود ربط لوحتك عبر **Connector API** (Cloudflare Worker في [`worker/`](./worker/)) ويستبدله برمز سيرفر طويل العمر، ثم يرسل نبضات كل 60 ثانية وتشخيصات منقّاة وحالة سبات نظيفة.
+
+- **Worker الإنتاج:** https://craftmate-connector-api.craftmate-api-sayed.workers.dev
+- **فحص الجاهزية:** https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health — تم التحقق أنه يعيد `configured:true`.
+- إصدار v0.3.1 يهاجر تلقائياً إعدادات v0.3.0 التي تحتوي على عنوان مؤقت (`YOUR-SUBDOMAIN`) إلى Worker الإنتاج عند أول تشغيل، دون تغيير أي عنوان Worker مخصص صالح.
+- تعليمات الـ Worker وسر Supabase (في Cloudflare Secrets فقط) في [`worker/README.md`](./worker/README.md)، وترحيلة الربط في [`004_connector_api_v03.sql`](./supabase/migrations/004_connector_api_v03.sql).

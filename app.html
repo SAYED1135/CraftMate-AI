@@ -156,7 +156,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       <div class="perk"><span class="ic">🩺</span><div><b data-ar="تشخيص يفهمك" data-en="Diagnosis that speaks your language">تشخيص يفهمك</b><span data-ar="10 تشخيصات ذكية شهرياً في الخطة المجانية" data-en="10 smart diagnoses monthly on the Free plan">10 تشخيصات ذكية شهرياً في الخطة المجانية</span></div></div>
       <div class="perk"><span class="ic">🌋</span><div><b data-ar="لاعبو الجوال يدخلون" data-en="Mobile players get in">لاعبو الجوال يدخلون</b><span data-ar="معالج لعب مشترك مظبوط على استضافتك الأربع" data-en="A crossplay wizard tuned to your four hosts">معالج لعب مشترك مظبوط على استضافتك الأربع</span></div></div>
       <div class="perk"><span class="ic">🔒</span><div><b data-ar="أمان قبل الذكاء" data-en="Safety before intelligence">أمان قبل الذكاء</b><span data-ar="تنقية أسرار، وموافقة قبل أي تعديل، ونسخ احتياطي وتراجع" data-en="Secret scrubbing, approval before any edit, backup & rollback">تنقية أسرار، وموافقة قبل أي تعديل، ونسخ احتياطي وتراجع</span></div></div>
-      <div class="perk"><span class="ic">🤖</span><div><b data-ar="بوت AFK في الطريق" data-en="AFK bot on the way">بوت AFK في الطريق</b><span data-ar="حسابك الحالي هو نفس حساب بوت البقاء عند إطلاقه" data-en="This same account runs your Stay-Alive bot at launch">حسابك الحالي هو نفس حساب بوت البقاء عند إطلاقه</span></div></div>
+      <div class="perk"><span class="ic">🔔</span><div><b data-ar="تنبيهات من حالة حقيقية" data-en="Alerts from real status">تنبيهات من حالة حقيقية</b><span data-ar="حالة سيرفرك بتتبني من آخر نبضة وصلت فعلاً من البلجن" data-en="Your server status is built from the latest real plugin heartbeat">حالة سيرفرك بتتبني من آخر نبضة وصلت فعلاً من البلجن</span></div></div>
     </div>
 
     <div class="card">
@@ -413,7 +413,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-prod1';
+const APP_BUILD='2026.10.16-prod2';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -434,14 +434,14 @@ function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY))||{users:
 function saveDB(){ localStorage.setItem(DB_KEY,JSON.stringify(db)); }
 function ensureDB(){
   ['users','servers','codes','diagnoses','audits','notifications','posts','comments','notices','tickets','changes'].forEach(k=>{ if(!Array.isArray(db[k])) db[k]=[]; });
+  db.posts=db.posts.filter(x=>!(x.ownerId==='system'&&/AFK/i.test(String(x.titleAr||'')+' '+String(x.titleEn||''))));
   if(!db.config) db.config={};
   if(!db.config.plans) db.config.plans={};
-  if(!db.config.flags) db.config.flags={posts:true,notices:true,afkWaitlist:true,support:true};
+  if(!db.config.flags) db.config.flags={posts:true,notices:true,support:true};
   if(!db.posts.length && !db.config.seededPosts){
     db.config.seededPosts=true;
     db.posts.push(
       {id:uid(),ownerId:'system',author:'CraftMate Team',titleAr:'🎉 أهلاً بكم في إطلاق CraftMate التجريبي',titleEn:'🎉 Welcome to the CraftMate beta launch',bodyAr:'المنصة بقت حسابات ولوحات وربط سيرفر وتشخيصات محفوظة. جرّب حساباً، اربط سيرفرك، وقولنا رأيك بصراحة — المنتج بيتبني بملاحظاتكم.',bodyEn:'The platform now has accounts, dashboards, server linking and saved diagnoses. Try an account, link your server, and tell us honestly — the product is shaped by your feedback.',at:new Date().toISOString(),likes:[],pinned:true},
-      {id:uid(),ownerId:'system',author:'CraftMate Team',titleAr:'🤖 بوت البقاء AFK — الحالة بصراحة',titleEn:'🤖 Stay-Alive AFK Bot — the honest status',bodyAr:'البوت لسه بيتبني على بنية سحابية موزعة ومش هنوعد بتاريخ قبل ما يثبت استقراره في اختبارات طويلة. قائمة الانتظار مفتوحة من الموقع الرئيسي.',bodyEn:'The bot is being built on distributed cloud infrastructure, and we will not promise a date before long stability tests pass. The waitlist is open on the main website.',at:new Date().toISOString(),likes:[],pinned:false}
     );
   }
   db.servers.forEach(normalizeServer);
@@ -1342,7 +1342,7 @@ function renderAdmin(){
   const set=(id,v)=>{ const e=document.getElementById(id); if(e&&document.activeElement!==e) e.value=v; };
   set('admFreeServers',free.servers); set('admFreeDiag',free.diagnoses); set('admFreeRet',free.retention); set('admProServers',pro.servers);
   const flags=db.config.flags||{};
-  document.getElementById('flagsList').innerHTML=[['posts',t('منشورات المجتمع','Community posts')],['notices',t('إشعارات المطوّر','Developer notices')],['afkWaitlist',t('قائمة انتظار AFK','AFK waitlist')],['support',t('الدعم والتذاكر','Support & tickets')]].map(f=>'<div class="flagrow"><span>'+f[1]+'</span><input class="switch" type="checkbox" '+(flags[f[0]]!==false?'checked':'')+' onchange="toggleFlag(\''+f[0]+'\',this.checked)"></div>').join('');
+  document.getElementById('flagsList').innerHTML=[['posts',t('منشورات المجتمع','Community posts')],['notices',t('إشعارات المطوّر','Developer notices')],['support',t('الدعم والتذاكر','Support & tickets')]].map(f=>'<div class="flagrow"><span>'+f[1]+'</span><input class="switch" type="checkbox" '+(flags[f[0]]!==false?'checked':'')+' onchange="toggleFlag(\''+f[0]+'\',this.checked)"></div>').join('');
   document.getElementById('noticesAdminList').innerHTML=db.notices.length?[...db.notices].reverse().map(n=>'<div class="check"><span class="box">📢</span><div style="flex:1"><b>'+escapeHtml(LANG==='ar'?n.titleAr:n.titleEn)+'</b><span>'+fmtDate(n.at)+'</span></div><button class="btn danger sm" onclick="deleteNotice(\''+n.id+'\')">'+t('حذف','Delete')+'</button></div>').join(''):'<div class="empty"><p>'+t('لا إشعارات منشورة.','No published notices.')+'</p></div>';
   document.getElementById('adminUsers').innerHTML=db.users.length?'<table><thead><tr><th>'+t('المستخدم','User')+'</th><th>'+t('الخطة','Plan')+'</th><th>'+t('سيرفرات','Servers')+'</th><th></th></tr></thead><tbody>'+db.users.map(x=>'<tr><td><b>'+escapeHtml(x.username)+'</b><br><span style="color:var(--dim);font-size:.75rem">'+x.displayCode+' · '+fmtDate(x.createdAt)+'</span></td><td>'+planOf(x).label+'</td><td>'+db.servers.filter(sv=>sv.ownerId===x.id).length+'</td><td><select onchange="adminSetPlan(\''+x.id+'\',this.value)" style="background:var(--card3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px"><option value="free" '+(x.plan==='free'?'selected':'')+'>free</option><option value="pro" '+(x.plan==='pro'?'selected':'')+'>pro</option><option value="ultra" '+(x.plan==='ultra'?'selected':'')+'>ultra</option></select></td></tr>').join('')+'</tbody></table>':'—';
   document.getElementById('adminWaitlists').innerHTML=waitlists.length?'<table><thead><tr><th>Email</th><th>'+t('المنتج','Product')+'</th><th>'+t('التاريخ','Date')+'</th></tr></thead><tbody>'+waitlists.map(w=>'<tr><td>'+escapeHtml(w.email)+'</td><td>'+escapeHtml(w.product)+'</td><td>'+fmtDate(w.at)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty"><p>'+t('لا اشتراكات انتظار على هذا المتصفح بعد.','No waitlist signups in this browser yet.')+'</p></div>';

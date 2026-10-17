@@ -299,8 +299,8 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
           <div class="stepdot active" id="sd1" data-ar="1 · الاستضافة" data-en="1 · Host">1 · الاستضافة</div>
           <div class="stepdot" id="sd2" data-ar="2 · بيانات السيرفر" data-en="2 · Server details">2 · بيانات السيرفر</div>
           <div class="stepdot" id="sd3" data-ar="3 · طريقة الربط" data-en="3 · Link method">3 · طريقة الربط</div>
-          <div class="stepdot" id="sd4" data-ar="4 · تحميل البلجن" data-en="4 · Download plugin">4 · تحميل البلجن</div>
-          <div class="stepdot" id="sd5" data-ar="5 · إدخال الكود" data-en="5 · Enter code">5 · إدخال الكود</div>
+          <div class="stepdot" id="sd4" data-ar="4 · حساب المنصة" data-en="4 · Platform account">4 · حساب المنصة</div>
+          <div class="stepdot" id="sd5" data-ar="5 · تحقق الاتصال" data-en="5 · Verify connection">5 · تحقق الاتصال</div>
         </div>
 
         <div class="panel wizard-panel active" id="obStep1">
@@ -324,31 +324,23 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         <div class="panel wizard-panel" id="obStep3">
           <h3 data-ar="ثالثاً: هتوصلنا بسيرفرك إزاي؟" data-en="Third: how will you connect us?">ثالثاً: هتوصلنا بسيرفرك إزاي؟</h3>
           <div class="radio-row">
-            <div class="radio-card sel" id="mPlugin" onclick="setMethod('plugin')"><div class="ic">🔌</div><b data-ar="بالبلجن (الأقوى)" data-en="Plugin (strongest)">بالبلجن (الأقوى)</b><span data-ar="ربط حي كل 60 ثانية وتشخيص تلقائي" data-en="Live 60s link & automatic diagnosis">ربط حي كل 60 ثانية وتشخيص تلقائي</span></div>
+            <div class="radio-card sel" id="mBot" onclick="setMethod('bot')"><div class="ic">🤖</div><b data-ar="بحساب اتصال المنصة (من غير تثبيت)" data-en="Platform connection account (no install)">بحساب اتصال المنصة (من غير تثبيت)</b><span data-ar="المنصة بتدخل سيرفرك بحسابها بعد ما تضيفه وتديله صلاحيات" data-en="The platform joins your server with its account after you add it and grant privileges">المنصة بتدخل سيرفرك بحسابها بعد ما تضيفه وتديله صلاحيات</span></div>
             <div class="radio-card" id="mManual" onclick="setMethod('manual')"><div class="ic">📄</div><b data-ar="برفع السجل" data-en="Log upload">برفع السجل</b><span data-ar="من غير أي تثبيت — للاستضافات المقيدة" data-en="Zero install — for restricted hosts">من غير أي تثبيت — للاستضافات المقيدة</span></div>
             <div class="radio-card" id="mLater" onclick="setMethod('later')"><div class="ic">🕐</div><b data-ar="سجّله دلوقتي واربط بعدين" data-en="Save now, link later">سجّله دلوقتي واربط بعدين</b><span data-ar="هيظهر في لوحتك بحالة غير مرتبط" data-en="Appears in your dashboard as unlinked">هيظهر في لوحتك بحالة غير مرتبط</span></div>
           </div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(2)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createServer()" data-ar="حفظ ومتابعة لتحميل البلجن ←" data-en="Save & continue to plugin download →">حفظ ومتابعة لتحميل البلجن ←</button></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(2)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createServer()" data-ar="حفظ ومتابعة لحساب المنصة ←" data-en="Save & continue to platform account →">حفظ ومتابعة لحساب المنصة ←</button></div>
         </div>
 
         <div class="panel wizard-panel" id="obStep4">
-          <h3 data-ar="رابعاً: نزّل البلجن وحطه في استضافتك" data-en="Fourth: download the plugin and place it on your host">رابعاً: نزّل البلجن وحطه في استضافتك</h3>
-          <ol style="padding-inline-start:22px;color:#cbd5e1;line-height:2">
-            <li data-ar="حمّل ملف بلجن CraftMate Connector v0.4.0." data-en="Download the CraftMate Connector v0.4.0 plugin file.">حمّل ملف بلجن CraftMate Connector v0.4.0.</li>
-            <li data-ar="افتح مدير ملفات الاستضافة وارفع الملف داخل مجلد plugins في سيرفرك." data-en="Open your host file manager and upload the file into your server's plugins folder.">افتح مدير ملفات الاستضافة وارفع الملف داخل مجلد <code>plugins</code> في سيرفرك.</li>
-            <li data-ar="شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل." data-en="Start or restart the server from the host panel and make sure it boots.">شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل.</li>
-          </ol>
-          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
-            <a class="btn" href="https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.6.2/CraftMate-Connector-0.6.2.jar" target="_blank" rel="noopener" data-ar="⬇️ تحميل البلجن مباشرة" data-en="⬇️ Download plugin directly">⬇️ تحميل البلجن مباشرة</a>
-            <a class="btn ghost" href="https://github.com/SAYED1135/CraftMate-AI/releases/tag/v0.6.2" target="_blank" rel="noopener" data-ar="GitHub Releases (احتياطي)" data-en="GitHub Releases (backup)">GitHub Releases (احتياطي)</a>
-          </div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="showCurrentConnectStep()" data-ar="تم التثبيت والتشغيل ←" data-en="Installed & running →">تم التثبيت والتشغيل ←</button></div>
+          <h3 data-ar="رابعاً: أضف حساب اتصال المنصة إلى سيرفرك" data-en="Fourth: add the platform connection account to your server">رابعاً: أضف حساب اتصال المنصة إلى سيرفرك</h3>
+          <div id="obBotAccount"><p class="hint">⏳</p></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="renderBotVerifyStep()" data-ar="أضفته واديته الصلاحيات ←" data-en="Added & granted →">أضفته واديته الصلاحيات ←</button></div>
         </div>
 
         <div class="panel wizard-panel" id="obStep5">
-          <h3 data-ar="خامساً: ولّد الكود وادخله هنا" data-en="Fifth: generate the code and enter it here">خامساً: ولّد الكود وادخله هنا</h3>
-          <div id="obConnect"></div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(4)" data-ar="→ رجوع لتحميل البلجن" data-en="← Back to plugin download">→ رجوع لتحميل البلجن</button></div>
+          <h3 data-ar="خامساً: تحقق إن المنصة عرفت تدخل سيرفرك" data-en="Fifth: verify the platform can join your server">خامساً: تحقق إن المنصة عرفت تدخل سيرفرك</h3>
+          <div id="obBotVerify"><p class="hint">⏳</p></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(4)" data-ar="→ رجوع لحساب المنصة" data-en="← Back to platform account">→ رجوع لحساب المنصة</button></div>
         </div>
       </section>
 
@@ -498,7 +490,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux13';
+const APP_BUILD='2026.10.17-ux14';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -507,7 +499,7 @@ let db=loadDB(), session=loadSession(), authMode='cloud';
 try{ localStorage.setItem('cm_auth_mode','cloud'); localStorage.removeItem('cm_sb_anon_key'); localStorage.removeItem('cm_sb_url'); }catch(e){}
 if(session && session.mode!=='cloud'){ session=null; try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 ensureDB();
-let obHost='play_hosting', obMethod='plugin', activeServerId=null, obStep=1, onboardServerId=null, loginRouteDone=false;
+let obHost='play_hosting', obMethod='bot', activeServerId=null, obStep=1, onboardServerId=null, loginRouteDone=false;
 
 const HOSTS={
  play_hosting:{icon:'🟣',ar:'Play Hosting',en:'Play Hosting',noteAr:'3GB رام وبورت Bedrock جاهز — رفع JAR يدوي متاح',noteEn:'3GB RAM & ready Bedrock port — manual JAR allowed',map:'play_hosting'},
@@ -584,7 +576,7 @@ async function cloudFetch(path,opts){
 }
 async function cloudJson(path,opts){ const r=await cloudFetch(path,opts); if(!r.ok){ await r.text().catch(()=>{}); const e=new Error('CM-CLOUD-301'); e.supportCode='CM-CLOUD-301'; e.status=r.status; throw e; } const txt=await r.text(); return txt?JSON.parse(txt):null; }
 function localServerFromCloud(x){
-  return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,controlEnabled:!!x.control_enabled,controlMode:x.control_mode||'off',controlExpiresAt:x.control_expires_at||null,connectorVersion:x.connector_version||null,createdAt:x.created_at,source:'cloud'};
+  return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,controlEnabled:!!x.control_enabled,controlMode:x.control_mode||'off',controlExpiresAt:x.control_expires_at||null,connectorVersion:x.connector_version||null,botUsername:x.bot_username||null,botVerifyStatus:x.bot_verify_status||'none',botVerifiedAt:x.bot_verified_at||null,createdAt:x.created_at,source:'cloud'};
 }
 function cloudServerPayload(sv){
   const payload={owner_id:sv.ownerId,name:sv.name,host_provider:sv.host,server_software:sv.software,mc_version:sv.version,status:sv.status,address:sv.address||null,edition:'java',link_method:sv.method||'plugin',linked_at:sv.linkedAt||null,last_heartbeat_at:sv.lastHeartbeat||null,environment_snapshot:sv.env||{},settings:normalizeServer(sv).settings};
@@ -980,7 +972,7 @@ function routeAfterLogin(){
 }
 function startLinkFlow(){
   const pending=myServers().find(s=>!s.linkedAt&&s.status!=='ONLINE');
-  if(pending){ activeServerId=pending.id; onboardServerId=pending.id; go('onboard'); if(pending.method==='plugin') setOnboardStep(4); else showConnectPanel(pending,true); return; }
+  if(pending){ activeServerId=pending.id; onboardServerId=pending.id; go('onboard'); if(pending.method==='bot'){ setOnboardStep(4); renderBotAccountStep(pending); } else if(pending.method==='plugin') setOnboardStep(4); else showConnectPanel(pending,true); return; }
   go('onboard'); setOnboardStep(1);
 }
 function renderLinkHome(){
@@ -1090,7 +1082,7 @@ function renderOnboard(){
 function pickHost(id){ obHost=id; renderOnboard(); }
 function setMethod(m){
   obMethod=m;
-  ['plugin','manual','later'].forEach(x=>document.getElementById('m'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('sel',x===m));
+  ['bot','manual','later'].forEach(x=>{ const el=document.getElementById('m'+x.charAt(0).toUpperCase()+x.slice(1)); if(el) el.classList.toggle('sel',x===m); });
 }
 function newLinkCode(serverId){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1114,8 +1106,80 @@ async function createServer(){
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
   renderAll();
-  if(s.method==='plugin'){ setOnboardStep(4); toast(t('✅ اتسجل سيرفرك — دلوقتي نزّل البلجن وحطه في الاستضافة','✅ Your server is registered — now download the plugin and place it on your host')); }
+  if(s.method==='bot'){ setOnboardStep(4); renderBotAccountStep(s); toast(t('✅ اتسجل سيرفرك — دلوقتي أضف حساب اتصال المنصة إلى سيرفرك','✅ Your server is registered — now add the platform connection account to your server')); }
+  else if(s.method==='plugin'){ setOnboardStep(4); toast(t('✅ اتسجل سيرفرك — دلوقتي نزّل البلجن وحطه في الاستضافة','✅ Your server is registered — now download the plugin and place it on your host')); }
   else { showConnectPanel(s,true); toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step')); }
+}
+let botVerifyTimer=null;
+async function renderBotAccountStep(s){
+  s=s||myServers().find(x=>x.id===onboardServerId)||myServers().find(x=>x.id===activeServerId);
+  const box=document.getElementById('obBotAccount'); if(!box||!s) return;
+  onboardServerId=s.id; activeServerId=s.id;
+  box.innerHTML='<p class="hint">'+t('⏳ بنجهز اسم حساب اتصال المنصة لسيرفرك…','⏳ Preparing your server platform account name…')+'</p>';
+  let username=s.botUsername||null;
+  try{
+    if(isCloud()&&isUuid(s.id)){ const d=await connectorPost('/v1/bot/identity',{server_id:s.id}); username=d.bot_username||username; s.botUsername=username; }
+  }catch(e){
+    box.innerHTML='<p class="hint" style="color:#f59e0b">⚠️ '+t('تعذر تجهيز حساب المنصة دلوقتي. رمز الدعم: ','Could not prepare the platform account right now. Support code: ')+(e.message||'CM-BOT-503')+'</p>';
+    return;
+  }
+  if(!username){ box.innerHTML='<p class="hint">⚠️ '+t('سجل دخولك بحساب سحابي الأول عشان نجهز حساب الاتصال.','Sign in with a cloud account first so we can prepare the connection account.')+'</p>'; return; }
+  const opCmd='op '+username;
+  box.innerHTML=
+   '<p style="color:var(--muted);line-height:1.9">'+t('المنصة هتدخل سيرفرك بالحساب ده. اعمل الخطوتين دول في لوحة استضافتك:','The platform will join your server with this account. Do these two steps in your host panel:')+'</p>'+
+   '<div class="codebox"><b style="direction:ltr">'+escapeHtml(username)+'</b><span>'+t('اسم حساب اتصال المنصة الخاص بسيرفرك','Your server platform connection account name')+'</span></div>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px"><button class="btn ghost sm" onclick="copyText(\''+escapeHtml(username)+'\')">'+t('📋 انسخ الاسم','📋 Copy name')+'</button></div>'+
+   '<ol style="padding-inline-start:22px;color:#cbd5e1;line-height:2">'+
+   '<li>'+t('اتأكد إن سيرفرك شغال دلوقتي، وإن عنوانه هو اللي سجلته: ','Make sure your server is running now, and its address is the one you saved: ')+'<b style="direction:ltr">'+escapeHtml(s.address||'—')+'</b></li>'+
+   '<li>'+t('افتح كونسول السيرفر من لوحة الاستضافة ونفّذ الأمر ده عشان تديله صلاحيات الإدارة:','Open the server console in your host panel and run this to grant it admin privileges:')+' <span class="codecmd" style="direction:ltr">'+escapeHtml(opCmd)+'</span></li>'+
+   '<li>'+t('المسار ده بيشتغل على السيرفرات اللي بتقبل الدخول من غير حساب أصلي (Offline Mode) — ودي أغلب سيرفرات الاستضافات المجانية.','This route works on servers that accept logins without an original account (Offline Mode) — most free-host servers.')+'</li>'+
+   '</ol>'+
+   '<p class="hint">'+t('متشاركش اسم الحساب ده مع حد تاني؛ هو مفتاح دخول المنصة لسيرفرك بالصلاحيات اللي هتديهاله.','Do not share this account name publicly; it is the platform key into your server with the privileges you grant.')+'</p>';
+}
+async function renderBotVerifyStep(){
+  setOnboardStep(5);
+  const s=myServers().find(x=>x.id===onboardServerId)||myServers().find(x=>x.id===activeServerId);
+  const box=document.getElementById('obBotVerify'); if(!box||!s) return;
+  box.innerHTML='<p style="color:var(--muted);line-height:1.9">'+t('لما تكون أضفت الحساب واديته الصلاحيات والسيرفر شغال، اطلب التحقق. المنصة هتدخل بسيرفرك بالحساب ده وتتأكد إن الصلاحيات شغالة فعلًا.','Once you added the account, granted privileges, and the server is running, request verification. The platform will join your server with this account and check the privileges really work.')+'</p>'+
+   '<div class="codebox"><b>'+escapeHtml(s.name)+'</b><span style="direction:ltr">'+escapeHtml(s.address||'—')+'</span></div>'+
+   '<button class="btn" onclick="requestBotVerify(\''+s.id+'\')">'+t('🔎 اطلب التحقق الآن','🔎 Request verification now')+'</button>'+
+   '<div id="botVerifyStatus" class="hint" style="margin-top:12px"></div>';
+}
+async function requestBotVerify(serverId){
+  const st=document.getElementById('botVerifyStatus');
+  const s=myServers().find(x=>x.id===serverId);
+  try{
+    await connectorPost('/v1/bot/request-verify',{server_id:serverId,address:s?.address||''});
+    if(st) st.innerHTML='⏳ '+t('الطلب اتبعت. أول مرة ممكن تاخد لحد دقيقتين لحد ما مشغّل الاتصال يصحى ويدخل سيرفرك…','Request sent. The first time can take up to two minutes while the connector wakes and joins…');
+    pollBotVerify(serverId);
+  }catch(e){
+    if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('تعذر طلب التحقق. رمز الدعم: ','Could not request verification. Support code: ')+(e.message||'CM-BOT-500')+'</span>';
+  }
+}
+function pollBotVerify(serverId){
+  if(botVerifyTimer) clearInterval(botVerifyTimer);
+  let tries=0;
+  botVerifyTimer=setInterval(async()=>{
+    tries++;
+    const st=document.getElementById('botVerifyStatus');
+    try{
+      const d=await connectorPost('/v1/bot/status',{server_id:serverId});
+      if(d.bot_verify_status==='verified'){
+        clearInterval(botVerifyTimer); botVerifyTimer=null;
+        if(st) st.innerHTML='<span style="color:#22c55e">✅ '+t('تمام! المنصة دخلت سيرفرك والصلاحيات شغالة. دلوقتي افتح الشات وابدأ.','Done! The platform joined your server and privileges work. Open the chat and start.')+'</span><br><br><button class="btn" onclick="activeServerId=\''+serverId+'\';go(\'serverchat\')">'+t('💬 افتح شات سيرفري','💬 Open my server chat')+'</button>';
+        toast(t('✅ اتربط سيرفرك بحساب اتصال المنصة','✅ Your server is linked via the platform account'));
+        if(isCloud()) try{ await syncCloudData(); renderAll(); }catch(e){}
+        return;
+      }
+      if(d.bot_verify_status==='failed'){
+        clearInterval(botVerifyTimer); botVerifyTimer=null;
+        if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('التحقق فشل: ','Verification failed: ')+escapeHtml(d.bot_verify_detail||'')+'</span><br><span>'+t('اتأكد إن السيرفر شغال، العنوان صح، وإنك نفذت أمر الصلاحيات. وبعدين اطلب التحقق تاني. رمز الدعم: CM-BOT-VFY','Make sure the server is running, the address is right, and you ran the privilege command. Then request verification again. Support code: CM-BOT-VFY')+'</span>';
+        return;
+      }
+      if(st) st.innerHTML='⏳ '+t('جارٍ التحقق… المنصة بتحاول تدخل سيرفرك وتختبر الصلاحيات (محاولة ','Verifying… the platform is joining your server and testing privileges (attempt ')+tries+')';
+    }catch(e){ /* keep polling */ }
+    if(tries>=40){ clearInterval(botVerifyTimer); botVerifyTimer=null; if(st) st.innerHTML='⏳ '+t('التحقق واخد وقت أطول من المعتاد. اتأكد إن مشغّل الاتصال شغال والسيرفر صاحي، واطلب التحقق تاني. رمز الدعم: CM-BOT-SLOW','Verification is taking longer than usual. Make sure the connector runner is up and the server is awake, then request again. Support code: CM-BOT-SLOW'); }
+  },5000);
 }
 function showConnectPanel(s,fresh){
   onboardServerId=s.id; activeServerId=s.id;

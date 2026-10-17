@@ -554,6 +554,159 @@ function isControlSchemaError(error) {
   return /^SUPABASE_(400|404|409|422)$/.test(String(error?.message || ""));
 }
 
+
+// ---------------------------------------------------------------------------
+// Platform connection account (bot identity). The platform joins the user's
+// server under a platform-owned username, verifies the privileges the owner
+// granted, then executes validated task templates during control sessions.
+// Runner processes authenticate with BOT_RUNNER_SECRET (server-side only).
+// ---------------------------------------------------------------------------
+function runnerAuthorized(env, request) {
+  const secret = String(env.BOT_RUNNER_SECRET || "");
+  if (!secret) return false;
+  return (request.headers.get("X-Runner-Secret") || "") === secret;
+}
+
+function botUsernameFor(serverId) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let seed = 0;
+  for (const ch of String(serverId || "")) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  let suffix = "";
+  for (let i = 0; i < 5; i++) { seed = (seed * 1103515245 + 12345) >>> 0; suffix += alphabet[seed % alphabet.length]; }
+  return "CraftMate_" + suffix;
+}
+
+async function handleBotIdentity(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-BOT-401", "Please log in again to link your server.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  try {
+    let username = server.bot_username || null;
+    if (!username) {
+      username = botUsernameFor(server.id);
+      await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, { bot_username: username, link_method: "bot" });
+    }
+    return json({ ok: true, server_id: server.id, bot_username: username, address: server.address || null, bot_verify_status: server.bot_verify_status || "none", bot_verified_at: server.bot_verified_at || null });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handleBotRequestVerify(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-BOT-401", "Please log in again to verify your server.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const address = String(body.address || server.address || "").trim();
+  if (!/^[a-zA-Z0-9.-]{3,253}(:\d{1,5})?$/.test(address)) return fail("CM-BOT-422", "Enter the server address like play.example.net:25565 first.", 422);
+  const port = address.includes(":") ? Number(address.split(":").pop()) : 25565;
+  if (port < 1 || port > 65535) return fail("CM-BOT-422", "The server port looks invalid.", 422);
+  try {
+    if (!server.bot_username) await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, { bot_username: botUsernameFor(server.id) });
+    await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, {
+      address, link_method: "bot", bot_verify_status: "requested", bot_verify_detail: null,
+    });
+    return json({ ok: true, server_id: server.id, bot_verify_status: "requested" });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handleBotStatus(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-BOT-401", "Please log in again to check verification.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  return json({
+    ok: true, server_id: server.id,
+    bot_username: server.bot_username || null,
+    bot_verify_status: server.bot_verify_status || "none",
+    bot_verify_detail: server.bot_verify_detail || null,
+    bot_verified_at: server.bot_verified_at || null,
+    status: server.status,
+  });
+}
+
+async function handleRunnerJobsNext(db, env, body, request) {
+  if (!String(env.BOT_RUNNER_SECRET || "")) return fail("CM-BOT-503", "Bot runner is not configured yet.", 503);
+  if (!runnerAuthorized(env, request)) return fail("CM-BOT-401", "Invalid runner credentials.", 401);
+  try {
+    const pendingVerify = await db.get(`servers?bot_verify_status=eq.requested&select=*&order=created_at.asc&limit=1`);
+    const v = Array.isArray(pendingVerify) ? pendingVerify[0] : null;
+    if (v && v.address && v.bot_username) {
+      await db.patch(`servers?id=eq.${encodeURIComponent(v.id)}`, { bot_verify_status: "verifying" });
+      return json({ ok: true, job: { kind: "verify", server_id: v.id, address: v.address, bot_username: v.bot_username } });
+    }
+    const queued = await db.get(`server_tasks?status=eq.QUEUED&select=*&order=created_at.asc&limit=10`);
+    for (const task of Array.isArray(queued) ? queued : []) {
+      if (task.expires_at && Date.parse(task.expires_at) <= Date.now()) {
+        await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, { status: "EXPIRED", finished_at: new Date().toISOString(), error_code: "CM-TASK-410" });
+        continue;
+      }
+      const server = await getServer(db, task.server_id);
+      if (!server || server.link_method !== "bot" || !server.bot_verified_at || !server.address || !server.bot_username) continue;
+      if (!controlState(server).enabled) continue;
+      await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, { status: "CLAIMED", claimed_at: new Date().toISOString() });
+      return json({ ok: true, job: { kind: "task", task_id: task.id, task_type: task.type, payload: task.payload || {}, server_id: server.id, address: server.address, bot_username: server.bot_username } });
+    }
+    return json({ ok: true, job: null });
+  } catch (error) {
+    if (isControlSchemaError(error)) return json({ ok: true, job: null, bot_ready: false });
+    throw error;
+  }
+}
+
+async function handleRunnerVerifyResult(db, env, body, request) {
+  if (!runnerAuthorized(env, request)) return fail("CM-BOT-401", "Invalid runner credentials.", 401);
+  const serverId = String(body.server_id || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "Server not found.", 404);
+  const ok = body.ok === true && body.op_verified === true;
+  const now = new Date().toISOString();
+  try {
+    const server = await getServer(db, serverId);
+    await db.patch(`servers?id=eq.${encodeURIComponent(serverId)}`, {
+      bot_verify_status: ok ? "verified" : "failed",
+      bot_verified_at: ok ? now : null,
+      bot_verify_detail: String(body.detail || "").slice(0, 240) || null,
+      ...(ok ? { status: "ONLINE", linked_at: server?.linked_at || now, last_heartbeat_at: now } : {}),
+    });
+    return json({ ok: true, verified: ok });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handleRunnerTaskResult(db, env, body, request) {
+  if (!runnerAuthorized(env, request)) return fail("CM-BOT-401", "Invalid runner credentials.", 401);
+  const taskId = String(body.task_id || "").trim();
+  if (!UUID_PATTERN.test(taskId)) return fail("CM-TASK-404", "Task not found.", 404);
+  const result = body.result && typeof body.result === "object" ? body.result : {};
+  const status = String(result.status || "FAILED").toUpperCase() === "SUCCESS" ? "SUCCEEDED" : "FAILED";
+  try {
+    const rows = await db.get(`server_tasks?id=eq.${encodeURIComponent(taskId)}&select=*&limit=1`);
+    const task = rows?.[0] || null;
+    if (!task) return fail("CM-TASK-404", "Task not found.", 404);
+    if (["SUCCEEDED", "FAILED", "EXPIRED", "CANCELLED"].includes(task.status)) return json({ ok: true, duplicate: true, status: task.status });
+    await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, {
+      status, result, error_code: status === "SUCCEEDED" ? null : "CM-TASK-BOT", finished_at: new Date().toISOString(),
+    });
+    return json({ ok: true, task_id: task.id, status });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
 async function handleControlStatus(db, env, body, request) {
   const user = await getAuthenticatedUser(env, request);
   if (!user) return fail("CM-CTRL-401", "Please log in again to manage server control.", 401);
@@ -580,8 +733,9 @@ async function handleControlSet(db, env, body, request) {
       const claimed = await db.get(
         `connector_tokens?server_id=eq.${encodeURIComponent(server.id)}&is_revoked=eq.false&token_hash=not.is.null&select=id,claimed_at&limit=1`,
       );
-      if (!Array.isArray(claimed) || !claimed.length) {
-        return fail("CM-CTRL-409", "Link the plugin first before enabling full control.", 409);
+      const botLinked = !!server.bot_verified_at;
+      if ((!Array.isArray(claimed) || !claimed.length) && !botLinked) {
+        return fail("CM-CTRL-409", "Link your server first before enabling full control.", 409);
       }
       const expires = new Date(now.getTime() + durationMinutes * 60 * 1000);
       await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, {
@@ -1223,7 +1377,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.9.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.10.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 
@@ -1248,6 +1402,12 @@ export default {
         case "/v1/tasks/create": return await handleTaskCreate(db, env, body, request);
         case "/v1/tasks/list": return await handleTaskList(db, env, body, request);
         case "/v1/plugin/tasks/poll": return await handlePluginTaskPoll(db, body, request);
+        case "/v1/bot/identity": return await handleBotIdentity(db, env, body, request);
+        case "/v1/bot/request-verify": return await handleBotRequestVerify(db, env, body, request);
+        case "/v1/bot/status": return await handleBotStatus(db, env, body, request);
+        case "/v1/runner/jobs/next": return await handleRunnerJobsNext(db, env, body, request);
+        case "/v1/runner/jobs/verify-result": return await handleRunnerVerifyResult(db, env, body, request);
+        case "/v1/runner/jobs/task-result": return await handleRunnerTaskResult(db, env, body, request);
         case "/v1/plugin/tasks/result": return await handlePluginTaskResult(db, body, request);
         case "/v1/shutdown": return await handleShutdown(db, body, request);
         case "/v1/revoke": return await handleRevoke(db, body, request);

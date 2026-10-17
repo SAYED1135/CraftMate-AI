@@ -2,3 +2,4 @@
 # Plugin build outputs
 plugin/build/
 plugin/.gradle/
+bot/node_modules/

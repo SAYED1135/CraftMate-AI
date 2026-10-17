@@ -1,0 +1,37 @@
+name: CraftMate Platform Connector (Bot Runner)
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_minutes:
+        description: "How long the connector stays up polling for verify/task jobs"
+        required: false
+        default: "120"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  run-connector:
+    name: Run platform connection account
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install connector dependencies
+        run: npm install --no-audit --no-fund
+      - name: Serve verify and task jobs
+        env:
+          CM_API: https://craftmate-connector-api.craftmate-api-sayed.workers.dev
+          CM_RUNNER_SECRET: ${{ secrets.BOT_RUNNER_SECRET }}
+          CM_POLL_SECONDS: '5'
+          CM_MAX_RUNTIME_MIN: ${{ inputs.max_minutes }}
+        run: node runner.mjs serve

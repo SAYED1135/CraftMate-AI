@@ -1,0 +1,17 @@
+{
+  "name": "craftmate-platform-connector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CraftMate platform connection account: joins a linked Minecraft server with granted privileges, verifies them, and executes validated command templates for the AI operator chat.",
+  "scripts": {
+    "verify": "node runner.mjs verify",
+    "serve": "node runner.mjs serve"
+  },
+  "dependencies": {
+    "mineflayer": "^4.33.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

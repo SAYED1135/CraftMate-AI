@@ -46,7 +46,10 @@ jobs:
             --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts")"
           echo "Cloudflare Workers scripts API status: ${status}"
-          test "${status}" = "200"
+          if [ "${status}" != "200" ]; then
+            echo "::error title=Cloudflare Workers preflight failed::HTTP ${status} while listing Workers scripts for the configured account."
+            exit 1
+          fi
 
       - name: Deploy Worker with Wrangler
         if: steps.cf.outputs.configured == 'true'

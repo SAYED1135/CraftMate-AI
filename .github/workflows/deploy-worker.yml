@@ -64,9 +64,18 @@ jobs:
       - name: Verify Worker health
         if: steps.cf.outputs.configured == 'true'
         run: |
-          body="$(curl --fail --silent --show-error \
-            https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health)"
-          echo "$body"
-          echo "$body" | grep -q '"auth_registration":true'
-          echo "$body" | grep -q '"configured":true'
-          echo "$body" | grep -q '"gemini_configured":true'
+          for attempt in $(seq 1 12); do
+            body="$(curl --fail --silent --show-error \
+              https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health)" || body=""
+            echo "$body"
+            if echo "$body" | grep -q '"version":"0.5.0"' \
+              && echo "$body" | grep -q '"auth_registration":true' \
+              && echo "$body" | grep -q '"configured":true' \
+              && echo "$body" | grep -q '"gemini_configured":true'; then
+              exit 0
+            fi
+            echo "Worker health is not fully propagated yet; retrying (${attempt}/12)..."
+            sleep 5
+          done
+          echo "::error title=Worker health verification failed::The deployed Worker did not report version 0.5.0 with Gemini configured in time."
+          exit 1

@@ -1,4 +1,4 @@
-# CraftMate — P2 Control Foundation Build `2026.10.17-ux5`
+# CraftMate — P2 Control Foundation Build `2026.10.17-ux6`
 
 **التاريخ:** 2026-10-17
 
@@ -20,7 +20,7 @@
    - `POST /v1/plugin/tasks/poll`
    - `POST /v1/plugin/tasks/result`
 3. Connector source `0.5.0` مع polling دوري للمهام وإرسال النتائج، وتنفيذ المهام المقبولة محليًا من `AllowlistTaskExecutor`.
-4. زر داخل شات السيرفر لتفعيل/إيقاف جلسة تحكم كاملة لمدة 60 دقيقة.
+4. زر داخل شات السيرفر لتفعيل/إيقاف جلسة تحكم كاملة لمدة 60 دقيقة، وأزرار إجراءات سريعة داخل الشات لطلب آخر السجلات أو فحص البيئة واستلام النتيجة الحقيقية من البلجن.
 5. GitHub Actions build للتأكد أن البلجن بيتبني بـ JDK 21.
 
 ## أول مهام مسموحة

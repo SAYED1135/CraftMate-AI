@@ -212,6 +212,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       </div>
       <nav class="snav">
         <button data-view="dashboard" class="active" onclick="go('dashboard')" data-ar="🏠 لوحتي" data-en="🏠 Dashboard">🏠 لوحتي</button>
+        <button data-view="serverchat" onclick="go('serverchat')" data-ar="🤖 شات السيرفر" data-en="🤖 Server chat">🤖 شات السيرفر</button>
         <button data-view="onboard" onclick="go('onboard')" data-ar="➕ ربط سيرفر" data-en="➕ Link a server">➕ ربط سيرفر</button>
         <button data-view="servers" onclick="go('servers')" data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفرتي</button>
         <button data-view="diagnose" onclick="go('diagnose')" data-ar="🩺 تشخيص جديد" data-en="🩺 New diagnosis">🩺 تشخيص جديد</button>
@@ -238,6 +239,29 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         </div>
         <div class="panel"><h3 data-ar="🎯 قائمة تفعيلك" data-en="🎯 Your activation checklist">🎯 قائمة تفعيلك</h3><div id="checklist"></div></div>
         <div class="panel"><h3 data-ar="🗂️ سيرفراتك" data-en="🗂️ Your servers">🗂️ سيرفراتك</h3><div id="dashServers"></div></div>
+      </section>
+
+      <!-- SERVER CHAT -->
+      <section class="view" id="view-serverchat">
+        <div class="view-head"><div><h2 data-ar="🤖 شات السيرفر" data-en="🤖 Server chat">🤖 شات السيرفر</h2><p data-ar="اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة." data-en="Ask about your server status, environment and reports from real linked data. This phase is read-only — no execution before the approved task phase.">اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة.</p></div><button class="btn ghost sm" onclick="refreshReports()" data-ar="🔄 تحديث البيانات" data-en="🔄 Refresh data">🔄 تحديث البيانات</button></div>
+        <div class="panel">
+          <div class="field"><label data-ar="السيرفر" data-en="Server">السيرفر</label><select id="scServer" onchange="activeServerId=this.value;renderServerChat()"></select></div>
+          <div id="scStatus" class="ai-evidence" style="display:block"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+            <button class="btn ghost sm" onclick="setServerChatQuestion('ما حالة سيرفري الآن؟')">حالة السيرفر</button>
+            <button class="btn ghost sm" onclick="setServerChatQuestion('راجع بيئة السيرفر والبلجنات وقولي لو فيه تعارض واضح')">مراجعة البيئة</button>
+            <button class="btn ghost sm" onclick="setServerChatQuestion('اشرح آخر تشخيص وقولي أول خطوة آمنة')">آخر تشخيص</button>
+            <button class="btn ghost sm" onclick="setServerChatQuestion('إيه المعلومات الناقصة قبل ما أجهز السيرفر أو أعدل إعداداته؟')">معلومات ناقصة</button>
+          </div>
+          <div class="field"><label data-ar="سؤالك عن السيرفر" data-en="Your question about the server">سؤالك عن السيرفر</label><textarea id="scQuestion" maxlength="1000" placeholder="اسأل عن الحالة، البلجنات، آخر تشخيص، أو خطة تجهيز آمنة..."></textarea></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <button class="btn" id="scAskBtn" onclick="submitServerChat()" data-ar="🤖 اسأل مساعد السيرفر" data-en="🤖 Ask server assistant">🤖 اسأل مساعد السيرفر</button>
+            <span class="hint" id="scChatStatus"></span>
+          </div>
+          <div id="scAnswer" class="ai-answer" style="display:none;margin-top:14px"></div>
+          <div id="scEvidence" class="ai-evidence" style="display:none"></div>
+          <p class="hint" style="margin-top:12px" data-ar="🛡️ مرحلة P1 قراءة فقط: المساعد لا ينفذ تعديلًا ولا يدعي تنفيذه. التعديلات ستأتي كبطاقات خطة وموافقة ومهام بلجن موثقة." data-en="🛡️ P1 is read-only: the assistant does not execute or claim changes. Changes will arrive as plan cards, approval, and verified plugin tasks.">🛡️ مرحلة P1 قراءة فقط: المساعد لا ينفذ تعديلًا ولا يدعي تنفيذه. التعديلات ستأتي كبطاقات خطة وموافقة ومهام بلجن موثقة.</p>
+        </div>
       </section>
 
       <!-- ONBOARDING -->
@@ -429,7 +453,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ai2';
+const APP_BUILD='2026.10.17-ai3';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -909,7 +933,7 @@ function go(view){
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
   document.querySelectorAll('.snav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   renderAll();
-  if(view==='history'&&isCloud()) refreshCloudData();
+  if((view==='history'||view==='serverchat')&&isCloud()) refreshCloudData();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function myServers(){ const u=user(); return u?db.servers.filter(s=>s.ownerId===u.id):[]; }
@@ -944,7 +968,7 @@ function renderAll(){
   document.getElementById('stOnline').textContent=online;
   document.getElementById('stDays').textContent=plan().retention>9000?'∞':plan().retention;
   document.getElementById('adminNav').style.display=isAdmin(u)?'block':'none';
-  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderSettings(); renderPhaseC();
+  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderServerChat(); renderSettings(); renderPhaseC();
 }
 function renderChecklist(servers){
   const hasServer=servers.length>0;
@@ -968,7 +992,7 @@ function serverCard(s,withActions){
    '<div class="addr">'+escapeHtml(s.address||'—')+'</div><div class="meta">'+statusTag(s)+
    '<span class="tag">'+host.icon+' '+(LANG==='ar'?host.ar:host.en)+'</span><span class="tag">'+escapeHtml(s.software)+' '+escapeHtml(s.version)+'</span>'+
    (s.env?'<span class="tag">👥 '+s.env.players+'/'+s.env.maxPlayers+'</span><span class="tag">🧠 '+Math.round(s.env.ramMb/1024*10)/10+'/'+Math.round(s.env.maxRamMb/1024*10)/10+' GB</span>':'')+
-   '</div>'+(withActions?'<div class="actions"><button class="btn sm" onclick="openServer(\''+s.id+'\')">'+t('🎛️ إدارة','🎛️ Manage')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status!=='ONLINE'?'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 كود ربط','🔗 Link code')+'</button>':'')+'</div>':'')+
+   '</div>'+(withActions?'<div class="actions"><button class="btn sm" onclick="openServerChat(\''+s.id+'\')">'+t('🤖 شات','🤖 Chat')+'</button><button class="btn ghost sm" onclick="openServer(\''+s.id+'\')">'+t('🎛️ إدارة','🎛️ Manage')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status!=='ONLINE'?'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 كود ربط','🔗 Link code')+'</button>':'')+'</div>':'')+
    '</div></div>';
 }
 function renderServerLists(servers){
@@ -1113,6 +1137,7 @@ async function watchPluginPairingClaim(serverId,codeStr){
             const status=document.getElementById('pluginCodeStatus');
             if(status) status.innerHTML='<span style="color:#22c55e">🎉 '+t('تم الربط! البلجن استلم الكود وسيرفرك بقى متصلاً. جرّب /craftmate status و /craftmate diagnose في السيرفر.','Linked! The plugin claimed the code and your server is connected. Try /craftmate status and /craftmate diagnose on the server.')+'</span>';
             toast(t('🎉 تم ربط سيرفرك بنجاح','🎉 Your server linked successfully'));
+            setTimeout(()=>openServerChat(s.id), 900);
           }
           break;
         }
@@ -1164,7 +1189,7 @@ function openServer(id){
   const host=HOSTS[s.host]||HOSTS.play_hosting;
   const diags=myDiagnoses().filter(x=>x.serverId===id);
   d.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><h3 style="font-size:1.2rem">'+escapeHtml(s.name)+' '+statusTag(s)+'</h3><p style="color:var(--muted);font-size:.88rem">'+host.icon+' '+(LANG==='ar'?host.ar:host.en)+' · '+escapeHtml(s.software)+' '+escapeHtml(s.version)+' · '+escapeHtml(s.address||'—')+'</p></div>'+
-   '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="syncServer(\''+s.id+'\')">'+t('🔄 مزامنة نبضة','🔄 Sync heartbeat')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status==='ONLINE'?'<button class="btn ghost sm" onclick="disconnectServer(\''+s.id+'\')">'+t('🔌 فصل','🔌 Unlink')+'</button>':'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 ربط','🔗 Link')+'</button>')+'<button class="btn danger sm" onclick="deleteServer(\''+s.id+'\')">'+t('🗑️ حذف','🗑️ Delete')+'</button></div></div>'+
+   '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="openServerChat(\''+s.id+'\')">'+t('🤖 شات السيرفر','🤖 Server chat')+'</button><button class="btn ghost sm" onclick="syncServer(\''+s.id+'\')">'+t('🔄 مزامنة نبضة','🔄 Sync heartbeat')+'</button><button class="btn ghost sm" onclick="diagnoseFor(\''+s.id+'\')">'+t('🩺 تشخيص','🩺 Diagnose')+'</button>'+(s.status==='ONLINE'?'<button class="btn ghost sm" onclick="disconnectServer(\''+s.id+'\')">'+t('🔌 فصل','🔌 Unlink')+'</button>':'<button class="btn ghost sm" onclick="showLinkFor(\''+s.id+'\')">'+t('🔗 ربط','🔗 Link')+'</button>')+'<button class="btn danger sm" onclick="deleteServer(\''+s.id+'\')">'+t('🗑️ حذف','🗑️ Delete')+'</button></div></div>'+
    '<div class="stats" style="margin-top:17px"><div class="stat"><b>'+(s.env?s.env.players+'/'+s.env.maxPlayers:'—')+'</b><span>'+t('لاعبون','Players')+'</span></div><div class="stat"><b>'+(s.env?Math.round(s.env.ramMb/1024*10)/10+'GB':'—')+'</b><span>'+t('رام مستخدمة','RAM used')+'</span></div><div class="stat"><b style="font-size:1rem;padding-top:8px">'+(s.lastHeartbeat?fmtDate(s.lastHeartbeat):'—')+'</b><span>'+t('آخر نبضة','Last heartbeat')+'</span></div><div class="stat"><b>'+diags.length+'</b><span>'+t('تشخيصات محفوظة','Saved diagnoses')+'</span></div></div>'+
    (s.env?'<p style="color:var(--muted);font-size:.88rem">'+t('البلجنات المكتشفة: ','Detected plugins: ')+s.env.plugins.map(escapeHtml).join(' · ')+'</p>':'<p style="color:var(--muted);font-size:.88rem">'+t('لا توجد بيئة مكتشفة بعد — اربط البلجن لتظهر حالة سيرفرك الحية هنا.','No environment detected yet — link the plugin for live server state here.')+'</p>')+
    serverSettingsHtml(s)+
@@ -1183,6 +1208,46 @@ async function syncServer(id){
 }
 function disconnectServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; s.status='UNLINKED'; s.env=null; saveDB(); audit('SERVER_UNLINKED',s.name); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🔌 اتفصل السيرفر عن حسابك','🔌 Server unlinked from your account')); }
 function deleteServer(id){ const s=myServers().find(x=>x.id===id); if(!s) return; if(!confirm(t('حذف «'+s.name+'» نهائياً من حسابك؟','Delete “'+s.name+'” permanently from your account?'))) return; db.servers=db.servers.filter(x=>x.id!==id); db.codes=db.codes.filter(x=>x.serverId!==id); saveDB(); audit('SERVER_DELETED',s.name); if(s.source==='cloud') cloudDeleteServer(id).catch(()=>{}); renderAll(); document.getElementById('serverDetail').style.display='none'; toast(t('🗑️ اتحذف السيرفر','🗑️ Server deleted')); }
+
+/* ── P1 server chat (read-only) ── */
+let serverChatBusy=false;
+function renderServerChat(){
+  const sel=document.getElementById('scServer'); const box=document.getElementById('scStatus'); if(!sel||!box) return;
+  const servers=myServers();
+  if(!servers.length){ sel.innerHTML=''; box.innerHTML='<b>'+t('لا يوجد سيرفر بعد','No server yet')+'</b><p style="color:var(--muted);margin-top:6px">'+t('اربط سيرفرك بالبلجن أولًا، وبعدها هيفتح الشات على سياقه الحقيقي.','Link your server with the plugin first, then chat opens on its real context.')+'</p>'; return; }
+  if(!activeServerId||!servers.some(s=>s.id===activeServerId)) activeServerId=(servers.find(s=>s.status==='ONLINE')||servers[0]).id;
+  sel.innerHTML=servers.map(s=>'<option value="'+s.id+'">'+escapeHtml(s.name)+'</option>').join(''); sel.value=activeServerId;
+  const s=servers.find(x=>x.id===activeServerId); if(!s) return;
+  const diags=myDiagnoses().filter(d=>d.serverId===s.id);
+  const env=s.env;
+  box.innerHTML='<b>'+escapeHtml(s.name)+' '+statusTag(s)+'</b><div style="color:var(--muted);margin-top:7px;line-height:1.8">'+
+    escapeHtml(s.software)+' '+escapeHtml(s.version)+' · '+(LANG==='ar'?(HOSTS[s.host]?.ar||s.host):(HOSTS[s.host]?.en||s.host))+'<br>'+
+    t('آخر نبضة: ','Last heartbeat: ')+(s.lastHeartbeat?fmtDate(s.lastHeartbeat):'—')+' · '+t('تقارير محفوظة: ','Saved reports: ')+diags.length+'<br>'+
+    (env?t('لاعبون: ','Players: ')+env.players+'/'+env.maxPlayers+' · '+t('بلجنات مكتشفة: ','Detected plugins: ')+(env.plugins||[]).length:t('لا توجد لقطة بيئة بعد — حدّث البيانات أو شغّل البلجن.','No environment snapshot yet — refresh data or run the plugin.'))+'</div>';
+}
+function openServerChat(id){ if(id) activeServerId=id; go('serverchat'); renderServerChat(); }
+function setServerChatQuestion(q){ const el=document.getElementById('scQuestion'); if(el){ el.value=q; el.focus(); } }
+async function submitServerChat(){
+  if(serverChatBusy) return;
+  const serverId=document.getElementById('scServer')?.value||activeServerId;
+  const question=document.getElementById('scQuestion').value.trim();
+  const answer=document.getElementById('scAnswer'), evidence=document.getElementById('scEvidence'), status=document.getElementById('scChatStatus'), btn=document.getElementById('scAskBtn');
+  if(!serverId||!isUuid(serverId)) return toast(t('اربط سيرفرك سحابيًا أولًا عشان الشات يقرأ سياقه الحقيقي','Link your server in the cloud first so chat can read its real context'));
+  if(question.length<3) return toast(aiErrorText('CM-AI-422'));
+  if(!isCloud()) return toast(aiErrorText('CM-AI-401'));
+  serverChatBusy=true; btn.disabled=true; status.textContent=t('⏳ المساعد بيراجع حالة سيرفرك...','⏳ Assistant is reviewing your server...'); answer.style.display='none'; evidence.style.display='none';
+  try{
+    if(session.expiresAt&&Date.now()>session.expiresAt-60000) await cloudRefresh();
+    const r=await fetch(CONNECTOR_API_URL+'/v1/ai/server-chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.accessToken},body:JSON.stringify({server_id:serverId,question,locale:LANG})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data.ok) throw new Error(data?.error?.code||'CM-AI-500');
+    answer.textContent=data.answer||''; answer.style.display='block';
+    const srv=data.evidence?.server||{}; const reps=Array.isArray(data.evidence?.latest_reports)?data.evidence.latest_reports:[];
+    evidence.innerHTML='<b>'+t('📌 سياق السيرفر المستخدم','📌 Server context used')+'</b><div style="color:var(--muted);margin-top:6px;line-height:1.8">'+escapeHtml(srv.status||'—')+' · '+escapeHtml(srv.server_software||'')+' '+escapeHtml(srv.minecraft_version||'')+' · '+t('آخر نبضة: ','Last heartbeat: ')+(srv.last_heartbeat_at?fmtDate(srv.last_heartbeat_at):'—')+'</div>'+(reps.length?'<ul>'+reps.map(rep=>'<li>'+escapeHtml(LANG==='ar'?(rep.summary_ar||rep.summary_en||''):(rep.summary_en||rep.summary_ar||''))+'</li>').join('')+'</ul>':'<p style="color:var(--muted);margin-top:6px">'+t('لا توجد تقارير محفوظة لهذا السيرفر في السياق.','No saved reports for this server were in context.')+'</p>');
+    evidence.style.display='block'; status.textContent=t('✅ الإجابة من سياق سيرفرك فقط، ولم يتم تنفيذ أي تعديل.','✅ The answer uses only your server context, and no change was executed.');
+  }catch(e){ status.textContent='⚠️ '+aiErrorText(e.message); }
+  serverChatBusy=false; btn.disabled=false;
+}
 
 /* ── diagnosis ── */
 function renderDiagnoseForm(){

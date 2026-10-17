@@ -123,6 +123,10 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GRAY + "Pending Link: " + ChatColor.YELLOW + "Waiting for dashboard registration (expires "
                     + new java.util.Date(client.pendingPairingExpiresAtMillis()) + ")");
         }
+        sender.sendMessage(ChatColor.GRAY + "Server ID: " + ChatColor.WHITE + (client.getServerId() == null || client.getServerId().isBlank() ? "—" : client.getServerId()));
+        sender.sendMessage(ChatColor.GRAY + "Task Channel: " + (plugin.getConfig().getBoolean("control.task-polling-enabled", true)
+                ? ChatColor.GREEN + "ENABLED (executes website full-control tasks)"
+                : ChatColor.RED + "DISABLED in config.yml"));
         sender.sendMessage(ChatColor.GRAY + "Last Sync: " + ChatColor.WHITE + client.getLastSyncTimestamp());
         sender.sendMessage(ChatColor.GRAY + "JVM Memory: " + ChatColor.WHITE + usedMb + " MB / " + maxMb + " MB");
         sender.sendMessage(ChatColor.GRAY + "Security Mode: " + (readOnly

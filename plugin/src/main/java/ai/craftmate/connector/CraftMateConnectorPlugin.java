@@ -126,6 +126,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
                 JsonObject params = task.has("payload") && task.get("payload").isJsonObject()
                         ? task.getAsJsonObject("payload")
                         : new JsonObject();
+                getLogger().info("[CraftMate] Executing website task " + taskType + " (" + taskId + ")");
                 JsonObject result;
                 try {
                     result = taskExecutor.executeTask(taskId, taskType, params, Bukkit.getOnlinePlayers().size());
@@ -136,6 +137,8 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
                     result.addProperty("status", "FAILED");
                     result.addProperty("error", ex.getMessage());
                 }
+                getLogger().info("[CraftMate] Website task " + taskType + " finished with status: "
+                        + (result.has("status") ? result.get("status").getAsString() : "UNKNOWN"));
                 connectorClient.sendTaskResultAsync(result);
             });
         });

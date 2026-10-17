@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ConnectorClient {
 
-    public static final String CONNECTOR_VERSION = "0.6.0";
+    public static final String CONNECTOR_VERSION = "0.6.1";
     public static final String DEFAULT_API_URL = "https://craftmate-connector-api.craftmate-api-sayed.workers.dev";
     private static final String PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final long PENDING_PAIRING_TTL_MILLIS = 30L * 60L * 1000L;
@@ -38,6 +38,7 @@ public final class ConnectorClient {
     private final EnvironmentDetector detector;
     private final HttpClient httpClient;
     private final AtomicBoolean claimInFlight = new AtomicBoolean(false);
+    private volatile Boolean lastControlEnabled = null;
     private volatile String lastSyncStatus = "NOT_LINKED";
     private volatile String lastSyncTimestamp = "Never";
 
@@ -251,11 +252,22 @@ public final class ConnectorClient {
             }
             try {
                 JsonObject result = postJson("/v1/plugin/tasks/poll", baseAuthenticatedPayload(onlinePlayers), true);
+                if (result.has("control") && result.get("control").isJsonObject()) {
+                    boolean enabled = result.getAsJsonObject("control").has("enabled")
+                            && result.getAsJsonObject("control").get("enabled").getAsBoolean();
+                    if (lastControlEnabled == null || lastControlEnabled != enabled) {
+                        lastControlEnabled = enabled;
+                        plugin.getLogger().info("[CraftMate] Website full-control channel: " + (enabled ? "ACTIVE — website tasks will execute immediately." : "OFF — enable it from the CraftMate website chat."));
+                    }
+                }
+                if (result.has("tasks_ready") && !result.get("tasks_ready").getAsBoolean()) {
+                    plugin.getLogger().warning("[CraftMate] Task channel is not ready on the CraftMate service yet (database migration pending). Tasks cannot be received.");
+                }
                 if (!result.has("task") || !result.get("task").isJsonObject()) return null;
                 JsonObject task = result.getAsJsonObject("task");
                 return task.has("task_id") ? task : null;
             } catch (Exception e) {
-                plugin.getLogger().fine("[CraftMate] Task polling deferred: " + e.getMessage());
+                plugin.getLogger().warning("[CraftMate] Task polling failed (will retry): " + e.getMessage());
                 return null;
             }
         });

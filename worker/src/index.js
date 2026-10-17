@@ -525,7 +525,7 @@ async function handleControlStatus(db, env, body, request) {
   if (!UUID_PATTERN.test(serverId)) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
   const server = await getServer(db, serverId);
   if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
-  return json({ ok: true, server_id: server.id, control: controlState(server) });
+  return json({ ok: true, server_id: server.id, control: controlState(server), plugin: { version: server.connector_version || null, linked_at: server.linked_at || null, last_heartbeat_at: server.last_heartbeat_at || null } });
 }
 
 async function handleControlSet(db, env, body, request) {
@@ -884,6 +884,7 @@ async function handleServerChat(db, env, body, request) {
       return json({
         ok: true,
         action_required: "enable_control",
+        plugin_version: server.connector_version || null,
         intent: { type: intent.type },
         answer: locale === "ar"
           ? `⚡ طلبك جاهز للتنفيذ: «${intent.ar}». فعّل التحكم الكامل من زر «⚡ تفعيل التحكم» اللي فوق الشات، وبعدين ابعت الطلب تاني وهيتنفذ فورًا عبر البلجن من غير أي خطوات إضافية.`
@@ -895,6 +896,7 @@ async function handleServerChat(db, env, body, request) {
       return json({
         ok: true,
         execution_mode: "full_instant",
+        plugin_version: server.connector_version || null,
         intent: { type: intent.type },
         task: { id: task.id, type: task.type, status: task.status },
         answer: locale === "ar"
@@ -1149,7 +1151,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.8.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.8.1", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

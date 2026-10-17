@@ -11,3 +11,8 @@ SUPABASE_URL = "https://fucsztovkkilyboinhrv.supabase.co"
 #   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 # Paste the ROTATED service_role key only into that prompt.
 # It is stored by Cloudflare as a Worker Secret and never enters this repo.
+#
+# Optional AI report-assistant secret, also set only by the project owner:
+#   npx wrangler secret put GEMINI_API_KEY
+# Paste the ROTATED Google AI Studio key only into that prompt or the
+# Cloudflare dashboard Secret field. Never place the value in this file.

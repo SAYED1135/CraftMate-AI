@@ -1,4 +1,4 @@
-# CraftMate — P3 Slice 1: Live World Tasks — Build `2026.10.17-ux7`
+# CraftMate — P3 Slice 1: Live World Tasks — Build `2026.10.17-ux8`
 
 **التاريخ:** 2026-10-17
 
@@ -25,7 +25,7 @@
 
 ## Acceptance المتبقي (مالك)
 1. تشغيل migration `006` في Supabase إن لم تُشغّل بعد.
-2. تثبيت Connector `0.6.0` وإعادة تشغيل السيرفر.
+2. تثبيت Connector `0.6.0` الرسمي (GitHub Releases؛ SHA-256: `17734374a3adeb0e3908060c9a9befc6ee124c238a606117b38be62df7b441f2`) وإعادة تشغيل السيرفر.
 3. تفعيل التحكم من الشات وتجربة زر «🌅 نهار» و«🕊️ سلمي» ومقارنة النتيجة داخل اللعبة.
 
 ## الخطوة التالية

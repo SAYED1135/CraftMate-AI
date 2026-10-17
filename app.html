@@ -120,6 +120,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(6,10,18,.85);backdrop-f
 .sev-ok{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.4)}
 .report ol{padding-inline-start:22px;color:#cbd5e1;display:flex;flex-direction:column;gap:7px;margin:12px 0}
 .guard{background:var(--skysoft);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:11px 14px;font-size:.85rem;color:#bae6fd}
+.ai-answer{white-space:pre-wrap;background:var(--card3);border:1px solid var(--border2);border-radius:12px;padding:15px;line-height:1.75;color:#e2e8f0}
+.ai-evidence{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:13px 15px;margin-top:12px}
+.ai-evidence ul{padding-inline-start:20px;color:#cbd5e1;line-height:1.7}
 table{width:100%;border-collapse:collapse;font-size:.87rem}
 th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:start;vertical-align:top}
 th{color:var(--dim);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
@@ -313,6 +316,19 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       <section class="view" id="view-history">
         <div class="view-head"><div><h2 data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</h2><p data-ar="كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام." data-en="Every diagnosis saved in your account — reopen or delete it. Free retention is 7 days.">كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام.</p></div></div>
         <div class="panel"><div id="historyList"></div></div>
+        <div class="panel" id="aiPanel" style="display:none;margin-top:16px">
+          <span class="sev sev-ok">🤖 AI PILOT</span>
+          <h3 id="aiPanelTitle" style="margin-bottom:7px" data-ar="اسأل عن هذا التقرير" data-en="Ask about this report">اسأل عن هذا التقرير</h3>
+          <p style="color:var(--muted);margin-bottom:12px" data-ar="المساعد يشرح التقرير المحفوظ وسياق سيرفرك فقط، ولا ينفذ أي تعديل. لا تكتب باسوردات أو أكواد ربط أو مفاتيح." data-en="The assistant explains only this saved report and your server context, and never executes changes. Do not enter passwords, pairing codes, or keys.">المساعد يشرح التقرير المحفوظ وسياق سيرفرك فقط، ولا ينفذ أي تعديل. لا تكتب باسوردات أو أكواد ربط أو مفاتيح.</p>
+          <div class="field"><label data-ar="سؤالك عن التقرير" data-en="Your question about the report">سؤالك عن التقرير</label><textarea id="aiQuestion" maxlength="1000" placeholder="يعني إيه التقرير ده؟ وأعمل إيه الأول؟"></textarea></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <button class="btn" id="aiAskBtn" onclick="submitReportAI()" data-ar="🤖 اسأل المساعد" data-en="🤖 Ask assistant">🤖 اسأل المساعد</button>
+            <button class="btn ghost sm" onclick="closeReportAI()" data-ar="إغلاق" data-en="Close">إغلاق</button>
+            <span class="hint" id="aiStatus"></span>
+          </div>
+          <div id="aiAnswer" class="ai-answer" style="display:none;margin-top:14px"></div>
+          <div id="aiEvidence" class="ai-evidence" style="display:none"></div>
+        </div>
       </section>
 
       
@@ -413,7 +429,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-prod4';
+const APP_BUILD='2026.10.17-ai1';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1369,7 +1385,53 @@ function renderHistory(){
   const items=myDiagnoses();
   if(!items.length){ list.innerHTML='<div class="empty"><div class="big">📜</div><p>'+t('لا تقارير محفوظة بعد — أول تشخيص لك هيظهر هنا.','No saved reports yet — your first diagnosis appears here.')+'</p></div>'; return; }
   list.innerHTML='<table><thead><tr><th>'+t('التقرير','Report')+'</th><th>'+t('السيرفر','Server')+'</th><th>'+t('التاريخ','Date')+'</th><th></th></tr></thead><tbody>'+
-   items.map(d=>{ const s=myServers().find(x=>x.id===d.serverId); return '<tr><td><b>'+escapeHtml(d.title)+'</b><br><span style="color:var(--dim);font-size:.78rem">'+(d.sev==='high'?'🔴':d.sev==='ok'?'🟢':'🟡')+' · 🔒 '+d.ips+' IP · '+d.secrets+' '+t('سر','secrets')+'</span></td><td>'+(s?escapeHtml(s.name):t('عام','General'))+'</td><td style="white-space:nowrap">'+fmtDate(d.at)+'</td><td><button class="btn danger sm" onclick="deleteDiagnosis(\''+d.id+'\')">'+t('حذف','Delete')+'</button></td></tr>'; }).join('')+'</tbody></table>';
+   items.map(d=>{ const s=myServers().find(x=>x.id===d.serverId); return '<tr><td><b>'+escapeHtml(d.title)+'</b><br><span style="color:var(--dim);font-size:.78rem">'+(d.sev==='high'?'🔴':d.sev==='ok'?'🟢':'🟡')+' · 🔒 '+d.ips+' IP · '+d.secrets+' '+t('سر','secrets')+'</span></td><td>'+(s?escapeHtml(s.name):t('عام','General'))+'</td><td style="white-space:nowrap">'+fmtDate(d.at)+'</td><td style="white-space:nowrap"><button class="btn ghost sm" onclick="openReportAI(\''+d.id+'\')" '+(isUuid(d.id)?'':'disabled title="Cloud report is still syncing"')+'>'+t('🤖 اسأل','🤖 Ask')+'</button> <button class="btn danger sm" onclick="deleteDiagnosis(\''+d.id+'\')">'+t('حذف','Delete')+'</button></td></tr>'; }).join('')+'</tbody></table>';
+}
+let aiReportId=null, aiBusy=false;
+function aiErrorText(code){
+  const messages={
+    'CM-AI-001':t('مساعد الذكاء غير مفعّل على الخدمة بعد — تقريرك المحفوظ ما زال هو المرجع الموثوق.','The AI assistant is not enabled on the service yet — your saved report remains the trusted reference.'),
+    'CM-AI-002':t('مساعد الذكاء مش متاح مؤقتًا — تقريرك المحفوظ ما زال هو المرجع الموثوق.','The AI assistant is temporarily unavailable — your saved report remains the trusted reference.'),
+    'CM-AI-401':t('انتهت جلسة الدخول — سجّل دخولك من جديد ثم جرّب تاني.','Your sign-in session expired — log in again and retry.'),
+    'CM-AI-404':t('التقرير ده مش موجود في حسابك أو لسه بيتزامن من السحابة.','This report was not found in your account or is still syncing from the cloud.'),
+    'CM-AI-422':t('اكتب سؤالًا واضحًا عن التقرير الأول.','Write a clear question about the report first.'),
+    'CM-AI-429':t('وصلت لحد استخدام المساعد مؤقتًا — جرّب بعد شوية.','You reached the temporary assistant limit — try again later.')
+  };
+  return (messages[code]||t('حصلت مشكلة غير متوقعة في المساعد.','An unexpected assistant problem occurred.'))+' ['+(code||'CM-AI-500')+']';
+}
+function openReportAI(id){
+  if(!isUuid(id)) return toast(t('استنى لما التقرير يتحفظ سحابيًا الأول','Wait until the report is saved in the cloud first'));
+  aiReportId=id;
+  const d=myDiagnoses().find(x=>x.id===id);
+  const panel=document.getElementById('aiPanel'); if(!panel) return;
+  panel.style.display='block';
+  document.getElementById('aiPanelTitle').textContent=t('🤖 اسأل عن: ','🤖 Ask about: ')+(d?d.title:t('هذا التقرير','this report'));
+  document.getElementById('aiStatus').textContent='';
+  document.getElementById('aiAnswer').style.display='none';
+  document.getElementById('aiEvidence').style.display='none';
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>document.getElementById('aiQuestion')?.focus(),350);
+}
+function closeReportAI(){ const panel=document.getElementById('aiPanel'); if(panel) panel.style.display='none'; aiReportId=null; }
+async function submitReportAI(){
+  if(aiBusy) return;
+  const question=document.getElementById('aiQuestion').value.trim();
+  const answer=document.getElementById('aiAnswer'), evidence=document.getElementById('aiEvidence'), status=document.getElementById('aiStatus'), btn=document.getElementById('aiAskBtn');
+  if(!aiReportId) return toast(t('اختر تقريرًا الأول','Choose a report first'));
+  if(question.length<3) return toast(aiErrorText('CM-AI-422'));
+  if(!isCloud()) return toast(aiErrorText('CM-AI-401'));
+  aiBusy=true; btn.disabled=true; status.textContent=t('⏳ المساعد بيراجع التقرير...','⏳ Assistant is reviewing the report...'); answer.style.display='none'; evidence.style.display='none';
+  try{
+    if(session.expiresAt&&Date.now()>session.expiresAt-60000) await cloudRefresh();
+    const r=await fetch(CONNECTOR_API_URL+'/v1/ai/report-chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.accessToken},body:JSON.stringify({report_id:aiReportId,question,locale:LANG})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data.ok) throw new Error(data?.error?.code||'CM-AI-500');
+    answer.textContent=data.answer||''; answer.style.display='block';
+    const ev=data.evidence||{}; const findings=Array.isArray(ev.findings)?ev.findings:[];
+    evidence.innerHTML='<b>'+t('📌 الدليل من التقرير المحفوظ','📌 Evidence from the saved report')+'</b>'+(findings.length?'<ul>'+findings.map(f=>'<li>'+escapeHtml(f.text||String(f))+'</li>').join('')+'</ul>':'<p style="color:var(--muted);margin-top:6px">'+t('لا توجد خطوات إضافية مسجلة في التقرير.','No additional findings were recorded in the report.')+'</p>');
+    evidence.style.display='block'; status.textContent=t('✅ الإجابة مبنية على تقريرك المحفوظ فقط، ولم يتم تنفيذ أي تعديل.','✅ The answer uses only your saved report, and no change was executed.');
+  }catch(e){ status.textContent='⚠️ '+aiErrorText(e.message); }
+  aiBusy=false; btn.disabled=false;
 }
 function deleteDiagnosis(id){ db.diagnoses=db.diagnoses.filter(d=>d.id!==id); saveDB(); renderAll(); toast(t('🗑️ اتحذف التقرير','🗑️ Report deleted')); }
 function renderSettings(){

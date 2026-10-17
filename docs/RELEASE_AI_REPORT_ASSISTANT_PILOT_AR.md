@@ -29,6 +29,8 @@
   - غياب مفتاح Gemini يرجع `CM-AI-001` دون كسر التقرير.
 
 ## حالة النشر
-- الكود يُدفع إلى GitHub.
-- GitHub Pages تنشر واجهة اللوحة تلقائيًا.
-- نشر الـ Worker عبر GitHub Actions ما زال يعتمد على وجود أسرار نشر Cloudflare داخل GitHub؛ عند غيابها تظهر خطوة النشر `skipped` رغم نجاح الـ workflow شكليًا. لذلك لا يُعلن نجاح الـ Pilot حيًا إلا بعد أن يرجع `/health` بالإصدار الجديد و`gemini_configured:true`، ثم سؤال حقيقي على تقرير المالك.
+- الكود مدفوع إلى GitHub، وواجهة اللوحة منشورة عبر GitHub Pages.
+- نُشر الـ Worker بنجاح عبر GitHub Actions بعد إضافة أسرار نشر Cloudflare وتصحيح `CLOUDFLARE_ACCOUNT_ID` من زر النسخ داخل Cloudflare.
+- التحقق الحي بتاريخ 2026-10-17 أعاد: `version:"0.5.0"` و`gemini_configured:true` و`configured:true`.
+- طلب غير مصادق إلى `/v1/ai/report-chat` أعاد `CM-AI-401` كما هو متوقع.
+- المتبقي لقبول الـ Pilot: سؤال حقيقي من المالك على تقرير محفوظ ظاهر في «تقاريري»، ومراجعة جودة الإجابة مقابل التقرير الحتمي.

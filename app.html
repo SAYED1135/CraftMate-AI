@@ -54,6 +54,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(6,10,18,.85);backdrop-f
 .mode-row button.active{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.07)}
 /* app shell */
 .shell{display:grid;grid-template-columns:245px 1fr;gap:22px;padding:28px 0 70px;align-items:start}
+.shell.focus-mode{grid-template-columns:1fr}.shell.focus-mode .side{display:none}
+.simple-home{min-height:58vh;display:flex;align-items:center;justify-content:center}.simple-home-card{max-width:680px;width:100%;text-align:center;background:var(--card);border:1px solid var(--border2);border-radius:24px;padding:48px 30px}.simple-home-card h2{font-size:2rem;margin-bottom:12px}.simple-home-card p{color:var(--muted);line-height:1.9;margin-bottom:26px}.big-link-btn{font-size:1.12rem;padding:16px 38px;border-radius:999px}
+.chat-panel{min-height:62vh}.wizard-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px}.wizard-panel{display:none}.wizard-panel.active{display:block}
 .side{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:19px;position:sticky;top:88px}
 .profile{display:flex;gap:12px;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:15px}
 .avatar{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--green),#166534);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;color:#04150a}
@@ -204,7 +207,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
 <!-- ════════ APP VIEW ════════ -->
 <div id="appView" style="display:none">
-  <div class="shell">
+  <div class="shell" id="appShell">
     <aside class="side">
       <div class="profile">
         <div class="avatar" id="avatarTx">C</div>
@@ -228,6 +231,17 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
     <div>
       <div class="notice-banner" id="noticeBanner"></div>
+      <!-- SIMPLE LINK HOME -->
+      <section class="view" id="view-linkhome">
+        <div class="simple-home"><div class="simple-home-card">
+          <div style="font-size:52px;margin-bottom:14px">🔗</div>
+          <h2 id="linkHomeTitle" data-ar="اربط سيرفرك" data-en="Link your server">اربط سيرفرك</h2>
+          <p id="linkHomeText" data-ar="خطوة واحدة تبدأ: نزّل بلجن CraftMate، حطه في استضافتك، ولّد كود الربط من داخل السيرفر — وبعدها يتحول حسابك لشات سيرفرك." data-en="Start with one step: download the CraftMate plugin, place it on your host, generate a link code in-game — then your account becomes your server chat.">خطوة واحدة تبدأ: نزّل بلجن CraftMate، حطه في استضافتك، ولّد كود الربط من داخل السيرفر — وبعدها يتحول حسابك لشات سيرفرك.</p>
+          <button class="btn big-link-btn" id="linkHomeBtn" onclick="startLinkFlow()" data-ar="🔗 اربط سيرفرك" data-en="🔗 Link your server">🔗 اربط سيرفرك</button>
+          <p class="hint" style="margin-top:16px" data-ar="مش هنطلب باسورد الاستضافة ولا أي مفتاح سري هنا." data-en="We will never ask for your host password or any secret key here.">مش هنطلب باسورد الاستضافة ولا أي مفتاح سري هنا.</p>
+        </div></div>
+      </section>
+
       <!-- DASHBOARD -->
       <section class="view active" id="view-dashboard">
         <div class="view-head"><div><h2 id="dashTitle">🏠 لوحتي</h2><p data-ar="حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة." data-en="Your servers, activation steps and latest activity — at a glance.">حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ اربط سيرفر" data-en="➕ Link a server">➕ اربط سيرفر</button></div>
@@ -243,8 +257,8 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- SERVER CHAT -->
       <section class="view" id="view-serverchat">
-        <div class="view-head"><div><h2 data-ar="🤖 شات السيرفر" data-en="🤖 Server chat">🤖 شات السيرفر</h2><p data-ar="اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة." data-en="Ask about your server status, environment and reports from real linked data. This phase is read-only — no execution before the approved task phase.">اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة.</p></div><button class="btn ghost sm" onclick="refreshReports()" data-ar="🔄 تحديث البيانات" data-en="🔄 Refresh data">🔄 تحديث البيانات</button></div>
-        <div class="panel">
+        <div class="view-head"><div><h2 data-ar="🤖 شات السيرفر" data-en="🤖 Server chat">🤖 شات السيرفر</h2><p data-ar="اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة." data-en="Ask about your server status, environment and reports from real linked data. This phase is read-only — no execution before the approved task phase.">اسأل عن حالة سيرفرك وبيئته وتقاريره من بيانات الربط الحقيقية. هذه المرحلة للقراءة والشرح فقط — لا تنفيذ قبل مرحلة المهام المعتمدة.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" onclick="go('dashboard')" data-ar="🏠 لوحتي" data-en="🏠 Dashboard">🏠 لوحتي</button><button class="btn ghost sm" onclick="refreshReports()" data-ar="🔄 تحديث البيانات" data-en="🔄 Refresh data">🔄 تحديث البيانات</button></div></div>
+        <div class="panel chat-panel">
           <div class="field"><label data-ar="السيرفر" data-en="Server">السيرفر</label><select id="scServer" onchange="activeServerId=this.value;renderServerChat()"></select></div>
           <div id="scStatus" class="ai-evidence" style="display:block"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
@@ -266,22 +280,24 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- ONBOARDING -->
       <section class="view" id="view-onboard">
-        <div class="view-head"><div><h2 data-ar="➕ ربط سيرفر جديد" data-en="➕ Link a new server">➕ ربط سيرفر جديد</h2><p data-ar="أربع خطوات ويوصلك أول تشخيص — اختر استضافتك وطريقتك وسيب الباقي علينا." data-en="Four steps to your first diagnosis — pick your host and method, leave the rest to us.">أربع خطوات ويوصلك أول تشخيص — اختر استضافتك وطريقتك وسيب الباقي علينا.</p></div></div>
+        <div class="view-head"><div><h2 data-ar="➕ ربط سيرفر جديد" data-en="➕ Link a new server">➕ ربط سيرفر جديد</h2><p data-ar="خطوة بخطوة: اختر الاستضافة، نزّل البلجن، شغّله، وبعدين ادخل كود الربط هنا." data-en="Step by step: choose the host, download the plugin, run it, then enter the link code here.">خطوة بخطوة: اختر الاستضافة، نزّل البلجن، شغّله، وبعدين ادخل كود الربط هنا.</p></div><button class="btn ghost sm" onclick="go('linkhome')" data-ar="🏠 بداية الربط" data-en="🏠 Link start">🏠 بداية الربط</button></div>
         <div class="limitbox" id="limitBox"></div>
         <div class="stepsrow">
           <div class="stepdot active" id="sd1" data-ar="1 · الاستضافة" data-en="1 · Host">1 · الاستضافة</div>
           <div class="stepdot" id="sd2" data-ar="2 · بيانات السيرفر" data-en="2 · Server details">2 · بيانات السيرفر</div>
           <div class="stepdot" id="sd3" data-ar="3 · طريقة الربط" data-en="3 · Link method">3 · طريقة الربط</div>
-          <div class="stepdot" id="sd4" data-ar="4 · الاتصال" data-en="4 · Connection">4 · الاتصال</div>
+          <div class="stepdot" id="sd4" data-ar="4 · تحميل البلجن" data-en="4 · Download plugin">4 · تحميل البلجن</div>
+          <div class="stepdot" id="sd5" data-ar="5 · إدخال الكود" data-en="5 · Enter code">5 · إدخال الكود</div>
         </div>
 
-        <div class="panel" id="obStep1">
+        <div class="panel wizard-panel active" id="obStep1">
           <h3 data-ar="أولاً: سيرفرك مستضاف فين؟" data-en="First: where is your server hosted?">أولاً: سيرفرك مستضاف فين؟</h3>
           <div class="host-grid" id="obHosts"></div>
           <p class="hint" id="obHostNote"></p>
+          <div class="wizard-nav"><span></span><button class="btn" onclick="setOnboardStep(2)" data-ar="التالي: بيانات السيرفر ←" data-en="Next: server details →">التالي: بيانات السيرفر ←</button></div>
         </div>
 
-        <div class="panel" id="obStep2">
+        <div class="panel wizard-panel" id="obStep2">
           <h3 data-ar="ثانياً: بيانات سيرفرك" data-en="Second: your server details">ثانياً: بيانات سيرفرك</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
             <div class="field"><label data-ar="اسم السيرفر" data-en="Server name">اسم السيرفر</label><input id="obName" data-ar-ph="مثال: سيرفر الأصدقاء" data-en-ph="e.g. Friends Server" placeholder="مثال: سيرفر الأصدقاء"></div>
@@ -289,21 +305,37 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
             <div class="field"><label data-ar="برنامج السيرفر" data-en="Server software">برنامج السيرفر</label><select id="obSoft"><option>Paper</option><option>Purpur</option><option>Spigot</option></select></div>
             <div class="field"><label data-ar="إصدار ماينكرافت" data-en="Minecraft version">إصدار ماينكرافت</label><select id="obVer"><option>1.21.4</option><option>1.21.1</option><option>1.21</option><option>1.20.6</option><option>1.20.4</option><option>1.20.1</option></select></div>
           </div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(1)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="setOnboardStep(3)" data-ar="التالي: طريقة الربط ←" data-en="Next: link method →">التالي: طريقة الربط ←</button></div>
         </div>
 
-        <div class="panel" id="obStep3">
+        <div class="panel wizard-panel" id="obStep3">
           <h3 data-ar="ثالثاً: هتوصلنا بسيرفرك إزاي؟" data-en="Third: how will you connect us?">ثالثاً: هتوصلنا بسيرفرك إزاي؟</h3>
           <div class="radio-row">
             <div class="radio-card sel" id="mPlugin" onclick="setMethod('plugin')"><div class="ic">🔌</div><b data-ar="بالبلجن (الأقوى)" data-en="Plugin (strongest)">بالبلجن (الأقوى)</b><span data-ar="ربط حي كل 60 ثانية وتشخيص تلقائي" data-en="Live 60s link & automatic diagnosis">ربط حي كل 60 ثانية وتشخيص تلقائي</span></div>
             <div class="radio-card" id="mManual" onclick="setMethod('manual')"><div class="ic">📄</div><b data-ar="برفع السجل" data-en="Log upload">برفع السجل</b><span data-ar="من غير أي تثبيت — للاستضافات المقيدة" data-en="Zero install — for restricted hosts">من غير أي تثبيت — للاستضافات المقيدة</span></div>
             <div class="radio-card" id="mLater" onclick="setMethod('later')"><div class="ic">🕐</div><b data-ar="سجّله دلوقتي واربط بعدين" data-en="Save now, link later">سجّله دلوقتي واربط بعدين</b><span data-ar="هيظهر في لوحتك بحالة غير مرتبط" data-en="Appears in your dashboard as unlinked">هيظهر في لوحتك بحالة غير مرتبط</span></div>
           </div>
-          <button class="btn" id="createServerBtn" onclick="createServer()" data-ar="إنشاء السيرفر وتوليد الربط ←" data-en="Create server & generate link →">إنشاء السيرفر وتوليد الربط ←</button>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(2)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createServer()" data-ar="حفظ ومتابعة لتحميل البلجن ←" data-en="Save & continue to plugin download →">حفظ ومتابعة لتحميل البلجن ←</button></div>
         </div>
 
-        <div class="panel" id="obStep4" style="display:none">
-          <h3 data-ar="رابعاً: لحظة الاتصال" data-en="Fourth: the connection moment">رابعاً: لحظة الاتصال</h3>
+        <div class="panel wizard-panel" id="obStep4">
+          <h3 data-ar="رابعاً: نزّل البلجن وحطه في استضافتك" data-en="Fourth: download the plugin and place it on your host">رابعاً: نزّل البلجن وحطه في استضافتك</h3>
+          <ol style="padding-inline-start:22px;color:#cbd5e1;line-height:2">
+            <li data-ar="حمّل ملف بلجن CraftMate Connector v0.4.0." data-en="Download the CraftMate Connector v0.4.0 plugin file.">حمّل ملف بلجن CraftMate Connector v0.4.0.</li>
+            <li data-ar="افتح مدير ملفات الاستضافة وارفع الملف داخل مجلد plugins في سيرفرك." data-en="Open your host file manager and upload the file into your server's plugins folder.">افتح مدير ملفات الاستضافة وارفع الملف داخل مجلد <code>plugins</code> في سيرفرك.</li>
+            <li data-ar="شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل." data-en="Start or restart the server from the host panel and make sure it boots.">شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل.</li>
+          </ol>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+            <a class="btn" href="https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.4.0/CraftMate-Connector-0.4.0.jar" target="_blank" rel="noopener" data-ar="⬇️ تحميل البلجن مباشرة" data-en="⬇️ Download plugin directly">⬇️ تحميل البلجن مباشرة</a>
+            <a class="btn ghost" href="https://github.com/SAYED1135/CraftMate-AI/releases/tag/v0.4.0" target="_blank" rel="noopener" data-ar="GitHub Releases (احتياطي)" data-en="GitHub Releases (backup)">GitHub Releases (احتياطي)</a>
+          </div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="showCurrentConnectStep()" data-ar="تم التثبيت والتشغيل ←" data-en="Installed & running →">تم التثبيت والتشغيل ←</button></div>
+        </div>
+
+        <div class="panel wizard-panel" id="obStep5">
+          <h3 data-ar="خامساً: ولّد الكود وادخله هنا" data-en="Fifth: generate the code and enter it here">خامساً: ولّد الكود وادخله هنا</h3>
           <div id="obConnect"></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(4)" data-ar="→ رجوع لتحميل البلجن" data-en="← Back to plugin download">→ رجوع لتحميل البلجن</button></div>
         </div>
       </section>
 
@@ -453,7 +485,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ai3';
+const APP_BUILD='2026.10.17-ux1';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -462,7 +494,7 @@ let db=loadDB(), session=loadSession(), authMode='cloud';
 try{ localStorage.setItem('cm_auth_mode','cloud'); localStorage.removeItem('cm_sb_anon_key'); localStorage.removeItem('cm_sb_url'); }catch(e){}
 if(session && session.mode!=='cloud'){ session=null; try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 ensureDB();
-let obHost='play_hosting', obMethod='plugin', activeServerId=null;
+let obHost='play_hosting', obMethod='plugin', activeServerId=null, obStep=1, onboardServerId=null, loginRouteDone=false;
 
 const HOSTS={
  play_hosting:{icon:'🟣',ar:'Play Hosting',en:'Play Hosting',noteAr:'3GB رام وبورت Bedrock جاهز — رفع JAR يدوي متاح',noteEn:'3GB RAM & ready Bedrock port — manual JAR allowed',map:'play_hosting'},
@@ -846,7 +878,7 @@ async function doRegisterCloud(){
       try{
         const login=await cloudPasswordLogin(email,pw);
         establishCloudSession(login,{username,email,id:d.user_id});
-        enterApp(); go('onboard');
+        enterApp();
         toast(t('☁️ أهلاً بيك يا '+username+'! حسابك جاهز','☁️ Welcome, '+username+'! Your account is ready'));
         return false;
       }catch(loginErr){
@@ -882,7 +914,7 @@ async function doRegisterCloud(){
     }
     if(d.access_token){
       establishCloudSession(d,{username,email});
-      enterApp(); go('onboard');
+      enterApp();
       toast(t('☁️ أهلاً بيك يا '+username+'! حسابك جاهز','☁️ Welcome, '+username+'! Your account is ready'));
       return false;
     }
@@ -922,15 +954,39 @@ async function doLogin(ev){
 }
 function logout(){
   const wasCloud=isCloud(), token=session&&session.accessToken;
-  session=null; cloudSyncedFor=null; saveSession(); location.hash=''; renderAll(); toast(t('تم تسجيل الخروج','Logged out'));
+  session=null; cloudSyncedFor=null; loginRouteDone=false; saveSession(); location.hash=''; renderAll(); toast(t('تم تسجيل الخروج','Logged out'));
   if(wasCloud&&token) fetch(cloudURL()+'/auth/v1/logout',{method:'POST',headers:{'apikey':cloudKey(),'Authorization':'Bearer '+token}}).catch(()=>{});
 }
 
 /* ── app shell ── */
-function enterApp(){ renderAll(); if(isCloud()) syncCloudData(); }
+async function enterApp(){ renderAll(); if(isCloud()) await syncCloudData(); routeAfterLogin(); }
+function routeAfterLogin(){
+  if(loginRouteDone||!user()) return; loginRouteDone=true;
+  const linked=myServers().find(s=>s.status==='ONLINE'&&isUuid(s.id))||myServers().find(s=>s.linkedAt&&isUuid(s.id));
+  if(linked) openServerChat(linked.id); else go('linkhome');
+}
+function startLinkFlow(){
+  const pending=myServers().find(s=>!s.linkedAt&&s.status!=='ONLINE');
+  if(pending){ activeServerId=pending.id; onboardServerId=pending.id; go('onboard'); if(pending.method==='plugin') setOnboardStep(4); else showConnectPanel(pending,true); return; }
+  go('onboard'); setOnboardStep(1);
+}
+function renderLinkHome(){
+  const title=document.getElementById('linkHomeTitle'), text=document.getElementById('linkHomeText'), btn=document.getElementById('linkHomeBtn'); if(!title||!text||!btn) return;
+  const linked=myServers().find(s=>s.status==='ONLINE'&&isUuid(s.id))||myServers().find(s=>s.linkedAt&&isUuid(s.id));
+  const pending=myServers().find(s=>!s.linkedAt&&s.status!=='ONLINE');
+  if(linked){ title.textContent=t('سيرفرك متصل','Your server is linked'); text.textContent=t('افتح شات سيرفرك واسأل المساعد عن حالته وتقاريره وخطط تجهيزه.','Open your server chat and ask the assistant about its status, reports and setup plans.'); btn.textContent=t('🤖 افتح شات السيرفر','🤖 Open server chat'); btn.onclick=()=>openServerChat(linked.id); }
+  else if(pending){ title.textContent=t('كمّل ربط سيرفرك','Finish linking your server'); text.textContent=t('عندك سيرفر محفوظ لسه مش مرتبط — كمّل خطوة تحميل البلجن وإدخال الكود.','You have a saved server that is not linked yet — finish the plugin download and code step.'); btn.textContent=t('🔗 كمّل الربط','🔗 Continue linking'); btn.onclick=startLinkFlow; }
+  else { title.textContent=t('اربط سيرفرك','Link your server'); btn.textContent=t('🔗 اربط سيرفرك','🔗 Link your server'); btn.onclick=startLinkFlow; }
+}
+function setOnboardStep(n){
+  obStep=Math.max(1,Math.min(5,Number(n)||1));
+  [1,2,3,4,5].forEach(i=>{ const panel=document.getElementById('obStep'+i); if(panel) panel.classList.toggle('active',i===obStep); const dot=document.getElementById('sd'+i); if(dot) dot.classList.toggle('active',i===obStep); });
+}
+function showCurrentConnectStep(){ const s=myServers().find(x=>x.id===onboardServerId)||myServers().find(x=>x.id===activeServerId); if(!s) return setOnboardStep(1); showConnectPanel(s,true); }
 function go(view){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
+  const shell=document.getElementById('appShell'); if(shell) shell.classList.toggle('focus-mode',view==='linkhome'||view==='serverchat'||view==='onboard');
   document.querySelectorAll('.snav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   renderAll();
   if((view==='history'||view==='serverchat')&&isCloud()) refreshCloudData();
@@ -968,7 +1024,7 @@ function renderAll(){
   document.getElementById('stOnline').textContent=online;
   document.getElementById('stDays').textContent=plan().retention>9000?'∞':plan().retention;
   document.getElementById('adminNav').style.display=isAdmin(u)?'block':'none';
-  renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderServerChat(); renderSettings(); renderPhaseC();
+  renderLinkHome(); renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderServerChat(); renderSettings(); renderPhaseC();
 }
 function renderChecklist(servers){
   const hasServer=servers.length>0;
@@ -1013,6 +1069,7 @@ function renderOnboard(){
   box.style.display=atLimit?'block':'none';
   if(atLimit) box.innerHTML='⚠️ '+t('وصلت لحد الخطة المجانية (سيرفر واحد). سيرفرات أكتر جاية مع Pro — سجل اهتمامك من موقعنا الرئيسي، أو احذف سيرفراً من «سيرفراتي» لو حابب تبدل.','You reached the Free plan limit (1 server). More servers come with Pro — join its interest list on the main site, or delete a server under “My servers” to swap.');
   document.getElementById('createServerBtn').disabled=atLimit;
+  setOnboardStep(obStep);
 }
 function pickHost(id){ obHost=id; renderOnboard(); }
 function setMethod(m){
@@ -1039,14 +1096,14 @@ async function createServer(){
     catch(e){ toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم للدعم.','Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send the support code to support.'); return; }
   }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
-  activeServerId=s.id;
-  showConnectPanel(s,true);
-  toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step'));
-  renderAll(); showConnectPanel(s,true);
+  activeServerId=s.id; onboardServerId=s.id;
+  renderAll();
+  if(s.method==='plugin'){ setOnboardStep(4); toast(t('✅ اتسجل سيرفرك — دلوقتي نزّل البلجن وحطه في الاستضافة','✅ Your server is registered — now download the plugin and place it on your host')); }
+  else { showConnectPanel(s,true); toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step')); }
 }
 function showConnectPanel(s,fresh){
-  const panel=document.getElementById('obStep4'); panel.style.display='block';
-  ['1','2','3','4'].forEach(i=>document.getElementById('sd'+i).classList.toggle('active',i==='4'));
+  onboardServerId=s.id; activeServerId=s.id;
+  setOnboardStep(5);
   const box=document.getElementById('obConnect');
   if(s.method==='manual'){
     box.innerHTML='<p style="color:var(--muted)">'+t('اخترت مسار رفع السجل — من غير أي بلجن. سيرفرك اتسجل وهيظهر في لوحتك، وأول تشخيص برفع ملف هيحوّله لسيرفر نشط في حسابك.','You chose the log-upload route — zero plugins. Your server is registered in your dashboard, and your first uploaded diagnosis activates it in your account.')+'</p><br><button class="btn" onclick="diagnoseFor(\''+s.id+'\')">'+t('📄 ارفع أول سجل دلوقتي','📄 Upload your first log now')+'</button>';

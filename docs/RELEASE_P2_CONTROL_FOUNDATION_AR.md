@@ -1,4 +1,4 @@
-# CraftMate — P2 Control Foundation Build `2026.10.17-ux4`
+# CraftMate — P2 Control Foundation Build `2026.10.17-ux5`
 
 **التاريخ:** 2026-10-17
 
@@ -50,6 +50,6 @@
 
 ## Acceptance المتبقي
 1. تشغيل migration 006.
-2. بناء/نشر Connector 0.5.0 كـ JAR رسمي وتثبيته على سيرفر حقيقي.
+2. تثبيت Connector 0.5.0 الرسمي على سيرفر حقيقي (تم نشره على GitHub Releases؛ SHA-256: `7b50f89aebe1a20d1e2d7ce2ae41575966c7852233c3e53a4a2729f42fb9bf24`).
 3. تفعيل التحكم من الموقع وإنشاء مهمة logs/environment حقيقية ورؤية نتيجتها.
 4. بعد نجاح مهام القراءة، فتح مهام الكتابة المُتحقق منها تدريجيًا.

@@ -95,3 +95,7 @@ supabase/migrations/004_connector_api_v03.sql
 | `500 INTERNAL_ERROR` | مشكلة قاعدة بيانات أو صلاحيات الـ Worker | تأكد من Migration 004 ومن صلاحية مفتاح الـ Worker السري |
 
 تم اختبار دورة الربط آليًا بمحاكاة، وتمت إضافة اختبارات Mock لنقطة التسجيل السحابي في v0.4.0 (إنشاء صالح/تكرار/كلمة سر ضعيفة/Honeypot/Health).
+
+## AI report assistant
+
+`POST /v1/ai/report-chat` explains a saved diagnostic report for its authenticated owner using the server-side `GEMINI_API_KEY` secret. The key must exist only as a Cloudflare Worker Secret; it is never sent to the browser or plugin.

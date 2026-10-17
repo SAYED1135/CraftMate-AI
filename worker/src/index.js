@@ -374,47 +374,65 @@ async function callGemini(env, prompt) {
     error.code = "CM-AI-001";
     throw error;
   }
-  const model = String(env.GEMINI_MODEL || "gemini-2.5-flash").trim() || "gemini-2.5-flash";
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-      {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+
+  const configuredModel = String(env.GEMINI_MODEL || "").trim();
+  const models = [configuredModel, "gemini-flash-latest", "gemini-3.5-flash", "gemini-2.5-flash"]
+    .filter(Boolean)
+    .filter((model, index, list) => list.indexOf(model) === index);
+
+  let lastStatus = 0;
+  for (const model of models) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
+          }),
         },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
-        }),
-      },
-    );
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = new Error(`GEMINI_${response.status}`);
-      error.code = "CM-AI-002";
-      throw error;
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        lastStatus = response.status;
+        console.error("Gemini request failed", { model, status: response.status });
+        // A model can be retired or unavailable to a project while the key is
+        // valid. Try the next maintained Flash alias/model before giving up.
+        if (response.status === 404) continue;
+        const error = new Error(`GEMINI_${response.status}`);
+        error.code = "CM-AI-002";
+        throw error;
+      }
+      const parts = data?.candidates?.[0]?.content?.parts || [];
+      const answer = parts.map((part) => part?.text || "").join("\n").trim();
+      if (!answer) {
+        console.error("Gemini returned an empty answer", { model });
+        continue;
+      }
+      return scrubForAi(answer, 6000);
+    } catch (error) {
+      if (error.code) throw error;
+      console.error("Gemini request unavailable", {
+        model,
+        reason: error.name === "AbortError" ? "timeout" : "fetch_failed",
+      });
+      continue;
+    } finally {
+      clearTimeout(timer);
     }
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const answer = parts.map((part) => part?.text || "").join("\n").trim();
-    if (!answer) {
-      const error = new Error("GEMINI_EMPTY_RESPONSE");
-      error.code = "CM-AI-002";
-      throw error;
-    }
-    return scrubForAi(answer, 6000);
-  } catch (error) {
-    if (error.code) throw error;
-    const wrapped = new Error(error.name === "AbortError" ? "GEMINI_TIMEOUT" : "GEMINI_UNAVAILABLE");
-    wrapped.code = "CM-AI-002";
-    throw wrapped;
-  } finally {
-    clearTimeout(timer);
   }
+
+  const error = new Error(lastStatus ? `GEMINI_${lastStatus}` : "GEMINI_UNAVAILABLE");
+  error.code = "CM-AI-002";
+  throw error;
 }
 
 async function handleReportChat(db, env, body, request) {
@@ -650,7 +668,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.5.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.5.1", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

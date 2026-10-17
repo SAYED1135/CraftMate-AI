@@ -1,0 +1,4 @@
+
+# Plugin build outputs
+plugin/build/
+plugin/.gradle/

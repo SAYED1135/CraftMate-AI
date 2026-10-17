@@ -1,5 +1,5 @@
 # ============================================================================
-# CraftMate Connector v0.4.0 — Configuration
+# CraftMate Connector v0.5.0 — Configuration
 # Dashboard: https://sayed1135.github.io/CraftMate-AI/app.html
 # Docs: https://github.com/SAYED1135/CraftMate-AI
 # ============================================================================
@@ -37,8 +37,15 @@ linking:
 polling:
   enabled: true
   heartbeat-interval-seconds: 60
+  task-poll-interval-seconds: 15
   request-timeout-seconds: 10
   notify-hibernation-on-empty-shutdown: true
+
+# Remote control tasks are accepted only while the server owner has an active
+# full-control session enabled from the CraftMate website. The plugin still
+# rejects unknown task types locally; this slice polls read-only tasks first.
+control:
+  task-polling-enabled: true
 
 # Security & Policy Guardrails
 security:

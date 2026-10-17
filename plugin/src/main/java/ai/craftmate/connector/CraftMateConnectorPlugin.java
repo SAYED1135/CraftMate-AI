@@ -3,6 +3,7 @@ package ai.craftmate.connector;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.google.gson.JsonObject;
 import org.bukkit.scheduler.BukkitTask;
 
 /**
@@ -25,6 +26,7 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
     private ConnectorClient connectorClient;
     private BukkitTask heartbeatTask;
     private BukkitTask pendingLinkTask;
+    private BukkitTask controlTask;
 
     @Override
     public void onEnable() {
@@ -55,6 +57,17 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
                     },
                     100L, // initial delay 5s after boot
                     intervalTicks
+            );
+        }
+
+        if (getConfig().getBoolean("control.task-polling-enabled", true)) {
+            int taskPollSeconds = Math.max(10, getConfig().getInt("polling.task-poll-interval-seconds", 15));
+            long taskPollTicks = taskPollSeconds * 20L;
+            this.controlTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
+                    this,
+                    this::pollAndExecuteControlTask,
+                    200L,
+                    taskPollTicks
             );
         }
 
@@ -103,9 +116,37 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
         }
     }
 
+    private void pollAndExecuteControlTask() {
+        if (connectorClient == null || taskExecutor == null || !connectorClient.isLinked()) return;
+        connectorClient.pollForTaskAsync(Bukkit.getOnlinePlayers().size()).thenAccept(task -> {
+            if (task == null) return;
+            Bukkit.getScheduler().runTask(this, () -> {
+                String taskId = task.has("task_id") ? task.get("task_id").getAsString() : "";
+                String taskType = task.has("task_type") ? task.get("task_type").getAsString() : "";
+                JsonObject params = task.has("payload") && task.get("payload").isJsonObject()
+                        ? task.getAsJsonObject("payload")
+                        : new JsonObject();
+                JsonObject result;
+                try {
+                    result = taskExecutor.executeTask(taskId, taskType, params, Bukkit.getOnlinePlayers().size());
+                } catch (Exception ex) {
+                    result = new JsonObject();
+                    result.addProperty("task_id", taskId);
+                    result.addProperty("task_type", taskType);
+                    result.addProperty("status", "FAILED");
+                    result.addProperty("error", ex.getMessage());
+                }
+                connectorClient.sendTaskResultAsync(result);
+            });
+        });
+    }
+
     @Override
     public void onDisable() {
         stopPendingLinkPolling();
+        if (this.controlTask != null) {
+            this.controlTask.cancel();
+        }
         if (this.heartbeatTask != null) {
             this.heartbeatTask.cancel();
         }

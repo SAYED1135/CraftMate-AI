@@ -264,6 +264,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
               </div>
             </div>
             <div class="chat-top-actions">
+              <button class="btn ghost sm" id="scControlBtn" onclick="toggleServerControl()">⚡ تفعيل التحكم</button>
               <button class="icon-btn" onclick="go('dashboard')" title="Dashboard">🏠</button>
               <button class="icon-btn" onclick="refreshReports()" title="Refresh">↻</button>
             </div>
@@ -486,7 +487,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux3';
+const APP_BUILD='2026.10.17-ux4';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -572,7 +573,7 @@ async function cloudFetch(path,opts){
 }
 async function cloudJson(path,opts){ const r=await cloudFetch(path,opts); if(!r.ok){ await r.text().catch(()=>{}); const e=new Error('CM-CLOUD-301'); e.supportCode='CM-CLOUD-301'; e.status=r.status; throw e; } const txt=await r.text(); return txt?JSON.parse(txt):null; }
 function localServerFromCloud(x){
-  return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,createdAt:x.created_at,source:'cloud'};
+  return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,controlEnabled:!!x.control_enabled,controlMode:x.control_mode||'off',controlExpiresAt:x.control_expires_at||null,createdAt:x.created_at,source:'cloud'};
 }
 function cloudServerPayload(sv){
   const payload={owner_id:sv.ownerId,name:sv.name,host_provider:sv.host,server_software:sv.software,mc_version:sv.version,status:sv.status,address:sv.address||null,edition:'java',link_method:sv.method||'plugin',linked_at:sv.linkedAt||null,last_heartbeat_at:sv.lastHeartbeat||null,environment_snapshot:sv.env||{},settings:normalizeServer(sv).settings};
@@ -1316,7 +1317,57 @@ function renderServerChat(){
   const diags=myDiagnoses().filter(d=>d.serverId===s.id);
   const dot=s.status==='ONLINE'?'on':s.status==='HIBERNATING'?'sleep':'';
   status.innerHTML='<span class="chat-dot '+dot+'"></span>'+escapeHtml(s.status)+' · '+escapeHtml(s.software)+' '+escapeHtml(s.version)+' · '+t('آخر نبضة: ','Last heartbeat: ')+(s.lastHeartbeat?fmtDate(s.lastHeartbeat):'—')+' · '+diags.length+' '+t('تقارير','reports');
+  updateControlButton(s.id);
+  if(isCloud()&&isUuid(s.id)) refreshServerControl();
   renderChatMessages();
+}
+let serverControlState={};
+let serverControlBusy=false;
+function updateControlButton(serverId){
+  const btn=document.getElementById('scControlBtn'); if(!btn) return;
+  const local=myServers().find(x=>x.id===serverId);
+  const state=serverControlState[serverId]||(local?{enabled:!!local.controlEnabled&&(!local.controlExpiresAt||new Date(local.controlExpiresAt)>new Date()),mode:local.controlMode,expires_at:local.controlExpiresAt}:null);
+  if(state?.enabled){ btn.textContent=t('⛔ إيقاف التحكم','⛔ Disable control'); btn.title=t('التحكم الكامل مفعل حتى ','Full control active until ')+(state.expires_at?fmtDate(state.expires_at):''); }
+  else { btn.textContent=t('⚡ تفعيل التحكم','⚡ Enable control'); btn.title=t('تفعيل جلسة تحكم كامل من الموقع','Enable a full-control session from the website'); }
+}
+async function refreshServerControl(){
+  const serverId=document.getElementById('scServer')?.value||activeServerId;
+  if(!serverId||!isUuid(serverId)||!isCloud()) { updateControlButton(serverId); return; }
+  try{
+    if(session.expiresAt&&Date.now()>session.expiresAt-60000) await cloudRefresh();
+    const r=await fetch(CONNECTOR_API_URL+'/v1/control/status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.accessToken},body:JSON.stringify({server_id:serverId})});
+    const data=await r.json().catch(()=>({}));
+    if(r.ok&&data.ok){ serverControlState[serverId]=data.control; }
+  }catch(e){ /* keep last known local state */ }
+  updateControlButton(serverId);
+}
+async function toggleServerControl(){
+  if(serverControlBusy) return;
+  const serverId=document.getElementById('scServer')?.value||activeServerId;
+  if(!serverId||!isUuid(serverId)) return toast(t('اربط سيرفرك سحابيًا أولًا','Link your server in the cloud first'));
+  if(!isCloud()) return toast(aiErrorText('CM-AI-401'));
+  const current=serverControlState[serverId];
+  const enable=!(current?.enabled);
+  serverControlBusy=true;
+  try{
+    if(session.expiresAt&&Date.now()>session.expiresAt-60000) await cloudRefresh();
+    const r=await fetch(CONNECTOR_API_URL+'/v1/control/set',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.accessToken},body:JSON.stringify({server_id:serverId,enabled:enable,duration_minutes:60})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data.ok){
+      const code=data?.error?.code||'CM-CTRL-500';
+      if(code==='CM-CTRL-503') throw new Error('CM-CTRL-503');
+      if(code==='CM-CTRL-409') throw new Error('CM-CTRL-409');
+      throw new Error(code);
+    }
+    serverControlState[serverId]=data.control;
+    updateControlButton(serverId);
+    toast(enable?t('⚡ اتفعّل التحكم الكامل لمدة 60 دقيقة لهذا السيرفر','⚡ Full control is enabled for 60 minutes for this server'):t('⛔ اتوقف التحكم الكامل لهذا السيرفر','⛔ Full control is disabled for this server'));
+  }catch(e){
+    if(e.message==='CM-CTRL-503') toast(t('⚠️ قاعدة مهام التحكم لسه مش جاهزة — دي خطوة إعداد قاعدة بيانات واحدة قبل أول استخدام. [CM-CTRL-503]','⚠️ Control task storage is not ready yet — this is a one-time database setup step before first use. [CM-CTRL-503]'));
+    else if(e.message==='CM-CTRL-409') toast(t('⚠️ اربط البلجن أولًا قبل تفعيل التحكم. [CM-CTRL-409]','⚠️ Link the plugin first before enabling control. [CM-CTRL-409]'));
+    else toast(t('⚠️ تعذر تغيير حالة التحكم دلوقتي. ['+(e.message||'CM-CTRL-500')+']','⚠️ Could not change control state right now. ['+(e.message||'CM-CTRL-500')+']'));
+  }
+  serverControlBusy=false;
 }
 function changeServerChat(id){ activeServerId=id; currentChatServerId=id; renderServerChat(); }
 function openServerChat(id){ if(id) { activeServerId=id; currentChatServerId=id; } go('serverchat'); renderServerChat(); }

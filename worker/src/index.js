@@ -442,6 +442,202 @@ async function callGemini(env, prompt) {
   throw error;
 }
 
+
+const SAFE_PLUGIN_TASK_TYPES = new Set(["GET_ENVIRONMENT_SNAPSHOT", "GET_RECENT_LOGS"]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function controlState(server) {
+  const expiresAt = server?.control_expires_at || null;
+  const active = !!(
+    server?.control_enabled
+    && server?.control_mode === "full_instant"
+    && expiresAt
+    && Date.parse(expiresAt) > Date.now()
+  );
+  return {
+    enabled: active,
+    mode: active ? "full_instant" : "off",
+    activated_at: server?.control_activated_at || null,
+    expires_at: expiresAt,
+  };
+}
+
+function isControlSchemaError(error) {
+  return /^SUPABASE_(400|404|409|422)$/.test(String(error?.message || ""));
+}
+
+async function handleControlStatus(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-CTRL-401", "Please log in again to manage server control.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  return json({ ok: true, server_id: server.id, control: controlState(server) });
+}
+
+async function handleControlSet(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-CTRL-401", "Please log in again to manage server control.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+
+  const enabled = body.enabled === true;
+  const durationMinutes = Math.max(5, Math.min(240, Number(body.duration_minutes || 60) || 60));
+  const now = new Date();
+  try {
+    if (enabled) {
+      const claimed = await db.get(
+        `connector_tokens?server_id=eq.${encodeURIComponent(server.id)}&is_revoked=eq.false&token_hash=not.is.null&select=id,claimed_at&limit=1`,
+      );
+      if (!Array.isArray(claimed) || !claimed.length) {
+        return fail("CM-CTRL-409", "Link the plugin first before enabling full control.", 409);
+      }
+      const expires = new Date(now.getTime() + durationMinutes * 60 * 1000);
+      await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, {
+        control_enabled: true,
+        control_mode: "full_instant",
+        control_activated_at: now.toISOString(),
+        control_expires_at: expires.toISOString(),
+        control_updated_at: now.toISOString(),
+      });
+      return json({ ok: true, server_id: server.id, control: { enabled: true, mode: "full_instant", activated_at: now.toISOString(), expires_at: expires.toISOString() } });
+    }
+    await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, {
+      control_enabled: false,
+      control_mode: "off",
+      control_expires_at: now.toISOString(),
+      control_updated_at: now.toISOString(),
+    });
+    return json({ ok: true, server_id: server.id, control: { enabled: false, mode: "off", activated_at: server.control_activated_at || null, expires_at: now.toISOString() } });
+  } catch (error) {
+    if (isControlSchemaError(error)) {
+      return fail("CM-CTRL-503", "Server control storage is not ready yet.", 503);
+    }
+    throw error;
+  }
+}
+
+async function handleTaskCreate(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-CTRL-401", "Please log in again to create a server task.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  const type = String(body.type || body.task_type || "").trim().toUpperCase();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  if (!controlState(server).enabled) return fail("CM-CTRL-403", "Enable full control for this server first.", 403);
+  if (!SAFE_PLUGIN_TASK_TYPES.has(type)) return fail("CM-TASK-422", "This task type is not available in the first control slice.", 422);
+
+  const payload = {};
+  if (type === "GET_RECENT_LOGS") {
+    payload.max_lines = Math.max(25, Math.min(250, Number(body.payload?.max_lines || body.max_lines || 250) || 250));
+  }
+  try {
+    const inserted = await db.post("server_tasks", {
+      server_id: server.id,
+      owner_id: user.id,
+      type,
+      payload,
+      risk: "read",
+      status: "QUEUED",
+      idempotency_key: String(body.idempotency_key || crypto.randomUUID()),
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+    const task = Array.isArray(inserted) ? inserted[0] : inserted;
+    return json({ ok: true, task });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-CTRL-503", "Server control storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handleTaskList(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-CTRL-401", "Please log in again to view server tasks.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
+  const limit = Math.max(1, Math.min(50, Number(body.limit || 20) || 20));
+  try {
+    const tasks = await db.get(
+      `server_tasks?server_id=eq.${encodeURIComponent(server.id)}&owner_id=eq.${encodeURIComponent(user.id)}&select=*&order=created_at.desc&limit=${limit}`,
+    );
+    return json({ ok: true, tasks: Array.isArray(tasks) ? tasks : [] });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-CTRL-503", "Server control storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handlePluginTaskPoll(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  const server = await getServer(db, auth.server_id);
+  if (!server) return fail("SERVER_NOT_FOUND", "Server not found.", 404);
+  if (!controlState(server).enabled) return json({ ok: true, task: null, control: controlState(server) });
+  try {
+    const rows = await db.get(
+      `server_tasks?server_id=eq.${encodeURIComponent(server.id)}&status=eq.QUEUED&select=*&order=created_at.asc&limit=5`,
+    );
+    for (const task of Array.isArray(rows) ? rows : []) {
+      if (task.expires_at && Date.parse(task.expires_at) <= Date.now()) {
+        await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, { status: "EXPIRED", finished_at: new Date().toISOString(), error_code: "CM-TASK-410" });
+        continue;
+      }
+      const claimedAt = new Date().toISOString();
+      await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, { status: "CLAIMED", claimed_at: claimedAt });
+      await touchToken(db, auth);
+      return json({
+        ok: true,
+        task: {
+          task_id: task.id,
+          task_type: task.type,
+          payload: task.payload || {},
+          expires_at: task.expires_at,
+        },
+        control: controlState(server),
+      });
+    }
+    return json({ ok: true, task: null, control: controlState(server) });
+  } catch (error) {
+    if (isControlSchemaError(error)) return json({ ok: true, task: null, tasks_ready: false, control: controlState(server) });
+    throw error;
+  }
+}
+
+async function handlePluginTaskResult(db, body, request) {
+  const auth = await authenticate(db, body, request);
+  if (!auth) return fail("UNAUTHORIZED", "Invalid server token.", 401);
+  const taskId = String(body.task_id || body.taskId || "").trim();
+  if (!UUID_PATTERN.test(taskId)) return fail("CM-TASK-404", "Task not found.", 404);
+  const result = body.result && typeof body.result === "object" ? body.result : {};
+  const rawStatus = String(result.status || body.status || "FAILED").toUpperCase();
+  const status = rawStatus === "SUCCESS" ? "SUCCEEDED" : "FAILED";
+  try {
+    const rows = await db.get(`server_tasks?id=eq.${encodeURIComponent(taskId)}&select=*&limit=1`);
+    const task = rows?.[0] || null;
+    if (!task || task.server_id !== auth.server_id) return fail("CM-TASK-404", "Task not found.", 404);
+    if (["SUCCEEDED", "FAILED", "ROLLED_BACK", "EXPIRED", "CANCELLED"].includes(task.status)) {
+      return json({ ok: true, task_id: task.id, status: task.status, duplicate: true });
+    }
+    await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, {
+      status,
+      result,
+      error_code: status === "SUCCEEDED" ? null : "CM-TASK-PLUGIN",
+      finished_at: new Date().toISOString(),
+    });
+    await touchToken(db, auth);
+    return json({ ok: true, task_id: task.id, status });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-CTRL-503", "Server control storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
 async function handleReportChat(db, env, body, request) {
   const user = await getAuthenticatedUser(env, request);
   if (!user) return fail("CM-AI-401", "Please log in again to use the report assistant.", 401);
@@ -799,7 +995,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.5.3", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.6.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 
@@ -819,6 +1015,12 @@ export default {
         case "/v1/diagnose": return await handleDiagnose(db, body, request);
         case "/v1/ai/report-chat": return await handleReportChat(db, env, body, request);
         case "/v1/ai/server-chat": return await handleServerChat(db, env, body, request);
+        case "/v1/control/status": return await handleControlStatus(db, env, body, request);
+        case "/v1/control/set": return await handleControlSet(db, env, body, request);
+        case "/v1/tasks/create": return await handleTaskCreate(db, env, body, request);
+        case "/v1/tasks/list": return await handleTaskList(db, env, body, request);
+        case "/v1/plugin/tasks/poll": return await handlePluginTaskPoll(db, body, request);
+        case "/v1/plugin/tasks/result": return await handlePluginTaskResult(db, body, request);
         case "/v1/shutdown": return await handleShutdown(db, body, request);
         case "/v1/revoke": return await handleRevoke(db, body, request);
         default: return fail("NOT_FOUND", "Route not found.", 404);

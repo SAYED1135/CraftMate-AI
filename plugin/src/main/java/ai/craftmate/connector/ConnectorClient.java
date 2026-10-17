@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ConnectorClient {
 
-    public static final String CONNECTOR_VERSION = "0.4.0";
+    public static final String CONNECTOR_VERSION = "0.5.0";
     public static final String DEFAULT_API_URL = "https://craftmate-connector-api.craftmate-api-sayed.workers.dev";
     private static final String PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final long PENDING_PAIRING_TTL_MILLIS = 30L * 60L * 1000L;
@@ -238,6 +238,41 @@ public final class ConnectorClient {
                 } else {
                     plugin.getLogger().warning("[CraftMate] Pairing failed: " + e.getMessage());
                 }
+                return false;
+            }
+        });
+    }
+
+    /** Polls for one website-authorized control task, or returns null. */
+    public CompletableFuture<JsonObject> pollForTaskAsync(int onlinePlayers) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isLinked() || !plugin.getConfig().getBoolean("control.task-polling-enabled", true)) {
+                return null;
+            }
+            try {
+                JsonObject result = postJson("/v1/plugin/tasks/poll", baseAuthenticatedPayload(onlinePlayers), true);
+                if (!result.has("task") || !result.get("task").isJsonObject()) return null;
+                JsonObject task = result.getAsJsonObject("task");
+                return task.has("task_id") ? task : null;
+            } catch (Exception e) {
+                plugin.getLogger().fine("[CraftMate] Task polling deferred: " + e.getMessage());
+                return null;
+            }
+        });
+    }
+
+    /** Sends a structured plugin task result back to CraftMate. */
+    public CompletableFuture<Boolean> sendTaskResultAsync(JsonObject taskResult) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (!isLinked() || taskResult == null || !taskResult.has("task_id")) return false;
+                JsonObject payload = baseAuthenticatedPayload(0);
+                payload.addProperty("task_id", taskResult.get("task_id").getAsString());
+                payload.add("result", taskResult);
+                postJson("/v1/plugin/tasks/result", payload, true);
+                return true;
+            } catch (Exception e) {
+                plugin.getLogger().warning("[CraftMate] Task result upload failed safely: " + e.getMessage());
                 return false;
             }
         });

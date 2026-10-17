@@ -1,9 +1,9 @@
 name: CraftMateConnector
-version: '0.4.0'
+version: '0.5.0'
 main: ai.craftmate.connector.CraftMateConnectorPlugin
 api-version: '1.20'
 authors: [CraftMateAI]
-description: Host-aware diagnostic and safe policy-driven connector for CraftMate AI (Play.hosting, FalixNodes, MCServerHost, Minefort).
+description: Host-aware diagnostic and policy-driven control connector for CraftMate AI (Play.hosting, FalixNodes, MCServerHost, Minefort).
 website: https://sayed1135.github.io/CraftMate-AI/
 folia-supported: true
 

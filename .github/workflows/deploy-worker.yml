@@ -68,7 +68,7 @@ jobs:
             body="$(curl --fail --silent --show-error \
               https://craftmate-connector-api.craftmate-api-sayed.workers.dev/health)" || body=""
             echo "$body"
-            if echo "$body" | grep -q '"version":"0.8.1"' \
+            if echo "$body" | grep -q '"version":"0.9.0"' \
               && echo "$body" | grep -q '"auth_registration":true' \
               && echo "$body" | grep -q '"configured":true' \
               && echo "$body" | grep -q '"gemini_configured":true'; then
@@ -77,5 +77,5 @@ jobs:
             echo "Worker health is not fully propagated yet; retrying (${attempt}/12)..."
             sleep 5
           done
-          echo "::error title=Worker health verification failed::The deployed Worker did not report version 0.8.1 with Gemini configured in time."
+          echo "::error title=Worker health verification failed::The deployed Worker did not report version 0.9.0 with Gemini configured in time."
           exit 1

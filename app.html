@@ -498,7 +498,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux12';
+const APP_BUILD='2026.10.17-ux13';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1499,10 +1499,15 @@ async function submitServerChat(){
     const data=await r.json().catch(()=>({}));
     if(!r.ok||!data.ok) throw new Error(data?.error?.code||'CM-AI-500');
     pending.pending=false; pending.text=data.answer||''; pending.evidence=data.evidence||null;
-    if(data.task&&data.task.id){
+    const queuedTasks=(Array.isArray(data.tasks)&&data.tasks.length?data.tasks:(data.task?[data.task]:[])).filter(x=>x&&x.id);
+    if(queuedTasks.length){
       if(status) status.textContent=t('⏳ الأمر اتبعت للبلجن — بنستنى النتيجة الحقيقية...','⏳ Command sent to the plugin — waiting for the verified result...');
-      const task=await waitForTaskResult(serverId,data.task.id);
-      pending.text=task?formatTaskResult(task):(await taskTimeoutText(serverId,data.task.id,data.answer||''));
+      const results=[];
+      for(const qt of queuedTasks){
+        const task=await waitForTaskResult(serverId,qt.id);
+        results.push(task?formatTaskResult(task):(await taskTimeoutText(serverId,qt.id,data.answer||'')));
+      }
+      pending.text=results.join('\n');
       if(status) status.textContent=t('✅ النتيجة وصلت من البلجن مباشرة.','✅ The result arrived directly from the plugin.');
     } else if(data.action_required==='enable_control'){
       if(status) status.textContent=t('⚡ فعّل التحكم من زر «⚡ تفعيل التحكم» اللي فوق الشات عشان الطلب يتنفذ.','⚡ Enable control from the button above the chat so this request can run.');

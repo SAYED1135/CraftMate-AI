@@ -1,5 +1,5 @@
 # ============================================================================
-# CraftMate Connector v0.5.0 — Configuration
+# CraftMate Connector v0.6.0 — Configuration
 # Dashboard: https://sayed1135.github.io/CraftMate-AI/app.html
 # Docs: https://github.com/SAYED1135/CraftMate-AI
 # ============================================================================
@@ -46,6 +46,10 @@ polling:
 # rejects unknown task types locally; this slice polls read-only tasks first.
 control:
   task-polling-enabled: true
+  # Live, reversible world tasks (difficulty/time/weather/default gamemode/
+  # broadcast) received through the website full-control session. Set false
+  # to disable them locally. File edits stay under security.read-only-mode.
+  allow-live-write-tasks: true
 
 # Security & Policy Guardrails
 security:

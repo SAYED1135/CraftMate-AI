@@ -443,7 +443,59 @@ async function callGemini(env, prompt) {
 }
 
 
-const SAFE_PLUGIN_TASK_TYPES = new Set(["GET_ENVIRONMENT_SNAPSHOT", "GET_RECENT_LOGS"]);
+// Plugin task registry — the ONLY task types the Worker will ever queue.
+// Every payload is validated here, and the plugin re-validates locally.
+const PLUGIN_TASK_DEFINITIONS = {
+  GET_ENVIRONMENT_SNAPSHOT: { risk: "read" },
+  GET_RECENT_LOGS: { risk: "read" },
+  SET_DIFFICULTY: { risk: "write" },
+  SET_TIME: { risk: "write" },
+  SET_WEATHER: { risk: "write" },
+  SET_DEFAULT_GAMEMODE: { risk: "write" },
+  BROADCAST_MESSAGE: { risk: "write" },
+};
+
+function validateTaskPayload(type, body) {
+  const raw = body.payload && typeof body.payload === "object" ? body.payload : {};
+  switch (type) {
+    case "GET_ENVIRONMENT_SNAPSHOT":
+      return { ok: true, payload: {} };
+    case "GET_RECENT_LOGS":
+      return { ok: true, payload: { max_lines: Math.max(25, Math.min(250, Number(raw.max_lines || body.max_lines || 250) || 250)) } };
+    case "SET_DIFFICULTY": {
+      const difficulty = String(raw.difficulty || "").trim().toUpperCase();
+      if (!["PEACEFUL", "EASY", "NORMAL", "HARD"].includes(difficulty)) return { ok: false };
+      return { ok: true, payload: { difficulty } };
+    }
+    case "SET_TIME": {
+      if (raw.ticks !== undefined && raw.ticks !== null && raw.ticks !== "") {
+        const ticks = Number(raw.ticks);
+        if (!Number.isInteger(ticks) || ticks < 0 || ticks > 23999) return { ok: false };
+        return { ok: true, payload: { ticks } };
+      }
+      const preset = String(raw.preset || "DAY").trim().toUpperCase();
+      if (!["DAY", "SUNRISE", "NOON", "NIGHT", "MIDNIGHT"].includes(preset)) return { ok: false };
+      return { ok: true, payload: { preset } };
+    }
+    case "SET_WEATHER": {
+      const preset = String(raw.preset || "").trim().toUpperCase();
+      if (!["CLEAR", "RAIN", "THUNDER"].includes(preset)) return { ok: false };
+      return { ok: true, payload: { preset } };
+    }
+    case "SET_DEFAULT_GAMEMODE": {
+      const gamemode = String(raw.gamemode || "").trim().toUpperCase();
+      if (!["SURVIVAL", "CREATIVE", "ADVENTURE", "SPECTATOR"].includes(gamemode)) return { ok: false };
+      return { ok: true, payload: { gamemode } };
+    }
+    case "BROADCAST_MESSAGE": {
+      const message = String(raw.message || "").replace(/[§&][0-9a-fk-orA-FK-OR]/g, "").trim();
+      if (!message || message.length > 200) return { ok: false };
+      return { ok: true, payload: { message } };
+    }
+    default:
+      return { ok: false };
+  }
+}
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function controlState(server) {
@@ -529,19 +581,18 @@ async function handleTaskCreate(db, env, body, request) {
   const server = await getServer(db, serverId);
   if (!server || server.owner_id !== user.id) return fail("CM-CTRL-404", "This server was not found in your account.", 404);
   if (!controlState(server).enabled) return fail("CM-CTRL-403", "Enable full control for this server first.", 403);
-  if (!SAFE_PLUGIN_TASK_TYPES.has(type)) return fail("CM-TASK-422", "This task type is not available in the first control slice.", 422);
-
-  const payload = {};
-  if (type === "GET_RECENT_LOGS") {
-    payload.max_lines = Math.max(25, Math.min(250, Number(body.payload?.max_lines || body.max_lines || 250) || 250));
-  }
+  const definition = PLUGIN_TASK_DEFINITIONS[type];
+  if (!definition) return fail("CM-TASK-422", "This task type is not available yet.", 422);
+  const validated = validateTaskPayload(type, body);
+  if (!validated.ok) return fail("CM-TASK-422", "Task details are invalid for this task type.", 422);
+  const payload = validated.payload;
   try {
     const inserted = await db.post("server_tasks", {
       server_id: server.id,
       owner_id: user.id,
       type,
       payload,
-      risk: "read",
+      risk: definition.risk,
       status: "QUEUED",
       idempotency_key: String(body.idempotency_key || crypto.randomUUID()),
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
@@ -995,7 +1046,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.6.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.7.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

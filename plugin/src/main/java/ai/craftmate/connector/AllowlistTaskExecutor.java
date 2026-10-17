@@ -1,6 +1,11 @@
 package ai.craftmate.connector;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
+import org.bukkit.GameMode;
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -102,6 +107,134 @@ public final class AllowlistTaskExecutor {
                     return result;
                 }
 
+                case "SET_DIFFICULTY": {
+                    if (!liveWritesAllowed()) return blockedLiveWrite(result);
+                    String raw = params.has("difficulty") ? params.get("difficulty").getAsString() : "";
+                    Difficulty difficulty;
+                    try { difficulty = Difficulty.valueOf(raw.trim().toUpperCase()); }
+                    catch (Exception e) { return failed(result, "Invalid difficulty: " + raw); }
+                    String previous = Bukkit.getWorlds().isEmpty() ? "UNKNOWN" : Bukkit.getWorlds().get(0).getDifficulty().name();
+                    for (World w : Bukkit.getWorlds()) w.setDifficulty(difficulty);
+                    boolean verified = Bukkit.getWorlds().stream().allMatch(w -> w.getDifficulty() == difficulty);
+                    JsonObject data = new JsonObject();
+                    data.addProperty("difficulty", difficulty.name());
+                    data.addProperty("previous_difficulty", previous);
+                    data.addProperty("worlds_updated", Bukkit.getWorlds().size());
+                    data.addProperty("verified", verified);
+                    data.addProperty("reversible", true);
+                    executedTaskIds.add(taskId);
+                    result.addProperty("status", verified ? "SUCCESS" : "FAILED");
+                    if (!verified) result.addProperty("error", "Difficulty verification failed after apply.");
+                    result.add("data", data);
+                    return result;
+                }
+
+                case "SET_TIME": {
+                    if (!liveWritesAllowed()) return blockedLiveWrite(result);
+                    long ticks;
+                    if (params.has("ticks")) {
+                        ticks = params.get("ticks").getAsLong();
+                        if (ticks < 0 || ticks > 23999) return failed(result, "ticks must be between 0 and 23999.");
+                    } else {
+                        String preset = params.has("preset") ? params.get("preset").getAsString().trim().toUpperCase() : "DAY";
+                        ticks = switch (preset) {
+                            case "DAY", "SUNRISE" -> 1000L;
+                            case "NOON" -> 6000L;
+                            case "NIGHT" -> 13000L;
+                            case "MIDNIGHT" -> 18000L;
+                            default -> -1L;
+                        };
+                        if (ticks < 0) return failed(result, "Invalid time preset.");
+                    }
+                    long previousTime = Bukkit.getWorlds().isEmpty() ? -1 : Bukkit.getWorlds().get(0).getTime();
+                    for (World w : Bukkit.getWorlds()) w.setTime(ticks);
+                    boolean verified = Bukkit.getWorlds().stream().allMatch(w -> Math.abs(w.getTime() - ticks) <= 20);
+                    JsonObject data = new JsonObject();
+                    data.addProperty("time_ticks", ticks);
+                    data.addProperty("previous_time_ticks", previousTime);
+                    data.addProperty("worlds_updated", Bukkit.getWorlds().size());
+                    data.addProperty("verified", verified);
+                    data.addProperty("reversible", true);
+                    executedTaskIds.add(taskId);
+                    result.addProperty("status", verified ? "SUCCESS" : "FAILED");
+                    if (!verified) result.addProperty("error", "Time verification failed after apply.");
+                    result.add("data", data);
+                    return result;
+                }
+
+                case "SET_WEATHER": {
+                    if (!liveWritesAllowed()) return blockedLiveWrite(result);
+                    String preset = params.has("preset") ? params.get("preset").getAsString().trim().toUpperCase() : "CLEAR";
+                    if (!Set.of("CLEAR", "RAIN", "THUNDER").contains(preset)) return failed(result, "Invalid weather preset.");
+                    JsonArray worlds = new JsonArray();
+                    for (World w : Bukkit.getWorlds()) {
+                        JsonObject before = new JsonObject();
+                        before.addProperty("world", w.getName());
+                        before.addProperty("storm", w.hasStorm());
+                        before.addProperty("thundering", w.isThundering());
+                        worlds.add(before);
+                        switch (preset) {
+                            case "CLEAR" -> { w.setStorm(false); w.setThundering(false); w.setWeatherDuration(20 * 60 * 10); }
+                            case "RAIN" -> { w.setStorm(true); w.setThundering(false); w.setWeatherDuration(20 * 60 * 10); }
+                            case "THUNDER" -> { w.setStorm(true); w.setThundering(true); w.setWeatherDuration(20 * 60 * 5); }
+                        }
+                    }
+                    boolean verified = Bukkit.getWorlds().stream().allMatch(w -> switch (preset) {
+                        case "CLEAR" -> !w.hasStorm() && !w.isThundering();
+                        case "RAIN" -> w.hasStorm() && !w.isThundering();
+                        default -> w.hasStorm() && w.isThundering();
+                    });
+                    JsonObject data = new JsonObject();
+                    data.addProperty("weather", preset);
+                    data.add("previous_world_states", worlds);
+                    data.addProperty("worlds_updated", Bukkit.getWorlds().size());
+                    data.addProperty("verified", verified);
+                    data.addProperty("reversible", true);
+                    executedTaskIds.add(taskId);
+                    result.addProperty("status", verified ? "SUCCESS" : "FAILED");
+                    if (!verified) result.addProperty("error", "Weather verification failed after apply.");
+                    result.add("data", data);
+                    return result;
+                }
+
+                case "SET_DEFAULT_GAMEMODE": {
+                    if (!liveWritesAllowed()) return blockedLiveWrite(result);
+                    String raw = params.has("gamemode") ? params.get("gamemode").getAsString() : "";
+                    GameMode mode;
+                    try { mode = GameMode.valueOf(raw.trim().toUpperCase()); }
+                    catch (Exception e) { return failed(result, "Invalid gamemode: " + raw); }
+                    String previous = Bukkit.getDefaultGameMode().name();
+                    Bukkit.setDefaultGameMode(mode);
+                    boolean verified = Bukkit.getDefaultGameMode() == mode;
+                    JsonObject data = new JsonObject();
+                    data.addProperty("gamemode", mode.name());
+                    data.addProperty("previous_gamemode", previous);
+                    data.addProperty("verified", verified);
+                    data.addProperty("reversible", true);
+                    data.addProperty("note", "Applies to players joining after this change; online players keep their current gamemode.");
+                    executedTaskIds.add(taskId);
+                    result.addProperty("status", verified ? "SUCCESS" : "FAILED");
+                    if (!verified) result.addProperty("error", "Gamemode verification failed after apply.");
+                    result.add("data", data);
+                    return result;
+                }
+
+                case "BROADCAST_MESSAGE": {
+                    if (!liveWritesAllowed()) return blockedLiveWrite(result);
+                    String message = params.has("message") ? params.get("message").getAsString() : "";
+                    message = message.replaceAll("[§&][0-9a-fk-orA-FK-OR]", "").trim();
+                    if (message.isEmpty() || message.length() > 200) return failed(result, "Broadcast message must be 1-200 characters.");
+                    Bukkit.broadcastMessage("[CraftMate] " + message);
+                    JsonObject data = new JsonObject();
+                    data.addProperty("message", message);
+                    data.addProperty("recipients_online", Bukkit.getOnlinePlayers().size());
+                    data.addProperty("verified", true);
+                    executedTaskIds.add(taskId);
+                    result.addProperty("status", "SUCCESS");
+                    result.add("data", data);
+                    return result;
+                }
+
                 case "SAFE_YAML_CONFIG_UPDATE": {
                     // Check if Read-Only mode is active (P2 default)
                     if (plugin.getConfig().getBoolean("security.read-only-mode", true)) {
@@ -169,5 +302,25 @@ public final class AllowlistTaskExecutor {
             result.addProperty("error", ex.getMessage());
             return result;
         }
+    }
+
+    private boolean liveWritesAllowed() {
+        // Live world tasks arrive only through the website full-control task
+        // channel (Worker returns tasks solely while a control session is
+        // active). This local switch is an extra owner kill-switch; file
+        // edits remain separately governed by security.read-only-mode.
+        return plugin.getConfig().getBoolean("control.allow-live-write-tasks", true);
+    }
+
+    private JsonObject blockedLiveWrite(JsonObject result) {
+        result.addProperty("status", "BLOCKED_BY_LOCAL_CONFIG");
+        result.addProperty("error", "Live write tasks are disabled in this connector config (control.allow-live-write-tasks: false).");
+        return result;
+    }
+
+    private JsonObject failed(JsonObject result, String error) {
+        result.addProperty("status", "FAILED");
+        result.addProperty("error", error);
+        return result;
     }
 }

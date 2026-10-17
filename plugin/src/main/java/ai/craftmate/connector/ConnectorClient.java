@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ConnectorClient {
 
-    public static final String CONNECTOR_VERSION = "0.5.0";
+    public static final String CONNECTOR_VERSION = "0.6.0";
     public static final String DEFAULT_API_URL = "https://craftmate-connector-api.craftmate-api-sayed.workers.dev";
     private static final String PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final long PENDING_PAIRING_TTL_MILLIS = 30L * 60L * 1000L;

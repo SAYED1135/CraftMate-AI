@@ -339,8 +339,8 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
             <li data-ar="شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل." data-en="Start or restart the server from the host panel and make sure it boots.">شغّل السيرفر أو اعمل Restart من لوحة الاستضافة، واتأكد إن السيرفر اشتغل.</li>
           </ol>
           <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
-            <a class="btn" href="https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.6.1/CraftMate-Connector-0.6.1.jar" target="_blank" rel="noopener" data-ar="⬇️ تحميل البلجن مباشرة" data-en="⬇️ Download plugin directly">⬇️ تحميل البلجن مباشرة</a>
-            <a class="btn ghost" href="https://github.com/SAYED1135/CraftMate-AI/releases/tag/v0.6.1" target="_blank" rel="noopener" data-ar="GitHub Releases (احتياطي)" data-en="GitHub Releases (backup)">GitHub Releases (احتياطي)</a>
+            <a class="btn" href="https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.6.2/CraftMate-Connector-0.6.2.jar" target="_blank" rel="noopener" data-ar="⬇️ تحميل البلجن مباشرة" data-en="⬇️ Download plugin directly">⬇️ تحميل البلجن مباشرة</a>
+            <a class="btn ghost" href="https://github.com/SAYED1135/CraftMate-AI/releases/tag/v0.6.2" target="_blank" rel="noopener" data-ar="GitHub Releases (احتياطي)" data-en="GitHub Releases (backup)">GitHub Releases (احتياطي)</a>
           </div>
           <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="showCurrentConnectStep()" data-ar="تم التثبيت والتشغيل ←" data-en="Installed & running →">تم التثبيت والتشغيل ←</button></div>
         </div>
@@ -498,7 +498,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux11';
+const APP_BUILD='2026.10.17-ux12';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1130,7 +1130,7 @@ function showConnectPanel(s,fresh){
     return;
   }
   const code=activeCode(s.id)||newLinkCode(s.id);
-  const jar='https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.6.1/CraftMate-Connector-0.6.1.jar';
+  const jar='https://github.com/SAYED1135/CraftMate-AI/releases/download/v0.6.2/CraftMate-Connector-0.6.2.jar';
   box.innerHTML=
    '<div style="border:1px solid var(--border2);border-radius:14px;padding:16px;background:var(--card3);margin-bottom:16px">'+
    '<h4 style="margin-bottom:8px">'+t('🔗 الطريقة الجديدة v0.4: البلجن يولّد الكود','🔗 New in v0.4: the plugin generates the code')+'</h4>'+

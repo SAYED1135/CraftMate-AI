@@ -431,7 +431,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.4.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.4.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

@@ -53,3 +53,4 @@ jobs:
           echo "$body"
           echo "$body" | grep -q '"auth_registration":true'
           echo "$body" | grep -q '"configured":true'
+          echo "$body" | grep -q '"gemini_configured":'

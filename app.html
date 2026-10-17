@@ -217,15 +217,11 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
       <nav class="snav">
         <button data-view="dashboard" class="active" onclick="go('dashboard')" data-ar="🏠 لوحتي" data-en="🏠 Dashboard">🏠 لوحتي</button>
         <button data-view="serverchat" onclick="go('serverchat')" data-ar="🤖 شات السيرفر" data-en="🤖 Server chat">🤖 شات السيرفر</button>
-        <button data-view="onboard" onclick="go('onboard')" data-ar="➕ ربط سيرفر" data-en="➕ Link a server">➕ ربط سيرفر</button>
+        <button data-view="onboard" class="js-link-server-action" onclick="go('onboard')" data-ar="➕ ربط سيرفر" data-en="➕ Link a server">➕ ربط سيرفر</button>
         <button data-view="servers" onclick="go('servers')" data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفرتي</button>
-        <button data-view="diagnose" onclick="go('diagnose')" data-ar="🩺 تشخيص جديد" data-en="🩺 New diagnosis">🩺 تشخيص جديد</button>
         <button data-view="history" onclick="go('history')" data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</button>
-        <button data-view="alerts" id="alertsNav" onclick="go('alerts')">🔔 <span data-ar="التنبيهات" data-en="Alerts">التنبيهات</span></button>
-        <button data-view="community" onclick="go('community')" data-ar="📝 المجتمع والمنشورات" data-en="📝 Community & posts">📝 المجتمع والمنشورات</button>
-        <button data-view="support" onclick="go('support')" data-ar="💬 الدعم والتذاكر" data-en="💬 Support & tickets">💬 الدعم والتذاكر</button>
         <button data-view="admin" id="adminNav" onclick="go('admin')" style="display:none" data-ar="🛡️ لوحة الإدارة" data-en="🛡️ Admin console">🛡️ لوحة الإدارة</button>
-        <button data-view="settings" onclick="go('settings')" data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</button>
+        <button data-view="settings" onclick="go('settings')" data-ar="⚙️ الإعدادات" data-en="⚙️ Settings">⚙️ الإعدادات</button>
       </nav>
       <div style="margin-top:17px;background:var(--card3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:.8rem;color:var(--muted)" id="sideModeNote"></div>
     </aside>
@@ -245,7 +241,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- DASHBOARD -->
       <section class="view active" id="view-dashboard">
-        <div class="view-head"><div><h2 id="dashTitle">🏠 لوحتي</h2><p data-ar="حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة." data-en="Your servers, activation steps and latest activity — at a glance.">حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ اربط سيرفر" data-en="➕ Link a server">➕ اربط سيرفر</button></div>
+        <div class="view-head"><div><h2 id="dashTitle">🏠 لوحتي</h2><p data-ar="حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة." data-en="Your servers, activation steps and latest activity — at a glance.">حالة سيرفراتك وخطوات تفعيلك وآخر نشاط — في نظرة واحدة.</p></div><button class="btn sm js-link-server-action" onclick="go('onboard')" data-ar="➕ اربط سيرفر" data-en="➕ Link a server">➕ اربط سيرفر</button></div>
         <div class="stats">
           <div class="stat"><b id="stServers">0/1</b><span data-ar="سيرفرات مرتبطة" data-en="Linked servers">سيرفرات مرتبطة</span></div>
           <div class="stat"><b id="stDiag">0/10</b><span data-ar="تشخيصات الشهر" data-en="Diagnoses this month">تشخيصات الشهر</span></div>
@@ -346,7 +342,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- SERVERS -->
       <section class="view" id="view-servers">
-        <div class="view-head"><div><h2 data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفراتي</h2><p data-ar="كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع." data-en="Every server with its status, environment and latest diagnosis — manage, unlink, delete.">كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع.</p></div><button class="btn sm" onclick="go('onboard')" data-ar="➕ سيرفر جديد" data-en="➕ New server">➕ سيرفر جديد</button></div>
+        <div class="view-head"><div><h2 data-ar="🗂️ سيرفراتي" data-en="🗂️ My servers">🗂️ سيرفراتي</h2><p data-ar="كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع." data-en="Every server with its status, environment and latest diagnosis — manage, unlink, delete.">كل سيرفر عندك بحالته وبيئته وآخر تشخيص — إدارة وحذف وتراجع.</p></div><button class="btn sm js-link-server-action" onclick="go('onboard')" data-ar="➕ سيرفر جديد" data-en="➕ New server">➕ سيرفر جديد</button></div>
         <div id="serversList"></div>
         <div class="panel" id="serverDetail" style="display:none"></div>
       </section>
@@ -459,7 +455,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- SETTINGS -->
       <section class="view" id="view-settings">
-        <div class="view-head"><div><h2 data-ar="⚙️ الإعدادات والسحابة" data-en="⚙️ Settings & cloud">⚙️ الإعدادات والسحابة</h2><p data-ar="حسابك وخطتك وبياناتك — كلها مرتبطة بحسابك ومحفوظة بشكل آمن." data-en="Your account, plan and data — all linked to your account and stored safely.">حسابك وخطتك وبياناتك — كلها مرتبطة بحسابك ومحفوظة بشكل آمن.</p></div></div>
+        <div class="view-head"><div><h2 data-ar="⚙️ الإعدادات" data-en="⚙️ Settings">⚙️ الإعدادات</h2><p data-ar="حسابك وخطتك وبياناتك — كلها مرتبطة بحسابك ومحفوظة بشكل آمن." data-en="Your account, plan and data — all linked to your account and stored safely.">حسابك وخطتك وبياناتك — كلها مرتبطة بحسابك ومحفوظة بشكل آمن.</p></div></div>
         <div class="panel"><h3 data-ar="👤 حسابي" data-en="👤 My account">👤 حسابي</h3><div id="settingsProfile"></div></div>
         <div class="panel">
           <h3 data-ar="☁️ حالة الحساب" data-en="☁️ Cloud account status">☁️ حالة الحساب</h3>
@@ -490,7 +486,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux2';
+const APP_BUILD='2026.10.17-ux3';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1029,6 +1025,9 @@ function renderAll(){
   document.getElementById('stOnline').textContent=online;
   document.getElementById('stDays').textContent=plan().retention>9000?'∞':plan().retention;
   document.getElementById('adminNav').style.display=isAdmin(u)?'block':'none';
+  const hasLinkedServer=servers.some(s=>s.status==='ONLINE'||s.linkedAt);
+  const hideLinkActions=hasLinkedServer&&servers.length>=plan().servers;
+  document.querySelectorAll('.js-link-server-action').forEach(el=>{ el.style.display=hideLinkActions?'none':''; });
   renderLinkHome(); renderChecklist(servers); renderServerLists(servers); renderOnboard(); renderDiagnoseForm(); renderHistory(); renderServerChat(); renderSettings(); renderPhaseC();
 }
 function renderChecklist(servers){

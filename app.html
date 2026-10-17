@@ -413,7 +413,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.16-prod2';
+const APP_BUILD='2026.10.16-prod3';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1308,11 +1308,11 @@ function setTicketStatus(id,status){ const x=db.tickets.find(tk=>tk.id===id); if
 function serverSettingsHtml(s){
   const st=normalizeServer(s).settings;
   const changes=db.changes.filter(c=>c.serverId===s.id).sort((a,b)=>new Date(b.at)-new Date(a.at));
-  return '<div style="margin-top:19px;border-top:1px dashed var(--border);padding-top:17px"><h4 style="margin-bottom:10px">'+t('⚙️ إعدادات آمنة قابلة للتراجع','⚙️ Safe reversible settings')+'</h4>'+
+  return '<div style="margin-top:19px;border-top:1px dashed var(--border);padding-top:17px"><h4 style="margin-bottom:10px">'+t('⚙️ تفضيلات السيرفر المحفوظة في حسابك','⚙️ Server preferences saved to your account')+'</h4>'+
   '<div class="grid2"><div class="field"><label>view-distance</label><input id="set-view-'+s.id+'" type="number" min="2" max="32" value="'+st.viewDistance+'"></div><div class="field"><label>simulation-distance</label><input id="set-sim-'+s.id+'" type="number" min="2" max="32" value="'+st.simulationDistance+'"></div><div class="field"><label>'+t('أقصى لاعبين','Max players')+'</label><input id="set-max-'+s.id+'" type="number" min="1" max="1000" value="'+st.maxPlayers+'"></div><div class="field"><label>'+t('الصعوبة','Difficulty')+'</label><select id="set-diff-'+s.id+'"><option '+(st.difficulty==='peaceful'?'selected':'')+'>peaceful</option><option '+(st.difficulty==='easy'?'selected':'')+'>easy</option><option '+(st.difficulty==='normal'?'selected':'')+'>normal</option><option '+(st.difficulty==='hard'?'selected':'')+'>hard</option></select></div></div>'+
-  '<p class="hint">'+t('قبل أي تطبيق بنحفظ نسخة .bak من الإعدادات الحالية، وكل تغيير بيتسجل هنا وقابل للتراجع. على Minefort لا يوجد هنا أي خيار يمس BungeeCord — محظور أصلاً.','Before applying we save a .bak of current settings, and every change is logged here and reversible. On Minefort there is no BungeeCord option here at all — it is forbidden by design.')+'</p>'+
-  '<button class="btn sm" onclick="applyServerSettings(\''+s.id+'\')">'+t('💾 تطبيق آمن مع نسخة احتياطية','💾 Apply safely with backup')+'</button>'+
-  (changes.length?'<h4 style="margin:17px 0 8px">'+t('سجل التغييرات والتراجع','Change & rollback log')+'</h4>'+changes.slice(0,5).map(c=>'<div class="check"><span class="box">↩</span><div style="flex:1"><b>'+escapeHtml(c.summary)+'</b><span>backup: '+escapeHtml(c.backupRef)+' · '+fmtDate(c.at)+(c.revertedAt?' · '+t('تم التراجع','reverted'):'')+'</span></div>'+(c.revertedAt?'':'<button class="btn ghost sm" onclick="rollbackChange(\''+c.id+'\')">'+t('تراجع','Rollback')+'</button>')+'</div>').join(''):'')+'</div>';
+  '<p class="hint">'+t('دي تفضيلات تتحفظ في حساب CraftMate فقط حالياً، ولا تُرسل إلى ملفات سيرفر ماينكرافت ولا تغيّر تشغيله بعد. التنفيذ الفعلي داخل السيرفر سيكون لاحقاً عبر مهمة بلجن آمنة، ولن يظهر كمنفذ إلا بعد استلام البلجن والنتيجة والنسخة الاحتياطية على السيرفر نفسه.','These preferences are currently saved only in your CraftMate account; they are not sent to your Minecraft server files and do not change the running server yet. Real in-server execution will come later through a safe plugin task, and will only appear executed after the plugin receipt, result, and backup on the server itself.')+'</p>'+
+  '<button class="btn sm" onclick="applyServerSettings(\''+s.id+'\')">'+t('💾 حفظ التفضيلات في حسابي','💾 Save preferences to my account')+'</button>'+
+  (changes.length?'<h4 style="margin:17px 0 8px">'+t('سجل التفضيلات واسترجاعها داخل الحساب','Preference history & account restore')+'</h4>'+changes.slice(0,5).map(c=>'<div class="check"><span class="box">↩</span><div style="flex:1"><b>'+escapeHtml(c.summary)+'</b><span>'+t('مرجع الحفظ: ','Saved ref: ')+escapeHtml(String(c.backupRef||'').replace(/^config-/,'saved-').replace(/\.bak$/,''))+' · '+fmtDate(c.at)+(c.revertedAt?' · '+t('تم التراجع','reverted'):'')+'</span></div>'+(c.revertedAt?'':'<button class="btn ghost sm" onclick="rollbackChange(\''+c.id+'\')">'+t('تراجع','Rollback')+'</button>')+'</div>').join(''):'')+'</div>';
 }
 function applyServerSettings(id){
   const s=myServers().find(x=>x.id===id); if(!s) return;
@@ -1323,15 +1323,15 @@ function applyServerSettings(id){
   const changed=Object.keys(after).filter(k=>String(before[k])!==String(after[k]));
   if(!changed.length) return toast(t('لا تغييرات لتطبيقها','No changes to apply'));
   s.settings=after; if(s.env) s.env.maxPlayers=after.maxPlayers;
-  db.changes.push({id:uid(),ownerId:user().id,serverId:id,summary:changed.join(', '),before,after,backupRef:'config-'+Date.now()+'.bak',at:new Date().toISOString(),revertedAt:null});
-  saveDB(); audit('SETTINGS_APPLIED',s.name+': '+changed.join(',')); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); notify('settings',t('⚙️ اتحدثت إعدادات سيرفرك','⚙️ Your server settings updated'),t('⚙️ Your server settings updated'),s.name+': '+changed.join(', '),s.name+': '+changed.join(', '));
-  renderAll(); openServer(id); toast(t('✅ اتطبق التغيير واتحفظت نسخة .bak','✅ Change applied and a .bak backup was saved'));
+  db.changes.push({id:uid(),ownerId:user().id,serverId:id,summary:changed.join(', '),before,after,backupRef:'saved-'+Date.now(),at:new Date().toISOString(),revertedAt:null});
+  saveDB(); audit('SETTINGS_APPLIED',s.name+': '+changed.join(',')); if(s.source==='cloud') cloudUpsertServer(s).catch(()=>{}); notify('settings',t('⚙️ اتحفظت تفضيلات سيرفرك في حسابك','⚙️ Your server preferences were saved to your account'),t('⚙️ Your server preferences were saved to your account'),s.name+': '+changed.join(', '),s.name+': '+changed.join(', '));
+  renderAll(); openServer(id); toast(t('✅ اتحفظت التفضيلات في حسابك — لم تُرسل إلى ملفات السيرفر بعد','✅ Preferences saved to your account — not sent to server files yet'));
 }
 function rollbackChange(id){
   const c=db.changes.find(x=>x.id===id); if(!c||c.revertedAt) return;
   const s=myServers().find(x=>x.id===c.serverId); if(!s) return;
   s.settings=JSON.parse(JSON.stringify(c.before)); if(s.env) s.env.maxPlayers=c.before.maxPlayers;
-  c.revertedAt=new Date().toISOString(); saveDB(); audit('SETTINGS_ROLLBACK',s.name); renderAll(); openServer(s.id); toast(t('↩️ تم التراجع للإعدادات السابقة','↩️ Rolled back to the previous settings'));
+  c.revertedAt=new Date().toISOString(); saveDB(); audit('SETTINGS_ROLLBACK',s.name); renderAll(); openServer(s.id); toast(t('↩️ تمت استعادة التفضيلات السابقة داخل حسابك','↩️ Previous preferences restored in your account'));
 }
 function renderAdmin(){
   const u=user(); if(!u) return;

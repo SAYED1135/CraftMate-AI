@@ -148,8 +148,24 @@ public final class AllowlistTaskExecutor {
                     }
                     long previousTime = Bukkit.getWorlds().isEmpty() ? -1 : Bukkit.getWorlds().get(0).getTime();
                     for (World w : Bukkit.getWorlds()) w.setTime(ticks);
-                    boolean verified = Bukkit.getWorlds().stream().allMatch(w -> Math.abs(w.getTime() - ticks) <= 20);
+                    // World.getTime() may return full accumulated time on some
+                    // builds, so compare time-of-day modulo one day (24000)
+                    // with a wrap-aware distance and tick-drift tolerance.
+                    JsonArray afterTimes = new JsonArray();
+                    boolean verified = true;
+                    boolean firstWorld = true;
+                    for (World w : Bukkit.getWorlds()) {
+                        long nowTicks = ((w.getTime() % 24000L) + 24000L) % 24000L;
+                        afterTimes.add(nowTicks);
+                        long diff = Math.abs(nowTicks - ticks);
+                        long wrapDiff = Math.min(diff, 24000L - diff);
+                        // Only the primary world decides success: extra plugin
+                        // worlds may legitimately freeze their own time.
+                        if (firstWorld && wrapDiff > 60L) verified = false;
+                        firstWorld = false;
+                    }
                     JsonObject data = new JsonObject();
+                    data.add("world_times_after", afterTimes);
                     data.addProperty("time_ticks", ticks);
                     data.addProperty("previous_time_ticks", previousTime);
                     data.addProperty("worlds_updated", Bukkit.getWorlds().size());
@@ -157,7 +173,7 @@ public final class AllowlistTaskExecutor {
                     data.addProperty("reversible", true);
                     executedTaskIds.add(taskId);
                     result.addProperty("status", verified ? "SUCCESS" : "FAILED");
-                    if (!verified) result.addProperty("error", "Time verification failed after apply.");
+                    if (!verified) result.addProperty("error", "Time verification failed after apply (target=" + ticks + ", world_times_after=" + afterTimes + ").");
                     result.add("data", data);
                     return result;
                 }
@@ -299,7 +315,7 @@ public final class AllowlistTaskExecutor {
             }
         } catch (Exception ex) {
             result.addProperty("status", "FAILED");
-            result.addProperty("error", ex.getMessage());
+            result.addProperty("error", ex.getClass().getSimpleName() + ": " + ex.getMessage());
             return result;
         }
     }

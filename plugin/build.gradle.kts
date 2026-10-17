@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "ai.craftmate"
-version = "0.6.1"
+version = "0.6.2"
 description = "CraftMate AI Connector — Safe Host-Aware Diagnostic & Policy Agent for Paper/Purpur"
 
 repositories {

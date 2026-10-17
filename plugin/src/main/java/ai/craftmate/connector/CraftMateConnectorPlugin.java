@@ -138,7 +138,8 @@ public final class CraftMateConnectorPlugin extends JavaPlugin {
                     result.addProperty("error", ex.getMessage());
                 }
                 getLogger().info("[CraftMate] Website task " + taskType + " finished with status: "
-                        + (result.has("status") ? result.get("status").getAsString() : "UNKNOWN"));
+                        + (result.has("status") ? result.get("status").getAsString() : "UNKNOWN")
+                        + (result.has("error") ? " — " + result.get("error").getAsString() : ""));
                 connectorClient.sendTaskResultAsync(result);
             });
         });

@@ -129,8 +129,11 @@ public final class CraftMateCommand implements CommandExecutor, TabCompleter {
                 : ChatColor.RED + "DISABLED in config.yml"));
         sender.sendMessage(ChatColor.GRAY + "Last Sync: " + ChatColor.WHITE + client.getLastSyncTimestamp());
         sender.sendMessage(ChatColor.GRAY + "JVM Memory: " + ChatColor.WHITE + usedMb + " MB / " + maxMb + " MB");
-        sender.sendMessage(ChatColor.GRAY + "Security Mode: " + (readOnly
-                ? ChatColor.GREEN + "READ-ONLY (Safe P2 Mode)"
+        sender.sendMessage(ChatColor.GRAY + "Live World Tasks: " + (plugin.getConfig().getBoolean("control.allow-live-write-tasks", true)
+                ? ChatColor.GREEN + "ALLOWED via website full-control"
+                : ChatColor.RED + "DISABLED in config.yml"));
+        sender.sendMessage(ChatColor.GRAY + "Config File Edits: " + (readOnly
+                ? ChatColor.YELLOW + "LOCKED (security.read-only-mode)"
                 : ChatColor.GOLD + "ALLOWLIST EXECUTION (Backup .bak enabled)"));
         sender.sendMessage(ChatColor.DARK_GRAY + "================================================");
     }

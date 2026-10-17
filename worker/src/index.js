@@ -381,6 +381,7 @@ async function callGemini(env, prompt) {
     .filter((model, index, list) => list.indexOf(model) === index);
 
   let lastStatus = 0;
+  let lastFailure = "";
   for (const model of models) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
@@ -406,23 +407,29 @@ async function callGemini(env, prompt) {
         console.error("Gemini request failed", { model, status: response.status });
         // A model can be retired or unavailable to a project while the key is
         // valid. Try the next maintained Flash alias/model before giving up.
-        if (response.status === 404) continue;
+        if (response.status === 404) { lastFailure = "model_unavailable"; continue; }
         const error = new Error(`GEMINI_${response.status}`);
-        error.code = "CM-AI-002";
+        error.code = response.status === 401 || response.status === 403
+          ? "CM-AI-010"
+          : response.status === 429
+            ? "CM-AI-012"
+            : "CM-AI-002";
         throw error;
       }
       const parts = data?.candidates?.[0]?.content?.parts || [];
       const answer = parts.map((part) => part?.text || "").join("\n").trim();
       if (!answer) {
+        lastFailure = "empty";
         console.error("Gemini returned an empty answer", { model });
         continue;
       }
       return scrubForAi(answer, 6000);
     } catch (error) {
       if (error.code) throw error;
+      lastFailure = error.name === "AbortError" ? "timeout" : "unavailable";
       console.error("Gemini request unavailable", {
         model,
-        reason: error.name === "AbortError" ? "timeout" : "fetch_failed",
+        reason: lastFailure,
       });
       continue;
     } finally {
@@ -431,7 +438,7 @@ async function callGemini(env, prompt) {
   }
 
   const error = new Error(lastStatus ? `GEMINI_${lastStatus}` : "GEMINI_UNAVAILABLE");
-  error.code = "CM-AI-002";
+  error.code = lastFailure === "model_unavailable" ? "CM-AI-011" : "CM-AI-002";
   throw error;
 }
 
@@ -498,8 +505,11 @@ async function handleReportChat(db, env, body, request) {
     if (error.code === "CM-AI-001") {
       return fail("CM-AI-001", "The AI assistant is not enabled yet. Your saved report is still available below.", 503);
     }
-    console.error("Report assistant failed", error.message);
-    return fail("CM-AI-002", "The AI assistant is temporarily unavailable. Your deterministic report remains the trusted result.", 502);
+    console.error("Report assistant failed", error.code || "CM-AI-002", error.message);
+    const code = ["CM-AI-002", "CM-AI-010", "CM-AI-011", "CM-AI-012"].includes(error.code)
+      ? error.code
+      : "CM-AI-002";
+    return fail(code, "The AI assistant is temporarily unavailable. Your deterministic report remains the trusted result.", code === "CM-AI-012" ? 429 : 502);
   }
 }
 
@@ -668,7 +678,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.5.1", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.5.2", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

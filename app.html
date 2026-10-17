@@ -314,7 +314,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
       <!-- HISTORY -->
       <section class="view" id="view-history">
-        <div class="view-head"><div><h2 data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</h2><p data-ar="كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام." data-en="Every diagnosis saved in your account — reopen or delete it. Free retention is 7 days.">كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام.</p></div></div>
+        <div class="view-head"><div><h2 data-ar="📜 تقاريري" data-en="📜 My reports">📜 تقاريري</h2><p data-ar="كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام." data-en="Every diagnosis saved in your account — reopen or delete it. Free retention is 7 days.">كل تشخيص اتحفظ في حسابك — افتحه تاني أو احذفه. الاحتفاظ المجاني 7 أيام.</p></div><button class="btn ghost sm" onclick="refreshReports()" data-ar="🔄 تحديث من السحابة" data-en="🔄 Refresh from cloud">🔄 تحديث من السحابة</button></div>
         <div class="panel"><div id="historyList"></div></div>
         <div class="panel" id="aiPanel" style="display:none;margin-top:16px">
           <span class="sev sev-ok">🤖 AI PILOT</span>
@@ -429,7 +429,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ai1';
+const APP_BUILD='2026.10.17-ai2';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -580,8 +580,8 @@ async function cloudSyncCode(code){
     code.cloudSynced=false; code.cloudError=(e&&e.supportCode)||'CM-LINK-203'; saveDB(); return false;
   }
 }
-async function syncCloudData(){
-  if(!isCloud()||cloudSyncing||cloudSyncedFor===session.userId) return;
+async function syncCloudData(force=false){
+  if(!isCloud()||cloudSyncing||(!force&&cloudSyncedFor===session.userId)) return;
   cloudSyncing=true;
   try{
     const u=user(); if(!u) return;
@@ -599,8 +599,9 @@ async function syncCloudData(){
     const reports=await cloudJson('diagnostic_reports?owner_id=eq.'+encodeURIComponent(u.id)+'&select=*&order=created_at.desc&limit=100');
     if(Array.isArray(reports)){
       reports.forEach(r=>{
-        if(db.diagnoses.some(d=>d.id===r.id)) return;
-        db.diagnoses.push({id:r.id,ownerId:r.owner_id,serverId:r.server_id||null,title:r.summary_ar||r.summary_en||'Report',sev:'med',cause:'',steps:Array.isArray(r.findings)?r.findings.map(f=>f.text||String(f)):[],guard:'',ips:(r.deduplicated_stats||{}).ips||0,secrets:(r.deduplicated_stats||{}).secrets||0,at:r.created_at,source:'cloud'});
+        const rec={id:r.id,ownerId:r.owner_id,serverId:r.server_id||null,title:r.summary_ar||r.summary_en||'Report',sev:'med',cause:'',steps:Array.isArray(r.findings)?r.findings.map(f=>f.text||String(f)):[],guard:'',ips:(r.deduplicated_stats||{}).ips||0,secrets:(r.deduplicated_stats||{}).secrets||0,at:r.created_at,source:'cloud'};
+        const idx=db.diagnoses.findIndex(d=>d.id===r.id);
+        if(idx>=0) db.diagnoses[idx]=Object.assign({},db.diagnoses[idx],rec); else db.diagnoses.push(rec);
       });
     }
     const notes=await cloudJson('notifications?owner_id=eq.'+encodeURIComponent(u.id)+'&select=*&order=created_at.desc&limit=50');
@@ -609,6 +610,8 @@ async function syncCloudData(){
   }catch(e){ console.warn('Cloud sync:',e.message); }
   cloudSyncing=false;
 }
+async function refreshCloudData(){ cloudSyncedFor=null; await syncCloudData(true); }
+async function refreshReports(){ if(!isCloud()) return toast(t('سجّل دخولك سحابيًا الأول','Log in with your cloud account first')); await refreshCloudData(); toast(t('🔄 اتحدثت تقاريرك من السحابة','🔄 Your reports were refreshed from the cloud')); }
 function audit(action,detail){ const u=user(); if(!u) return; db.audits.push({id:uid(),ownerId:u.id,action,detail:detail||'',at:new Date().toISOString()}); saveDB(); }
 
 /* ── i18n ── */
@@ -906,6 +909,7 @@ function go(view){
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
   document.querySelectorAll('.snav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   renderAll();
+  if(view==='history'&&isCloud()) refreshCloudData();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function myServers(){ const u=user(); return u?db.servers.filter(s=>s.ownerId===u.id):[]; }
@@ -1395,6 +1399,9 @@ function aiErrorText(code){
     'CM-AI-401':t('انتهت جلسة الدخول — سجّل دخولك من جديد ثم جرّب تاني.','Your sign-in session expired — log in again and retry.'),
     'CM-AI-404':t('التقرير ده مش موجود في حسابك أو لسه بيتزامن من السحابة.','This report was not found in your account or is still syncing from the cloud.'),
     'CM-AI-422':t('اكتب سؤالًا واضحًا عن التقرير الأول.','Write a clear question about the report first.'),
+    'CM-AI-010':t('إعداد خدمة الذكاء يحتاج مراجعة من فريق CraftMate — تقريرك المحفوظ لم يتأثر.','The AI service setup needs a CraftMate review — your saved report is unaffected.'),
+    'CM-AI-011':t('نموذج الذكاء المختار غير متاح حاليًا — تقريرك المحفوظ ما زال هو المرجع الموثوق.','The selected AI model is currently unavailable — your saved report remains the trusted reference.'),
+    'CM-AI-012':t('خدمة الذكاء وصلت لحد الاستخدام مؤقتًا — جرّب بعد شوية وتقريرك محفوظ.','The AI service temporarily reached its usage limit — try later; your report is saved.'),
     'CM-AI-429':t('وصلت لحد استخدام المساعد مؤقتًا — جرّب بعد شوية.','You reached the temporary assistant limit — try again later.')
   };
   return (messages[code]||t('حصلت مشكلة غير متوقعة في المساعد.','An unexpected assistant problem occurred.'))+' ['+(code||'CM-AI-500')+']';

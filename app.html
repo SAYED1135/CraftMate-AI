@@ -1115,7 +1115,7 @@ async function createConnectionAccount(){
   const name=t('سيرفري','My Server');
   const s={id:newUuid(),ownerId:u.id,name,address:'',host:obHost,software:'Paper',version:'1.21.4',status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
   try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
-  catch(e){ toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم للدعم.','Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send the support code to support.'); return; }
+  catch(e){ const st=e&&e.status?(' (HTTP '+e.status+')'):''; toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم ده: CM-SERVER-401'+st,'Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send this support code: CM-SERVER-401'+st); return; }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
   try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }

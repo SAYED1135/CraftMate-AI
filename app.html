@@ -318,6 +318,7 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
             <div class="field"><label data-ar="إيميل مخصص لحساب الاتصال" data-en="Dedicated connection email">إيميل مخصص لحساب الاتصال</label><input id="obBotEmail" type="email" placeholder="name@example.com" style="direction:ltr;text-align:left"></div>
             <div class="field"><label data-ar="باسورد حساب الاتصال" data-en="Connection account password">باسورد حساب الاتصال</label><input id="obBotPw" type="password" data-ar-ph="8 أحرف على الأقل" data-en-ph="At least 8 characters" placeholder="8 أحرف على الأقل" style="direction:ltr;text-align:left"></div>
+            <div class="field"><label data-ar="مفتاح API من حساب المنصة (اختياري — بيقوي الربط)" data-en="Panel API key from the platform account (optional, strengthens linking)">مفتاح API من حساب المنصة (اختياري — بيقوي الربط)</label><input id="obBotApiKey" type="password" placeholder="ptlc_…" style="direction:ltr;text-align:left"></div>
           </div>
           <p class="hint" data-ar="الباسورد بيتحفظ مشفرًا وبيستخدم بس لو سيرفرك طلب تسجيل أو دخول من حساب الاتصال داخل اللعبة." data-en="The password is stored encrypted and used only if your server asks the connection account to register or log in in-game.">الباسورد بيتحفظ مشفرًا وبيستخدم بس لو سيرفرك طلب تسجيل أو دخول من حساب الاتصال داخل اللعبة.</p>
           <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(1)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createConnectionAccount()" data-ar="إنشاء حساب الاتصال ←" data-en="Create connection account →">إنشاء حساب الاتصال ←</button></div>
@@ -490,7 +491,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux19';
+const APP_BUILD='2026.10.17-ux20';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1118,7 +1119,7 @@ async function createConnectionAccount(){
   if(pw.length<8){ toast(t('⚠️ باسورد حساب الاتصال 8 أحرف على الأقل','⚠️ Connection password needs at least 8 characters')); return; }
   if(!isCloud()){ toast(t('⚠️ سجل دخولك بحسابك السحابي الأول عشان ننشئ حساب الاتصال','⚠️ Sign in with your cloud account first')); return; }
   const existing=myServers().find(x=>x.id===onboardServerId);
-  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); }catch(e){ toast('⛔ '+t('تسجيل بيانات الحساب فشل. رمز الدعم: ','Saving the account credentials failed. Support code: ')+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
+  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw,api_key:(document.getElementById('obBotApiKey')?.value||'').trim(),hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); }catch(e){ toast('⛔ '+t('تسجيل بيانات الحساب فشل. رمز الدعم: ','Saving the account credentials failed. Support code: ')+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=t('سيرفري','My Server');
   const s={id:newUuid(),ownerId:u.id,name,address:'',host:obHost,software:'Paper',version:'1.21.4',status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
@@ -1126,7 +1127,7 @@ async function createConnectionAccount(){
   catch(e){ const st=e&&e.status?(' (HTTP '+e.status+(e.pg&&e.pg.code?(' / '+e.pg.code+' / '+e.pg.message):'')+')'):''; toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم ده: CM-SERVER-401'+st,'Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send this support code: CM-SERVER-401'+st); return; }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
-  try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }
+  try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,api_key:(document.getElementById('obBotApiKey')?.value||'').trim(),hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }
   catch(e){ toast('⛔ '+t('اتعمل السيرفر بس تسجيل بيانات حساب الاتصال فشل، فمش هنكمل قبل ما تتصلح. رمز الدعم: ','Server saved but saving the connection credentials failed; we will not continue until fixed. Support code: ')+(e.message||'CM-BOT-503')); renderAll(); return; }
   renderAll(); setOnboardStep(3);
   toast(t('✅ تم إنشاء حساب الاتصال — دلوقتي اختر اسم الحساب','✅ Connection account created — now choose its name'));
@@ -1204,7 +1205,8 @@ function pollBotVerify(serverId){
       }
       else if(d.bot_verify_status==='failed'){
         clearInterval(botVerifyTimer); botVerifyTimer=null;
-        if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('التحقق فشل: ','Verification failed: ')+escapeHtml(d.bot_verify_detail||'')+'</span><br><span>'+t('اتأكد إن السيرفر شغال، العنوان صح، وإنك نفذت أمر الصلاحيات. وبعدين اطلب التحقق تاني. رمز الدعم: CM-BOT-VFY','Make sure the server is running, the address is right, and you ran the privilege command. Then request verification again. Support code: CM-BOT-VFY')+'</span>';
+        const isChallenge=String(d.bot_verify_detail||'').includes('PANEL_BOT_CHALLENGE');
+        if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('التحقق فشل: ','Verification failed: ')+escapeHtml(d.bot_verify_detail||'')+'</span><br><span>'+(isChallenge?t('لوحة الاستضافة منعت تسجيل الدخول الآلي بحمايتها ضد البوتات. الحل: ادخل حساب المنصة جوه اللوحة، اعمل API Key من إعدادات الحساب، وادخله في خطوة حساب الاتصال عندنا، وبعدين اطلب التحقق تاني. رمز الدعم: CM-BOT-VFY','The hosting panel blocked automated login with its bot protection. Fix: inside the panel platform account, create an API key in account settings, enter it in our connection-account step, then request verification again. Support code: CM-BOT-VFY'):t('اتأكد إنك ضفت الحساب Subuser بالصلاحيات، وإن السيرفر ظاهر على حساب المنصة. وبعدين اطلب التحقق تاني. رمز الدعم: CM-BOT-VFY','Make sure you added the account as a subuser with permissions and the server appears on the platform account. Then request verification again. Support code: CM-BOT-VFY'))+'</span>';
         return;
       }
       if(st) st.innerHTML='⏳ '+t('جارٍ التحقق… المنصة بتحاول تدخل سيرفرك وتختبر الصلاحيات (محاولة ','Verifying… the platform is joining your server and testing privileges (attempt ')+tries+')';

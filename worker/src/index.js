@@ -629,6 +629,14 @@ async function handleBotIdentity(db, env, body, request) {
     }
     if (!username) { username = botUsernameFor(server.id); patch.bot_username = username; }
     if (email) patch.bot_email = email;
+    const apiKey = String(body.api_key || "").trim();
+    if (apiKey) {
+      if (apiKey.length < 10 || apiKey.length > 240) return fail("CM-BOT-422", "The panel API key does not look valid.", 422);
+      if (!(await botCredKey(env))) return fail("CM-BOT-504", "Secure credential storage key is not configured yet.", 503);
+      const encKey = await encryptBotSecret(env, apiKey);
+      if (!encKey) return fail("CM-BOT-504", "Secure credential storage key is not configured yet.", 503);
+      patch.bot_api_key_enc = encKey;
+    }
     if (password) {
       if (!(await botCredKey(env))) return fail("CM-BOT-504", "Secure credential storage key is not configured yet.", 503);
       const enc = await encryptBotSecret(env, password);
@@ -682,7 +690,7 @@ async function handleBotStatus(db, env, body, request) {
     ok: true, server_id: server.id,
     bot_username: server.bot_username || null,
     bot_verify_status: server.bot_verify_status || "none",
-    has_credentials: !!(server.bot_email && server.bot_password_enc),
+    has_credentials: !!((server.bot_email && server.bot_password_enc) || server.bot_api_key_enc),
     bot_email: server.bot_email || null,
     bot_verify_detail: server.bot_verify_detail || null,
     bot_verified_at: server.bot_verified_at || null,
@@ -705,7 +713,7 @@ async function handlePanelRequestCheck(db, env, body, request) {
   if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
   const server = await getServer(db, serverId);
   if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
-  if (!server.bot_email || !server.bot_password_enc) return fail("CM-BOT-422", "Save the connection account email and password first.", 422);
+  if ((!server.bot_email || !server.bot_password_enc) && !server.bot_api_key_enc) return fail("CM-BOT-422", "Save the connection account email and password first.", 422);
   try {
     await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, { bot_verify_status: "check_requested", bot_verify_detail: null, link_method: "bot" });
     return json({ ok: true, server_id: server.id, bot_verify_status: "check_requested" });
@@ -747,7 +755,7 @@ async function handleRunnerJobsNext(db, env, body, request) {
     const pc = Array.isArray(pendingCheck) ? pendingCheck[0] : null;
     if (pc && pc.bot_email && pc.bot_password_enc) {
       await db.patch(`servers?id=eq.${encodeURIComponent(pc.id)}`, { bot_verify_status: "checking" });
-      return json({ ok: true, job: { kind: "panel_check", server_id: pc.id, panel_url: panelUrlFor(pc), email: pc.bot_email, password: (await decryptBotSecret(env, pc.bot_password_enc)) || undefined, requested_username: pc.bot_username || undefined, server_name: pc.name } });
+      return json({ ok: true, job: { kind: "panel_check", server_id: pc.id, panel_url: panelUrlFor(pc), email: pc.bot_email, password: (await decryptBotSecret(env, pc.bot_password_enc)) || undefined, api_key: (await decryptBotSecret(env, pc.bot_api_key_enc)) || undefined, requested_username: pc.bot_username || undefined, server_name: pc.name } });
     }
     const pendingVerify = await db.get(`servers?bot_verify_status=eq.requested&select=*&order=created_at.asc&limit=1`);
     const v = Array.isArray(pendingVerify) ? pendingVerify[0] : null;
@@ -1486,7 +1494,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.2", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.13.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

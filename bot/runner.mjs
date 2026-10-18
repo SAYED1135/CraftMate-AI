@@ -157,6 +157,20 @@ async function panelLoginCheck(job) {
   const cookieHeader = () => [...jar.entries()].map(([k, v]) => k + '=' + v).join('; ');
   const absorb = (res) => { try { for (const c of res.headers.getSetCookie()) { const pair = c.split(';')[0]; const i = pair.indexOf('='); if (i > 0) jar.set(pair.slice(0, i).trim(), pair.slice(i + 1).trim()); } } catch {} };
   const xsrf = () => { const v = jar.get('XSRF-TOKEN'); return v ? decodeURIComponent(v) : ''; };
+  if (job.api_key) {
+    try {
+      const h = { Authorization: 'Bearer ' + job.api_key, Accept: 'application/vnd.pterodactyl.v1+json', 'User-Agent': PANEL_UA };
+      const aRes = await fetch(base + '/api/client/account', { headers: h, signal: AbortSignal.timeout(20000) });
+      const aTxt = await aRes.text().catch(() => '');
+      if (/just a moment|challenges\.cloudflare/i.test(aTxt)) return { login_ok: false, detail: 'PANEL_BOT_CHALLENGE_API: panel blocked API access too' };
+      if (!aRes.ok) return { login_ok: false, detail: 'API_HTTP_' + aRes.status };
+      let username = null; try { username = JSON.parse(aTxt)?.attributes?.username || null; } catch {}
+      const lRes = await fetch(base + '/api/client?per_page=100', { headers: h, signal: AbortSignal.timeout(20000) });
+      let servers = [];
+      if (lRes.ok) { const lj = await lRes.json().catch(() => ({})); servers = (lj.data || []).map((x) => x?.attributes?.name).filter(Boolean); }
+      return { login_ok: true, server_found: servers.length > 0, username, detail: servers.length ? ('servers visible: ' + servers.slice(0, 3).join(', ')) : 'api ok; no server shared yet' };
+    } catch (e) { return { login_ok: false, detail: 'API_UNREACHABLE: ' + String(e.message || e).slice(0, 160) }; }
+  }
   const timed = (ms) => AbortSignal.timeout(ms);
   try {
     let res = await fetch(base + '/', { headers: { 'User-Agent': PANEL_UA }, signal: timed(20000) });

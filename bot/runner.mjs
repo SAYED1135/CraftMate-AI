@@ -149,6 +149,46 @@ async function workerCall(path, body) {
   return data;
 }
 
+const PANEL_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+async function panelLoginCheck(job) {
+  const base = String(job.panel_url || '').replace(/\/+$/, '');
+  if (!base) return { login_ok: false, detail: 'PANEL_URL_MISSING' };
+  const jar = new Map();
+  const cookieHeader = () => [...jar.entries()].map(([k, v]) => k + '=' + v).join('; ');
+  const absorb = (res) => { try { for (const c of res.headers.getSetCookie()) { const pair = c.split(';')[0]; const i = pair.indexOf('='); if (i > 0) jar.set(pair.slice(0, i).trim(), pair.slice(i + 1).trim()); } } catch {} };
+  const xsrf = () => { const v = jar.get('XSRF-TOKEN'); return v ? decodeURIComponent(v) : ''; };
+  const timed = (ms) => AbortSignal.timeout(ms);
+  try {
+    let res = await fetch(base + '/', { headers: { 'User-Agent': PANEL_UA }, signal: timed(20000) });
+    absorb(res);
+    const home = await res.text().catch(() => '');
+    if (/just a moment|challenges\.cloudflare/i.test(home)) return { login_ok: false, detail: 'PANEL_BOT_CHALLENGE: hosting panel bot protection blocked automated login' };
+    res = await fetch(base + '/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': xsrf(), Cookie: cookieHeader(), 'User-Agent': PANEL_UA }, body: JSON.stringify({ user: job.email, password: job.password }), signal: timed(20000) });
+    absorb(res);
+    if (!res.ok) return { login_ok: false, detail: 'LOGIN_HTTP_' + res.status };
+    const apiHeaders = () => ({ Accept: 'application/vnd.pterodactyl.v1+json', Cookie: cookieHeader(), 'X-XSRF-TOKEN': xsrf(), 'X-Requested-With': 'XMLHttpRequest', 'User-Agent': PANEL_UA });
+    let acctRes = await fetch(base + '/api/client/account', { headers: apiHeaders(), signal: timed(20000) });
+    absorb(acctRes);
+    if (!acctRes.ok) return { login_ok: false, detail: 'ACCOUNT_HTTP_' + acctRes.status };
+    let account = (await acctRes.json().catch(() => ({})))?.attributes || {};
+    let username = account.username || null;
+    if (job.requested_username && username && job.requested_username !== username) {
+      try {
+        const ren = await fetch(base + '/api/client/account/username', { method: 'PUT', headers: { ...apiHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ username: job.requested_username, password: job.password }), signal: timed(20000) });
+        absorb(ren);
+        if (ren.ok) username = job.requested_username;
+      } catch {}
+    }
+    const listRes = await fetch(base + '/api/client?per_page=100', { headers: apiHeaders(), signal: timed(20000) });
+    absorb(listRes);
+    let servers = [];
+    if (listRes.ok) { const lj = await listRes.json().catch(() => ({})); servers = (lj.data || []).map((x) => x?.attributes?.name).filter(Boolean); }
+    return { login_ok: true, server_found: servers.length > 0, username, detail: servers.length ? ('servers visible: ' + servers.slice(0, 3).join(', ')) : 'logged in; no server shared yet' };
+  } catch (e) {
+    return { login_ok: false, detail: 'PANEL_UNREACHABLE: ' + String(e.message || e).slice(0, 160) };
+  }
+}
+
 async function modeServe() {
   const pollSeconds = Math.max(3, Number(process.env.CM_POLL_SECONDS || 5));
   const maxMinutes = Math.max(1, Number(process.env.CM_MAX_RUNTIME_MIN || 300));
@@ -161,7 +201,11 @@ async function modeServe() {
       const job = data.job;
       if (!job) { await sleep(pollSeconds * 1000); continue; }
       console.log('[craftmate-connector] job', job.kind, job.server_id || '', job.task_type || '');
-      if (job.kind === 'verify') {
+      if (job.kind === 'panel_check') {
+        const result = await panelLoginCheck(job);
+        console.log('[craftmate-connector] panel_check', job.server_id, JSON.stringify(result).slice(0, 200));
+        await workerCall('/v1/runner/jobs/panel-result', { server_id: job.server_id, ...result });
+      } else if (job.kind === 'verify') {
         let result;
         try {
           const addr = parseAddress(job.address);
@@ -203,7 +247,7 @@ async function modeServe() {
   console.log('[craftmate-connector] runtime budget reached; exiting');
 }
 
-export { offlineJoin, checkOp, executeTemplate, parseAddress, handleServerAuth, TEMPLATES };
+export { offlineJoin, checkOp, executeTemplate, parseAddress, handleServerAuth, panelLoginCheck, TEMPLATES };
 
 const isMain = process.argv[1] && process.argv[1].endsWith('runner.mjs');
 if (isMain) {

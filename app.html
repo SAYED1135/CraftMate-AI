@@ -319,7 +319,8 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
 
         <div class="panel wizard-panel" id="obStep2">
           <h3 data-ar="ثانياً: بيانات حساب الاتصال" data-en="Second: connection account credentials">ثانياً: بيانات حساب الاتصال</h3>
-          <p style="color:var(--muted);line-height:1.9" data-ar="المنصة هتنشئ حساب اتصال خاص بسيرفرك. الإيميل والباسورد دول مخصصين لحساب الاتصال بس — مش بيانات حسابك الشخصي في الاستضافة، ومتستخدمهمش في أي حاجة تانية." data-en="The platform will create a connection account just for your server. This email and password are only for that connection account — not your personal hosting login. Do not reuse them anywhere else.">المنصة هتنشئ حساب اتصال خاص بسيرفرك. الإيميل والباسورد دول مخصصين لحساب الاتصال بس — مش بيانات حسابك الشخصي في الاستضافة، ومتستخدمهمش في أي حاجة تانية.</p>
+          <p style="color:var(--muted);line-height:1.9" data-ar="اعمل حساب جديد على الاستضافة مخصص للمنصة بس — مش حسابك الرئيسي اللي عليه سيرفراتك. سجل بالإيميل والباسورد اللي هتكتبهم هنا، وبعدين ارجع اديهملنا عشان المنصة تسجل دخول وتدير سيرفرك بعد ما تضيفها Subuser." data-en="Create a fresh hosting account dedicated to the platform only — not your main account. Register with the email and password you enter here, then give them to us so the platform can log in and manage your server after you add it as a subuser.">اعمل حساب جديد على الاستضافة مخصص للمنصة بس — مش حسابك الرئيسي اللي عليه سيرفراتك. سجل بالإيميل والباسورد اللي هتكتبهم هنا، وبعدين ارجع اديهملنا عشان المنصة تسجل دخول وتدير سيرفرك بعد ما تضيفها Subuser.</p>
+          <div style="margin-bottom:12px"><button class="btn ghost sm" onclick="openHostingRegister()">🌐 <span data-ar="افتح صفحة إنشاء الحساب على الاستضافة" data-en="Open the hosting sign-up page">افتح صفحة إنشاء الحساب على الاستضافة</span></button></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
             <div class="field"><label data-ar="إيميل مخصص لحساب الاتصال" data-en="Dedicated connection email">إيميل مخصص لحساب الاتصال</label><input id="obBotEmail" type="email" placeholder="name@example.com" style="direction:ltr;text-align:left"></div>
             <div class="field"><label data-ar="باسورد حساب الاتصال" data-en="Connection account password">باسورد حساب الاتصال</label><input id="obBotPw" type="password" data-ar-ph="8 أحرف على الأقل" data-en-ph="At least 8 characters" placeholder="8 أحرف على الأقل" style="direction:ltr;text-align:left"></div>
@@ -496,7 +497,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux15';
+const APP_BUILD='2026.10.17-ux16';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1100,6 +1101,11 @@ function activeCode(serverId){
   const now=Date.now();
   return db.codes.filter(c=>c.serverId===serverId&&!c.usedAt&&c.expiresAt>now).sort((a,b)=>b.expiresAt-a.expiresAt)[0];
 }
+function openHostingRegister(){
+  const known={play_hosting:'https://panel.play.hosting/auth/register',falixnodes:'https://falixnodes.net',mcserverhost:'https://mcserverhost.com',minefort:'https://minefort.com'};
+  const link=(document.getElementById('obHostLink')?.value||'').trim();
+  window.open(link||known[obHost]||'https://panel.play.hosting/auth/register','_blank');
+}
 function detectHostFromLink(){
   const v=(document.getElementById('obHostLink')?.value||'').toLowerCase();
   const map=[['play.hosting','play_hosting'],['falixnodes','falixnodes'],['mcserverhost','mcserverhost'],['minefort','minefort']];
@@ -1115,7 +1121,7 @@ async function createConnectionAccount(){
   if(pw!==pw2){ toast(t('⚠️ تأكيد الباسورد مش مطابق','⚠️ Password confirmation does not match')); return; }
   if(!isCloud()){ toast(t('⚠️ سجل دخولك بحسابك السحابي الأول عشان ننشئ حساب الاتصال','⚠️ Sign in with your cloud account first')); return; }
   const existing=myServers().find(x=>x.id===onboardServerId);
-  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw}); }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
+  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=document.getElementById('obName').value.trim()||t('سيرفري','My Server');
   const s={id:newUuid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
@@ -1123,7 +1129,7 @@ async function createConnectionAccount(){
   catch(e){ toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم للدعم.','Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send the support code to support.'); return; }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
-  try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw}); s.botUsername=d.bot_username||null; }
+  try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }
   catch(e){ toast('⚠️ '+t('اتعمل السيرفر بس إنشاء حساب الاتصال اتعطل. رمز الدعم: ','Server saved but connection account creation hiccuped. Support code: ')+(e.message||'CM-BOT-503')); }
   renderAll(); setOnboardStep(3);
   toast(t('✅ تم إنشاء حساب الاتصال — دلوقتي اختر اسم الحساب','✅ Connection account created — now choose its name'));
@@ -1138,7 +1144,8 @@ async function finalizeBotName(){
     s.botUsername=d.bot_username; saveDB();
     if(box) box.innerHTML='<div class="codebox"><b style="direction:ltr">'+escapeHtml(d.bot_username)+'</b><span>'+t('اسم حساب الاتصال النهائي المعتمد من المنصة','Final platform-approved connection account name')+'</span></div>';
     toast(t('✅ تم اعتماد اسم الحساب','✅ Account name approved'));
-    setTimeout(()=>{ setOnboardStep(4); renderBotAccountStep(s); },700);
+    try{ await connectorPost('/v1/panel/request-check',{server_id:s.id}); }catch(e){}
+    setTimeout(()=>{ setOnboardStep(4); renderBotAccountStep(s); requestBotVerify(s.id); },700);
   }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-422')); }
 }
 let botVerifyTimer=null;
@@ -1146,26 +1153,18 @@ async function renderBotAccountStep(s){
   s=s||myServers().find(x=>x.id===onboardServerId)||myServers().find(x=>x.id===activeServerId);
   const box=document.getElementById('obBotAccount'); if(!box||!s) return;
   onboardServerId=s.id; activeServerId=s.id;
-  box.innerHTML='<p class="hint">'+t('⏳ بنجهز اسم حساب اتصال المنصة لسيرفرك…','⏳ Preparing your server platform account name…')+'</p>';
-  let username=s.botUsername||null;
-  try{
-    if(isCloud()&&isUuid(s.id)){ const d=await connectorPost('/v1/bot/identity',{server_id:s.id}); username=d.bot_username||username; s.botUsername=username; }
-  }catch(e){
-    box.innerHTML='<p class="hint" style="color:#f59e0b">⚠️ '+t('تعذر تجهيز حساب المنصة دلوقتي. رمز الدعم: ','Could not prepare the platform account right now. Support code: ')+(e.message||'CM-BOT-503')+'</p>';
-    return;
-  }
-  if(!username){ box.innerHTML='<p class="hint">⚠️ '+t('سجل دخولك بحساب سحابي الأول عشان نجهز حساب الاتصال.','Sign in with a cloud account first so we can prepare the connection account.')+'</p>'; return; }
-  const opCmd='op '+username;
+  const email=await (async()=>{ try{ const d=await connectorPost('/v1/bot/status',{server_id:s.id}); s.botUsername=d.bot_username||s.botUsername; return d.bot_username; }catch(e){ return s.botUsername; } })();
+  const uname=s.botUsername||'—';
   box.innerHTML=
-   '<p style="color:var(--muted);line-height:1.9">⏳ '+t('بانتظار ظهور السيرفر على الحساب… خذ اسم الحساب ده واديله صلاحيات على سيرفرك:','Waiting for the server to appear on the account… take this account name and grant it privileges on your server:')+'</p>'+
-   '<div class="codebox"><b style="direction:ltr">'+escapeHtml(username)+'</b><span>'+t('اسم حساب اتصال المنصة الخاص بسيرفرك','Your server platform connection account name')+'</span></div>'+
-   '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px"><button class="btn ghost sm" onclick="copyText(\''+escapeHtml(username)+'\')">'+t('📋 انسخ الاسم','📋 Copy name')+'</button></div>'+
+   '<p style="color:var(--muted);line-height:1.9">⏳ '+t('بانتظار ظهور السيرفر على الحساب… دلوقتي ضيف حساب المنصة ده Subuser على سيرفرك من لوحة الاستضافة:','Waiting for the server to appear on the account… now add this platform account as a subuser on your server from the hosting panel:')+'</p>'+
+   '<div class="codebox"><b>'+escapeHtml(uname)+'</b><span>'+t('اسم حساب المنصة على الاستضافة','Platform account name on the hosting')+'</span></div>'+
+   '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px"><button class="btn ghost sm" onclick="copyText(\''+escapeHtml(uname)+'\')">'+t('📋 انسخ الاسم','📋 Copy name')+'</button></div>'+
    '<ol style="padding-inline-start:22px;color:#cbd5e1;line-height:2">'+
-   '<li>'+t('اتأكد إن سيرفرك شغال دلوقتي، وإن عنوانه هو اللي سجلته: ','Make sure your server is running now, and its address is the one you saved: ')+'<b style="direction:ltr">'+escapeHtml(s.address||'—')+'</b></li>'+
-   '<li>'+t('افتح كونسول السيرفر من لوحة الاستضافة ونفّذ الأمر ده عشان تديله صلاحيات الإدارة:','Open the server console in your host panel and run this to grant it admin privileges:')+' <span class="codecmd" style="direction:ltr">'+escapeHtml(opCmd)+'</span></li>'+
-   '<li>'+t('المسار ده بيشتغل على السيرفرات اللي بتقبل الدخول من غير حساب أصلي (Offline Mode) — ودي أغلب سيرفرات الاستضافات المجانية.','This route works on servers that accept logins without an original account (Offline Mode) — most free-host servers.')+'</li>'+
+   '<li>'+t('افتح سيرفرك في لوحة الاستضافة وادخل قسم Users أو Subusers.','Open your server in the hosting panel and go to Users / Subusers.')+'</li>'+
+   '<li>'+t('ضيف حساب المنصة (بالاسم أو الإيميل اللي سجلت بيه) واديله صلاحيات: عرض الكونسول + إرسال أوامر + بدء/إعادة تشغيل.','Add the platform account (by its name or signup email) with permissions: view console + send commands + start/restart.')+'</li>'+
+   '<li>'+t('بعد الإضافة دوس «منحته الصلاحيات — تحقق الآن» والمنصة هتفحص ظهور سيرفرك على الحساب فورًا. لو مظهرش هتفضل تعيد الفحص.','Then press “Granted — verify now” and the platform checks for your server right away. If it is not there yet, it keeps rechecking.')+'</li>'+
    '</ol>'+
-   '<p class="hint">'+t('متشاركش اسم الحساب ده مع حد تاني؛ هو مفتاح دخول المنصة لسيرفرك بالصلاحيات اللي هتديهاله.','Do not share this account name publicly; it is the platform key into your server with the privileges you grant.')+'</p>';
+   '<p class="hint">'+t('تقدر تلغي وصول المنصة في أي لحظة بحذف الـ Subuser من لوحتك.','You can revoke platform access any time by removing the subuser from your panel.')+'</p>';
 }
 async function renderBotVerifyStep(){
   setOnboardStep(5);
@@ -1180,7 +1179,7 @@ async function requestBotVerify(serverId){
   const st=document.getElementById('botVerifyStatus');
   const s=myServers().find(x=>x.id===serverId);
   try{
-    await connectorPost('/v1/bot/request-verify',{server_id:serverId,address:s?.address||''});
+    await connectorPost('/v1/panel/request-check',{server_id:serverId});
     if(st) st.innerHTML='⏳ '+t('الطلب اتبعت. أول مرة ممكن تاخد لحد دقيقتين لحد ما مشغّل الاتصال يصحى ويدخل سيرفرك…','Request sent. The first time can take up to two minutes while the connector wakes and joins…');
     pollBotVerify(serverId);
   }catch(e){
@@ -1202,7 +1201,10 @@ function pollBotVerify(serverId){
         if(isCloud()) try{ await syncCloudData(); renderAll(); }catch(e){}
         return;
       }
-      if(d.bot_verify_status==='failed'){
+      if(d.bot_verify_status==='waiting_server'){
+        if(st) st.innerHTML='⏳ '+t('المنصة سجلت دخول بالحساب، بس سيرفرك لسه مظهرش عليه. اتأكد إنك ضفت الحساب Subuser على سيرفرك، وهنعيد الفحص تلقائيًا…','The platform logged in, but your server has not appeared yet. Make sure you added the account as a subuser — we keep rechecking…');
+      }
+      else if(d.bot_verify_status==='failed'){
         clearInterval(botVerifyTimer); botVerifyTimer=null;
         if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('التحقق فشل: ','Verification failed: ')+escapeHtml(d.bot_verify_detail||'')+'</span><br><span>'+t('اتأكد إن السيرفر شغال، العنوان صح، وإنك نفذت أمر الصلاحيات. وبعدين اطلب التحقق تاني. رمز الدعم: CM-BOT-VFY','Make sure the server is running, the address is right, and you ran the privilege command. Then request verification again. Support code: CM-BOT-VFY')+'</span>';
         return;

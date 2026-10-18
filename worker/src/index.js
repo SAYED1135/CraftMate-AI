@@ -635,6 +635,10 @@ async function handleBotIdentity(db, env, body, request) {
       patch.bot_password_enc = enc;
     }
     if (server.bot_verify_status !== "verified") patch.bot_verify_status = "waiting_server";
+    const hostingLink = String(body.hosting_link || "").trim();
+    if (hostingLink && /^https?:\/\/[^\s]{4,300}$/i.test(hostingLink)) {
+      patch.settings = { ...((server.settings && typeof server.settings === "object") ? server.settings : {}), panel_link: hostingLink, host_provider: server.host_provider || undefined };
+    }
     await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, patch);
     return json({ ok: true, server_id: server.id, bot_username: username, address: server.address || null, bot_verify_status: patch.bot_verify_status || server.bot_verify_status || "waiting_server", bot_verified_at: server.bot_verified_at || null });
   } catch (error) {
@@ -683,10 +687,65 @@ async function handleBotStatus(db, env, body, request) {
   });
 }
 
+function panelUrlFor(server) {
+  const link = (server.settings && typeof server.settings === "object" && server.settings.panel_link) || "";
+  try { if (link) return new URL(link).origin; } catch {}
+  if (server.host_provider === "play_hosting") return "https://panel.play.hosting";
+  if (server.host_provider === "falixnodes") return "https://client.falixnodes.net";
+  return null;
+}
+
+async function handlePanelRequestCheck(db, env, body, request) {
+  const user = await getAuthenticatedUser(env, request);
+  if (!user) return fail("CM-BOT-401", "Please log in again to check your server.", 401);
+  const serverId = String(body.server_id || body.serverId || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const server = await getServer(db, serverId);
+  if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  if (!server.bot_email || !server.bot_password_enc) return fail("CM-BOT-422", "Save the connection account email and password first.", 422);
+  try {
+    await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, { bot_verify_status: "check_requested", bot_verify_detail: null, link_method: "bot" });
+    return json({ ok: true, server_id: server.id, bot_verify_status: "check_requested" });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
+async function handleRunnerPanelResult(db, env, body, request) {
+  if (!runnerAuthorized(env, request)) return fail("CM-BOT-401", "Invalid runner credentials.", 401);
+  const serverId = String(body.server_id || "").trim();
+  if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "Server not found.", 404);
+  const loginOk = body.login_ok === true;
+  const found = body.server_found === true;
+  const now = new Date().toISOString();
+  try {
+    const server = await getServer(db, serverId);
+    const patch = {
+      bot_verify_detail: String(body.detail || "").slice(0, 240) || null,
+      ...(body.username ? { bot_username: String(body.username).slice(0, 32) } : {}),
+    };
+    if (loginOk && found) { patch.bot_verify_status = "verified"; patch.bot_verified_at = now; patch.status = "ONLINE"; patch.linked_at = server?.linked_at || now; patch.last_heartbeat_at = now; }
+    else if (loginOk) patch.bot_verify_status = "waiting_server";
+    else { patch.bot_verify_status = "failed"; patch.bot_verified_at = null; }
+    await db.patch(`servers?id=eq.${encodeURIComponent(serverId)}`, patch);
+    return json({ ok: true, verified: loginOk && found, waiting: loginOk && !found });
+  } catch (error) {
+    if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
+    throw error;
+  }
+}
+
 async function handleRunnerJobsNext(db, env, body, request) {
   if (!String(env.BOT_RUNNER_SECRET || "")) return fail("CM-BOT-503", "Bot runner is not configured yet.", 503);
   if (!runnerAuthorized(env, request)) return fail("CM-BOT-401", "Invalid runner credentials.", 401);
   try {
+    const pendingCheck = await db.get(`servers?bot_verify_status=eq.check_requested&select=*&order=created_at.asc&limit=1`);
+    const pc = Array.isArray(pendingCheck) ? pendingCheck[0] : null;
+    if (pc && pc.bot_email && pc.bot_password_enc) {
+      await db.patch(`servers?id=eq.${encodeURIComponent(pc.id)}`, { bot_verify_status: "checking" });
+      return json({ ok: true, job: { kind: "panel_check", server_id: pc.id, panel_url: panelUrlFor(pc), email: pc.bot_email, password: (await decryptBotSecret(env, pc.bot_password_enc)) || undefined, requested_username: pc.bot_username || undefined, server_name: pc.name } });
+    }
     const pendingVerify = await db.get(`servers?bot_verify_status=eq.requested&select=*&order=created_at.asc&limit=1`);
     const v = Array.isArray(pendingVerify) ? pendingVerify[0] : null;
     if (v && v.address && v.bot_username) {
@@ -1424,7 +1483,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.11.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 
@@ -1455,6 +1514,8 @@ export default {
         case "/v1/runner/jobs/next": return await handleRunnerJobsNext(db, env, body, request);
         case "/v1/runner/jobs/verify-result": return await handleRunnerVerifyResult(db, env, body, request);
         case "/v1/runner/jobs/task-result": return await handleRunnerTaskResult(db, env, body, request);
+        case "/v1/panel/request-check": return await handlePanelRequestCheck(db, env, body, request);
+        case "/v1/runner/jobs/panel-result": return await handleRunnerPanelResult(db, env, body, request);
         case "/v1/plugin/tasks/result": return await handlePluginTaskResult(db, body, request);
         case "/v1/shutdown": return await handleShutdown(db, body, request);
         case "/v1/revoke": return await handleRevoke(db, body, request);

@@ -15,7 +15,7 @@ const realFetch = global.fetch;
 global.fetch = async (url, opts = {}) => {
   const u = String(url);
   if (u.includes('/auth/v1/user')) return J({ id: ownerId, email: 'owner@example.com' });
-  if (u.includes('/rest/v1/servers?')) { if ((opts.method || 'GET') === 'PATCH') { try { Object.assign(server, JSON.parse(opts.body)); } catch {} } return J([server]); }
+  if (u.includes('/rest/v1/servers?')) { if ((opts.method || 'GET') === 'PATCH') { try { Object.assign(server, JSON.parse(opts.body)); } catch {} return J([server]); } const m = u.match(/bot_verify_status=eq\.([a-z_]+)/); if (m && server.bot_verify_status !== m[1]) return J([]); const un = u.match(/bot_username=eq\.([A-Za-z0-9_]+)/); if (un && server.bot_username !== un[1]) return J([]); return J([server]); }
   if (u.includes('/rest/v1/connector_tokens?')) {
     if (u.includes('token_hash=eq.')) return J([{ id: 'tok', server_id: serverId, token_hash: tokenHash, claimed_at: new Date().toISOString(), is_revoked: false }]);
     return J([{ id: 'tok', claimed_at: new Date().toISOString() }]);
@@ -77,4 +77,9 @@ r = await call('/v1/runner/jobs/next', {}); j = await r.json(); ok(r.status === 
 r = await call('/v1/runner/jobs/next', {}, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(r.status === 200 && j.job && j.job.kind === 'verify' && j.job.bot_username === 'CraftMate_T1', 'runner picks up verify job');
 ok(j.job.bot_password === 'SecretPw-123', 'runner receives decrypted password only via secret channel');
 r = await call('/v1/runner/jobs/verify-result', { server_id: serverId, ok: true, op_verified: true, detail: 'The time is 1000' }, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(r.status === 200 && j.verified === true, 'verify result accepted');
+
+r = await call('/v1/panel/request-check', { server_id: serverId }, 'user-token'); j = await r.json(); ok(j.bot_verify_status === 'check_requested', 'panel check requested');
+r = await call('/v1/runner/jobs/next', {}, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(j.job && j.job.kind === 'panel_check' && j.job.email === 'botconn@example.com' && j.job.password === 'SecretPw-123', 'runner receives panel check job with decrypted password');
+r = await call('/v1/runner/jobs/panel-result', { server_id: serverId, login_ok: true, server_found: false, username: 'PanelUser_9', detail: 'logged in; not shared yet' }, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(j.waiting === true && server.bot_verify_status === 'waiting_server' && server.bot_username === 'PanelUser_9', 'panel login ok but waiting for server appearance');
+r = await call('/v1/runner/jobs/panel-result', { server_id: serverId, login_ok: true, server_found: true, username: 'PanelUser_9' }, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(j.verified === true && server.bot_verify_status === 'verified', 'panel server appearance verified');
 console.log('ALL MOCK TESTS PASSED', n);

@@ -490,7 +490,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux18';
+const APP_BUILD='2026.10.17-ux19';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -968,11 +968,19 @@ async function enterApp(){ renderAll(); if(isCloud()) await syncCloudData(); rou
 function routeAfterLogin(){
   if(loginRouteDone||!user()) return; loginRouteDone=true;
   const linked=myServers().find(s=>s.status==='ONLINE'&&isUuid(s.id))||myServers().find(s=>s.linkedAt&&isUuid(s.id));
-  if(linked) openServerChat(linked.id); else go('linkhome');
+  if(linked) openServerChat(linked.id); else go('dashboard');
 }
-function startLinkFlow(){
+async function startLinkFlow(){
   const pending=myServers().find(s=>!s.linkedAt&&s.status!=='ONLINE');
-  if(pending){ activeServerId=pending.id; onboardServerId=pending.id; go('onboard'); if(pending.method==='bot'){ setOnboardStep(4); renderBotAccountStep(pending); } else if(pending.method==='plugin') setOnboardStep(4); else showConnectPanel(pending,true); return; }
+  if(pending){ activeServerId=pending.id; onboardServerId=pending.id; go('onboard');
+    if(pending.method==='bot'){
+      let hasCreds=false;
+      try{ const d=await connectorPost('/v1/bot/status',{server_id:pending.id}); hasCreds=!!d.has_credentials; if(d.bot_username) pending.botUsername=d.bot_username; }catch(e){}
+      if(!hasCreds){ setOnboardStep(2); toast(t('كمّل إدخال بيانات حساب الاتصال الأول','Finish entering the connection account credentials first')); }
+      else { setOnboardStep(4); renderBotAccountStep(pending); }
+    }
+    else if(pending.method==='plugin') setOnboardStep(4); else showConnectPanel(pending,true);
+    return; }
   go('onboard'); setOnboardStep(1);
 }
 function renderLinkHome(){

@@ -15,7 +15,7 @@ const realFetch = global.fetch;
 global.fetch = async (url, opts = {}) => {
   const u = String(url);
   if (u.includes('/auth/v1/user')) return J({ id: ownerId, email: 'owner@example.com' });
-  if (u.includes('/rest/v1/servers?')) return J([server]);
+  if (u.includes('/rest/v1/servers?')) { if ((opts.method || 'GET') === 'PATCH') { try { Object.assign(server, JSON.parse(opts.body)); } catch {} } return J([server]); }
   if (u.includes('/rest/v1/connector_tokens?')) {
     if (u.includes('token_hash=eq.')) return J([{ id: 'tok', server_id: serverId, token_hash: tokenHash, claimed_at: new Date().toISOString(), is_revoked: false }]);
     return J([{ id: 'tok', claimed_at: new Date().toISOString() }]);
@@ -33,14 +33,14 @@ global.fetch = async (url, opts = {}) => {
     return J({ candidates: [{ content: { parts: [{ text: 'mock answer' }] } }] });
   }
   if (u.includes('/rest/v1/')) {
-    if ((opts.method || 'GET') === 'PATCH') return J([{ id: serverId }]);
+    if ((opts.method || 'GET') === 'PATCH') { try { Object.assign(server, JSON.parse(opts.body)); } catch {} return J([{ id: serverId }]); }
     if ((opts.method || 'GET') === 'POST') return J([{ id: 'x' }], 201);
     return J([]);
   }
   return realFetch(url, opts);
 };
 const mod = await import('data:text/javascript;base64,' + Buffer.from(workerSrc).toString('base64'));
-const env = { SUPABASE_URL: 'https://db.test', SUPABASE_SERVICE_ROLE_KEY: 'service', GEMINI_API_KEY: 'key', BOT_RUNNER_SECRET: 'runner-secret' };
+const env = { SUPABASE_URL: 'https://db.test', SUPABASE_SERVICE_ROLE_KEY: 'service', GEMINI_API_KEY: 'key', BOT_RUNNER_SECRET: 'runner-secret', BOT_CREDENTIALS_KEY: Buffer.from('0123456789abcdef0123456789abcdef').toString('base64') };
 const ctx = { waitUntil() {} };
 async function call(path, body, auth, headers = {}) {
   return await mod.default.fetch(new Request('https://worker' + path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: auth ? 'Bearer ' + auth : '', ...headers }, body: JSON.stringify(body) }), env, ctx);
@@ -67,10 +67,14 @@ r = await call('/v1/ai/server-chat', { server_id: serverId, question: 'ما حا
 // Bot connection-account path
 r = await call('/v1/bot/identity', { server_id: serverId }); j = await r.json(); ok(r.status === 401 && j.error.code === 'CM-BOT-401', 'bot identity requires login');
 r = await call('/v1/bot/identity', { server_id: serverId }, 'user-token'); j = await r.json(); ok(r.status === 200 && /^CraftMate_[A-Z0-9]{5}$/.test(j.bot_username || ''), 'bot identity assigns username');
+r = await call('/v1/bot/identity', { server_id: serverId, email: 'botconn@example.com', password: 'SecretPw-123', requested_username: 'MyHelper_7' }, 'user-token'); j = await r.json(); ok(r.status === 200 && j.bot_username === 'MyHelper_7' && j.bot_verify_status === 'waiting_server', 'identity v2 approves requested name + waiting state');
+ok(typeof server.bot_password_enc === 'string' && server.bot_password_enc.startsWith('v1.') && !server.bot_password_enc.includes('SecretPw-123'), 'connection password stored encrypted only');
+ok(server.bot_email === 'botconn@example.com', 'connection email stored');
 r = await call('/v1/bot/request-verify', { server_id: serverId, address: 'bad address!' }, 'user-token'); j = await r.json(); ok(r.status === 422 && j.error.code === 'CM-BOT-422', 'bad address rejected');
 r = await call('/v1/bot/request-verify', { server_id: serverId, address: 'mc.example.net:25565' }, 'user-token'); j = await r.json(); ok(r.status === 200 && j.bot_verify_status === 'requested', 'verify requested');
 server.bot_verify_status = 'requested'; server.address = 'mc.example.net:25565'; server.bot_username = 'CraftMate_T1';
 r = await call('/v1/runner/jobs/next', {}); j = await r.json(); ok(r.status === 401 && j.error.code === 'CM-BOT-401', 'runner rejects missing secret');
 r = await call('/v1/runner/jobs/next', {}, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(r.status === 200 && j.job && j.job.kind === 'verify' && j.job.bot_username === 'CraftMate_T1', 'runner picks up verify job');
+ok(j.job.bot_password === 'SecretPw-123', 'runner receives decrypted password only via secret channel');
 r = await call('/v1/runner/jobs/verify-result', { server_id: serverId, ok: true, op_verified: true, detail: 'The time is 1000' }, null, { 'x-runner-secret': 'runner-secret' }); j = await r.json(); ok(r.status === 200 && j.verified === true, 'verify result accepted');
 console.log('ALL MOCK TESTS PASSED', n);

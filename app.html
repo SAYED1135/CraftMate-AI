@@ -296,45 +296,51 @@ footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color
         <div class="view-head"><div><h2 data-ar="➕ ربط سيرفر جديد" data-en="➕ Link a new server">➕ ربط سيرفر جديد</h2><p data-ar="خطوة بخطوة: اختر الاستضافة، نزّل البلجن، شغّله، وبعدين ادخل كود الربط هنا." data-en="Step by step: choose the host, download the plugin, run it, then enter the link code here.">خطوة بخطوة: اختر الاستضافة، نزّل البلجن، شغّله، وبعدين ادخل كود الربط هنا.</p></div><button class="btn ghost sm" onclick="go('linkhome')" data-ar="🏠 بداية الربط" data-en="🏠 Link start">🏠 بداية الربط</button></div>
         <div class="limitbox" id="limitBox"></div>
         <div class="stepsrow">
-          <div class="stepdot active" id="sd1" data-ar="1 · الاستضافة" data-en="1 · Host">1 · الاستضافة</div>
-          <div class="stepdot" id="sd2" data-ar="2 · بيانات السيرفر" data-en="2 · Server details">2 · بيانات السيرفر</div>
-          <div class="stepdot" id="sd3" data-ar="3 · طريقة الربط" data-en="3 · Link method">3 · طريقة الربط</div>
-          <div class="stepdot" id="sd4" data-ar="4 · حساب المنصة" data-en="4 · Platform account">4 · حساب المنصة</div>
+          <div class="stepdot active" id="sd1" data-ar="1 · رابط الاستضافة" data-en="1 · Hosting link">1 · رابط الاستضافة</div>
+          <div class="stepdot" id="sd2" data-ar="2 · حساب الاتصال" data-en="2 · Connection account">2 · حساب الاتصال</div>
+          <div class="stepdot" id="sd3" data-ar="3 · اسم الحساب" data-en="3 · Account name">3 · اسم الحساب</div>
+          <div class="stepdot" id="sd4" data-ar="4 · بانتظار ظهور السيرفر" data-en="4 · Waiting for server">4 · بانتظار ظهور السيرفر</div>
           <div class="stepdot" id="sd5" data-ar="5 · تحقق الاتصال" data-en="5 · Verify connection">5 · تحقق الاتصال</div>
         </div>
 
         <div class="panel wizard-panel active" id="obStep1">
-          <h3 data-ar="أولاً: سيرفرك مستضاف فين؟" data-en="First: where is your server hosted?">أولاً: سيرفرك مستضاف فين؟</h3>
+          <h3 data-ar="أولاً: رابط الاستضافة وعنوان سيرفرك" data-en="First: hosting link & your server address">أولاً: رابط الاستضافة وعنوان سيرفرك</h3>
+          <div class="field" style="margin-bottom:12px"><label data-ar="رابط الاستضافة التي تريد ربطها" data-en="Link of the hosting you want to connect">رابط الاستضافة التي تريد ربطها</label><input id="obHostLink" placeholder="https://…" style="direction:ltr;text-align:left" oninput="detectHostFromLink()"></div>
           <div class="host-grid" id="obHosts"></div>
           <p class="hint" id="obHostNote"></p>
-          <div class="wizard-nav"><span></span><button class="btn" onclick="setOnboardStep(2)" data-ar="التالي: بيانات السيرفر ←" data-en="Next: server details →">التالي: بيانات السيرفر ←</button></div>
-        </div>
-
-        <div class="panel wizard-panel" id="obStep2">
-          <h3 data-ar="ثانياً: بيانات سيرفرك" data-en="Second: your server details">ثانياً: بيانات سيرفرك</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:12px">
             <div class="field"><label data-ar="اسم السيرفر" data-en="Server name">اسم السيرفر</label><input id="obName" data-ar-ph="مثال: سيرفر الأصدقاء" data-en-ph="e.g. Friends Server" placeholder="مثال: سيرفر الأصدقاء"></div>
             <div class="field"><label data-ar="عنوان السيرفر (IP:Port)" data-en="Server address (IP:Port)">عنوان السيرفر (IP:Port)</label><input id="obAddr" placeholder="play.example.net:25565" style="direction:ltr;text-align:left"></div>
             <div class="field"><label data-ar="برنامج السيرفر" data-en="Server software">برنامج السيرفر</label><select id="obSoft"><option>Paper</option><option>Purpur</option><option>Spigot</option></select></div>
             <div class="field"><label data-ar="إصدار ماينكرافت" data-en="Minecraft version">إصدار ماينكرافت</label><select id="obVer"><option>1.21.4</option><option>1.21.1</option><option>1.21</option><option>1.20.6</option><option>1.20.4</option><option>1.20.1</option></select></div>
           </div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(1)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="setOnboardStep(3)" data-ar="التالي: طريقة الربط ←" data-en="Next: link method →">التالي: طريقة الربط ←</button></div>
+          <div class="wizard-nav"><span></span><button class="btn" onclick="setOnboardStep(2)" data-ar="التالي: حساب الاتصال ←" data-en="Next: connection account →">التالي: حساب الاتصال ←</button></div>
+        </div>
+
+        <div class="panel wizard-panel" id="obStep2">
+          <h3 data-ar="ثانياً: بيانات حساب الاتصال" data-en="Second: connection account credentials">ثانياً: بيانات حساب الاتصال</h3>
+          <p style="color:var(--muted);line-height:1.9" data-ar="المنصة هتنشئ حساب اتصال خاص بسيرفرك. الإيميل والباسورد دول مخصصين لحساب الاتصال بس — مش بيانات حسابك الشخصي في الاستضافة، ومتستخدمهمش في أي حاجة تانية." data-en="The platform will create a connection account just for your server. This email and password are only for that connection account — not your personal hosting login. Do not reuse them anywhere else.">المنصة هتنشئ حساب اتصال خاص بسيرفرك. الإيميل والباسورد دول مخصصين لحساب الاتصال بس — مش بيانات حسابك الشخصي في الاستضافة، ومتستخدمهمش في أي حاجة تانية.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+            <div class="field"><label data-ar="إيميل مخصص لحساب الاتصال" data-en="Dedicated connection email">إيميل مخصص لحساب الاتصال</label><input id="obBotEmail" type="email" placeholder="name@example.com" style="direction:ltr;text-align:left"></div>
+            <div class="field"><label data-ar="باسورد حساب الاتصال" data-en="Connection account password">باسورد حساب الاتصال</label><input id="obBotPw" type="password" data-ar-ph="8 أحرف على الأقل" data-en-ph="At least 8 characters" placeholder="8 أحرف على الأقل" style="direction:ltr;text-align:left"></div>
+            <div class="field"><label data-ar="تأكيد الباسورد" data-en="Confirm password">تأكيد الباسورد</label><input id="obBotPw2" type="password" style="direction:ltr;text-align:left"></div>
+          </div>
+          <p class="hint" data-ar="الباسورد بيتحفظ مشفرًا وبيستخدم بس لو سيرفرك طلب تسجيل أو دخول من حساب الاتصال داخل اللعبة." data-en="The password is stored encrypted and used only if your server asks the connection account to register or log in in-game.">الباسورد بيتحفظ مشفرًا وبيستخدم بس لو سيرفرك طلب تسجيل أو دخول من حساب الاتصال داخل اللعبة.</p>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(1)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createConnectionAccount()" data-ar="إنشاء حساب الاتصال ←" data-en="Create connection account →">إنشاء حساب الاتصال ←</button></div>
         </div>
 
         <div class="panel wizard-panel" id="obStep3">
-          <h3 data-ar="ثالثاً: هتوصلنا بسيرفرك إزاي؟" data-en="Third: how will you connect us?">ثالثاً: هتوصلنا بسيرفرك إزاي؟</h3>
-          <div class="radio-row">
-            <div class="radio-card sel" id="mBot" onclick="setMethod('bot')"><div class="ic">🤖</div><b data-ar="بحساب اتصال المنصة (من غير تثبيت)" data-en="Platform connection account (no install)">بحساب اتصال المنصة (من غير تثبيت)</b><span data-ar="المنصة بتدخل سيرفرك بحسابها بعد ما تضيفه وتديله صلاحيات" data-en="The platform joins your server with its account after you add it and grant privileges">المنصة بتدخل سيرفرك بحسابها بعد ما تضيفه وتديله صلاحيات</span></div>
-            <div class="radio-card" id="mManual" onclick="setMethod('manual')"><div class="ic">📄</div><b data-ar="برفع السجل" data-en="Log upload">برفع السجل</b><span data-ar="من غير أي تثبيت — للاستضافات المقيدة" data-en="Zero install — for restricted hosts">من غير أي تثبيت — للاستضافات المقيدة</span></div>
-            <div class="radio-card" id="mLater" onclick="setMethod('later')"><div class="ic">🕐</div><b data-ar="سجّله دلوقتي واربط بعدين" data-en="Save now, link later">سجّله دلوقتي واربط بعدين</b><span data-ar="هيظهر في لوحتك بحالة غير مرتبط" data-en="Appears in your dashboard as unlinked">هيظهر في لوحتك بحالة غير مرتبط</span></div>
-          </div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(2)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" id="createServerBtn" onclick="createServer()" data-ar="حفظ ومتابعة لحساب المنصة ←" data-en="Save & continue to platform account →">حفظ ومتابعة لحساب المنصة ←</button></div>
+          <h3 data-ar="ثالثاً: اختر اسم حساب الاتصال" data-en="Third: choose the connection account name">ثالثاً: اختر اسم حساب الاتصال</h3>
+          <p style="color:var(--muted);line-height:1.9" data-ar="ده الاسم اللي حساب الاتصال هيدخل بيه سيرفرك وهتشوفه جوه اللعبة. 3-16 حرف إنجليزي أو رقم أو _" data-en="This is the name the connection account will join your server with. 3-16 English letters, numbers or _">ده الاسم اللي حساب الاتصال هيدخل بيه سيرفرك وهتشوفه جوه اللعبة. 3-16 حرف إنجليزي أو رقم أو _</p>
+          <div class="field" style="max-width:420px"><label data-ar="اسم الحساب" data-en="Account name">اسم الحساب</label><input id="obBotName" placeholder="CraftMate_1" style="direction:ltr;text-align:left"></div>
+          <div id="obFinalName" style="margin-top:12px"></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(2)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="finalizeBotName()" data-ar="اعتماد الاسم ←" data-en="Confirm name →">اعتماد الاسم ←</button></div>
         </div>
 
         <div class="panel wizard-panel" id="obStep4">
-          <h3 data-ar="رابعاً: أضف حساب اتصال المنصة إلى سيرفرك" data-en="Fourth: add the platform connection account to your server">رابعاً: أضف حساب اتصال المنصة إلى سيرفرك</h3>
+          <h3 data-ar="رابعاً: بانتظار ظهور السيرفر على الحساب" data-en="Fourth: waiting for the server to appear on the account">رابعاً: بانتظار ظهور السيرفر على الحساب</h3>
           <div id="obBotAccount"><p class="hint">⏳</p></div>
-          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="renderBotVerifyStep()" data-ar="أضفته واديته الصلاحيات ←" data-en="Added & granted →">أضفته واديته الصلاحيات ←</button></div>
+          <div class="wizard-nav"><button class="btn ghost" onclick="setOnboardStep(3)" data-ar="→ رجوع" data-en="← Back">→ رجوع</button><button class="btn" onclick="renderBotVerifyStep()" data-ar="منحته الصلاحيات — تحقق الآن ←" data-en="Granted — verify now →">منحته الصلاحيات — تحقق الآن ←</button></div>
         </div>
 
         <div class="panel wizard-panel" id="obStep5">
@@ -490,7 +496,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux14';
+const APP_BUILD='2026.10.17-ux15';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1094,21 +1100,46 @@ function activeCode(serverId){
   const now=Date.now();
   return db.codes.filter(c=>c.serverId===serverId&&!c.usedAt&&c.expiresAt>now).sort((a,b)=>b.expiresAt-a.expiresAt)[0];
 }
-async function createServer(){
+function detectHostFromLink(){
+  const v=(document.getElementById('obHostLink')?.value||'').toLowerCase();
+  const map=[['play.hosting','play_hosting'],['falixnodes','falixnodes'],['mcserverhost','mcserverhost'],['minefort','minefort']];
+  for(const [d,id] of map){ if(v.includes(d)){ pickHost(id); toast(t('✅ عرفنا استضافتك من الرابط','✅ Detected your host from the link')); break; } }
+}
+async function createConnectionAccount(){
   const u=user(); if(!u) return;
+  const email=(document.getElementById('obBotEmail').value||'').trim();
+  const pw=document.getElementById('obBotPw').value||'';
+  const pw2=document.getElementById('obBotPw2').value||'';
+  if(!/^[^\s@]{2,64}@[^\s@]{2,120}\.[^\s@]{2,24}$/.test(email)){ toast(t('⚠️ اكتب إيميل صحيح لحساب الاتصال','⚠️ Enter a valid connection email')); return; }
+  if(pw.length<8){ toast(t('⚠️ باسورد حساب الاتصال 8 أحرف على الأقل','⚠️ Connection password needs at least 8 characters')); return; }
+  if(pw!==pw2){ toast(t('⚠️ تأكيد الباسورد مش مطابق','⚠️ Password confirmation does not match')); return; }
+  if(!isCloud()){ toast(t('⚠️ سجل دخولك بحسابك السحابي الأول عشان ننشئ حساب الاتصال','⚠️ Sign in with your cloud account first')); return; }
+  const existing=myServers().find(x=>x.id===onboardServerId);
+  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw}); }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=document.getElementById('obName').value.trim()||t('سيرفري','My Server');
-  const s={id:newUuid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:obMethod,env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
-  if(isCloud()){
-    try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
-    catch(e){ toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم للدعم.','Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send the support code to support.'); return; }
-  }
+  const s={id:newUuid(),ownerId:u.id,name,address:document.getElementById('obAddr').value.trim(),host:obHost,software:document.getElementById('obSoft').value,version:document.getElementById('obVer').value,status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
+  try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
+  catch(e){ toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم للدعم.','Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send the support code to support.'); return; }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
-  renderAll();
-  if(s.method==='bot'){ setOnboardStep(4); renderBotAccountStep(s); toast(t('✅ اتسجل سيرفرك — دلوقتي أضف حساب اتصال المنصة إلى سيرفرك','✅ Your server is registered — now add the platform connection account to your server')); }
-  else if(s.method==='plugin'){ setOnboardStep(4); toast(t('✅ اتسجل سيرفرك — دلوقتي نزّل البلجن وحطه في الاستضافة','✅ Your server is registered — now download the plugin and place it on your host')); }
-  else { showConnectPanel(s,true); toast(t('✅ اتسجل سيرفرك — كمّل خطوة الاتصال','✅ Your server is registered — finish the connection step')); }
+  try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw}); s.botUsername=d.bot_username||null; }
+  catch(e){ toast('⚠️ '+t('اتعمل السيرفر بس إنشاء حساب الاتصال اتعطل. رمز الدعم: ','Server saved but connection account creation hiccuped. Support code: ')+(e.message||'CM-BOT-503')); }
+  renderAll(); setOnboardStep(3);
+  toast(t('✅ تم إنشاء حساب الاتصال — دلوقتي اختر اسم الحساب','✅ Connection account created — now choose its name'));
+}
+async function finalizeBotName(){
+  const s=myServers().find(x=>x.id===onboardServerId); if(!s) return;
+  const requested=(document.getElementById('obBotName').value||'').trim();
+  if(!/^[A-Za-z0-9_]{3,16}$/.test(requested)){ toast(t('⚠️ الاسم لازم 3-16 حرف إنجليزي أو رقم أو _','⚠️ Name must be 3-16 letters, numbers or _')); return; }
+  const box=document.getElementById('obFinalName');
+  try{
+    const d=await connectorPost('/v1/bot/identity',{server_id:s.id,requested_username:requested});
+    s.botUsername=d.bot_username; saveDB();
+    if(box) box.innerHTML='<div class="codebox"><b style="direction:ltr">'+escapeHtml(d.bot_username)+'</b><span>'+t('اسم حساب الاتصال النهائي المعتمد من المنصة','Final platform-approved connection account name')+'</span></div>';
+    toast(t('✅ تم اعتماد اسم الحساب','✅ Account name approved'));
+    setTimeout(()=>{ setOnboardStep(4); renderBotAccountStep(s); },700);
+  }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-422')); }
 }
 let botVerifyTimer=null;
 async function renderBotAccountStep(s){
@@ -1126,7 +1157,7 @@ async function renderBotAccountStep(s){
   if(!username){ box.innerHTML='<p class="hint">⚠️ '+t('سجل دخولك بحساب سحابي الأول عشان نجهز حساب الاتصال.','Sign in with a cloud account first so we can prepare the connection account.')+'</p>'; return; }
   const opCmd='op '+username;
   box.innerHTML=
-   '<p style="color:var(--muted);line-height:1.9">'+t('المنصة هتدخل سيرفرك بالحساب ده. اعمل الخطوتين دول في لوحة استضافتك:','The platform will join your server with this account. Do these two steps in your host panel:')+'</p>'+
+   '<p style="color:var(--muted);line-height:1.9">⏳ '+t('بانتظار ظهور السيرفر على الحساب… خذ اسم الحساب ده واديله صلاحيات على سيرفرك:','Waiting for the server to appear on the account… take this account name and grant it privileges on your server:')+'</p>'+
    '<div class="codebox"><b style="direction:ltr">'+escapeHtml(username)+'</b><span>'+t('اسم حساب اتصال المنصة الخاص بسيرفرك','Your server platform connection account name')+'</span></div>'+
    '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px"><button class="btn ghost sm" onclick="copyText(\''+escapeHtml(username)+'\')">'+t('📋 انسخ الاسم','📋 Copy name')+'</button></div>'+
    '<ol style="padding-inline-start:22px;color:#cbd5e1;line-height:2">'+

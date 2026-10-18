@@ -576,6 +576,34 @@ function botUsernameFor(serverId) {
   return "CraftMate_" + suffix;
 }
 
+const b64ToBytes = (b64) => Uint8Array.from(atob(String(b64 || "")), (c) => c.charCodeAt(0));
+const bytesToB64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+let cachedCredKey = null;
+async function botCredKey(env) {
+  if (cachedCredKey) return cachedCredKey;
+  const raw = b64ToBytes(env.BOT_CREDENTIALS_KEY || "");
+  if (raw.length !== 32) return null;
+  cachedCredKey = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return cachedCredKey;
+}
+async function encryptBotSecret(env, plaintext) {
+  const key = await botCredKey(env);
+  if (!key) return null;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(String(plaintext)));
+  return "v1." + bytesToB64(iv) + "." + bytesToB64(ct);
+}
+async function decryptBotSecret(env, stored) {
+  try {
+    const parts = String(stored || "").split(".");
+    if (parts.length !== 3 || parts[0] !== "v1") return null;
+    const key = await botCredKey(env);
+    if (!key) return null;
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(parts[1]) }, key, b64ToBytes(parts[2]));
+    return new TextDecoder().decode(pt);
+  } catch { return null; }
+}
+
 async function handleBotIdentity(db, env, body, request) {
   const user = await getAuthenticatedUser(env, request);
   if (!user) return fail("CM-BOT-401", "Please log in again to link your server.", 401);
@@ -583,13 +611,32 @@ async function handleBotIdentity(db, env, body, request) {
   if (!UUID_PATTERN.test(serverId)) return fail("CM-BOT-404", "This server was not found in your account.", 404);
   const server = await getServer(db, serverId);
   if (!server || server.owner_id !== user.id) return fail("CM-BOT-404", "This server was not found in your account.", 404);
+  const email = String(body.email || "").trim().toLowerCase();
+  const password = String(body.password || "");
+  const requested = String(body.requested_username || body.username || "").trim();
+  if (email && !/^[^\s@]{2,64}@[^\s@]{2,120}\.[^\s@]{2,24}$/.test(email)) return fail("CM-BOT-422", "The connection email does not look valid.", 422);
+  if (password && (password.length < 8 || password.length > 72)) return fail("CM-BOT-422", "Connection password must be 8-72 characters.", 422);
+  if (requested && !/^[A-Za-z0-9_]{3,16}$/.test(requested)) return fail("CM-BOT-422", "Account name must be 3-16 letters, numbers or underscore.", 422);
   try {
     let username = server.bot_username || null;
-    if (!username) {
-      username = botUsernameFor(server.id);
-      await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, { bot_username: username, link_method: "bot" });
+    const patch = { link_method: "bot" };
+    if (requested && requested !== username) {
+      const taken = await db.get(`servers?bot_username=eq.${encodeURIComponent(requested)}&select=id&limit=1`);
+      username = (Array.isArray(taken) && taken.length && taken[0].id !== server.id)
+        ? (requested.slice(0, 12) + "_" + server.id.replace(/-/g, "").slice(0, 3)).slice(0, 16)
+        : requested;
+      patch.bot_username = username;
     }
-    return json({ ok: true, server_id: server.id, bot_username: username, address: server.address || null, bot_verify_status: server.bot_verify_status || "none", bot_verified_at: server.bot_verified_at || null });
+    if (!username) { username = botUsernameFor(server.id); patch.bot_username = username; }
+    if (email) patch.bot_email = email;
+    if (password) {
+      const enc = await encryptBotSecret(env, password);
+      if (!enc) return fail("CM-BOT-503", "Secure credential storage is not configured yet.", 503);
+      patch.bot_password_enc = enc;
+    }
+    if (server.bot_verify_status !== "verified") patch.bot_verify_status = "waiting_server";
+    await db.patch(`servers?id=eq.${encodeURIComponent(server.id)}`, patch);
+    return json({ ok: true, server_id: server.id, bot_username: username, address: server.address || null, bot_verify_status: patch.bot_verify_status || server.bot_verify_status || "waiting_server", bot_verified_at: server.bot_verified_at || null });
   } catch (error) {
     if (isControlSchemaError(error)) return fail("CM-BOT-503", "Bot linking storage is not ready yet.", 503);
     throw error;
@@ -644,7 +691,7 @@ async function handleRunnerJobsNext(db, env, body, request) {
     const v = Array.isArray(pendingVerify) ? pendingVerify[0] : null;
     if (v && v.address && v.bot_username) {
       await db.patch(`servers?id=eq.${encodeURIComponent(v.id)}`, { bot_verify_status: "verifying" });
-      return json({ ok: true, job: { kind: "verify", server_id: v.id, address: v.address, bot_username: v.bot_username } });
+      return json({ ok: true, job: { kind: "verify", server_id: v.id, address: v.address, bot_username: v.bot_username, bot_password: (await decryptBotSecret(env, v.bot_password_enc)) || undefined } });
     }
     const queued = await db.get(`server_tasks?status=eq.QUEUED&select=*&order=created_at.asc&limit=10`);
     for (const task of Array.isArray(queued) ? queued : []) {
@@ -656,7 +703,7 @@ async function handleRunnerJobsNext(db, env, body, request) {
       if (!server || server.link_method !== "bot" || !server.bot_verified_at || !server.address || !server.bot_username) continue;
       if (!controlState(server).enabled) continue;
       await db.patch(`server_tasks?id=eq.${encodeURIComponent(task.id)}`, { status: "CLAIMED", claimed_at: new Date().toISOString() });
-      return json({ ok: true, job: { kind: "task", task_id: task.id, task_type: task.type, payload: task.payload || {}, server_id: server.id, address: server.address, bot_username: server.bot_username } });
+      return json({ ok: true, job: { kind: "task", task_id: task.id, task_type: task.type, payload: task.payload || {}, server_id: server.id, address: server.address, bot_username: server.bot_username, bot_password: (await decryptBotSecret(env, server.bot_password_enc)) || undefined } });
     }
     return json({ ok: true, job: null });
   } catch (error) {
@@ -1377,7 +1424,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.10.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.11.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

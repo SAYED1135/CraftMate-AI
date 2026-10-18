@@ -41,6 +41,25 @@ function waitForMessage(bot, regex, timeoutMs = 8000) {
   });
 }
 
+async function handleServerAuth(bot, password) {
+  if (!password) return 'none';
+  await sleep(1200);
+  const recent = () => bot._cmMessages.slice(-12).join(' ');
+  let txt = recent();
+  if (!/register|login/i.test(txt)) {
+    const r = await waitForMessage(bot, /(register|login)/i, 2500);
+    if (r) txt = r.text;
+  }
+  if (/register/i.test(txt) && !/already/i.test(txt)) {
+    bot.chat(`/register ${password} ${password}`);
+    await sleep(1300);
+    if (/already/i.test(recent())) { bot.chat(`/login ${password}`); await sleep(1000); return 'register-then-login'; }
+    return 'registered';
+  }
+  if (/login/i.test(txt)) { bot.chat(`/login ${password}`); await sleep(1000); return 'login'; }
+  return 'no-prompt';
+}
+
 async function checkOp(bot) {
   bot.chat('/time query daytime');
   const res = await waitForMessage(bot, /The time is (\d+)|do not have permission|Unknown or incomplete command/i, 8000);
@@ -112,6 +131,7 @@ function parseAddress(address) {
 async function modeVerify(args) {
   const addr = parseAddress(args.address || `${args.host || '127.0.0.1'}:${args.port || 25565}`);
   const bot = await offlineJoin({ ...addr, username: args.username });
+  await handleServerAuth(bot, args.password);
   const op = await checkOp(bot);
   console.log(JSON.stringify({ joined: true, username: args.username, address: `${addr.host}:${addr.port}`, op: op.op, detail: op.detail }));
   bot.quit();
@@ -146,6 +166,7 @@ async function modeServe() {
         try {
           const addr = parseAddress(job.address);
           const bot = await offlineJoin({ ...addr, username: job.bot_username });
+          await handleServerAuth(bot, job.bot_password);
           const op = await checkOp(bot);
           result = { ok: op.op === true, op_verified: op.op === true, detail: op.detail };
           bot.quit();
@@ -157,6 +178,7 @@ async function modeServe() {
           if (!entry || !entry.bot || !entry.bot.entity) {
             const addr = parseAddress(job.address);
             const fresh = await offlineJoin({ ...addr, username: job.bot_username });
+            await handleServerAuth(fresh, job.bot_password);
             entry = { bot: fresh, lastUsed: Date.now() };
             sessions.set(job.server_id, entry);
             fresh.once('end', () => sessions.delete(job.server_id));
@@ -181,7 +203,7 @@ async function modeServe() {
   console.log('[craftmate-connector] runtime budget reached; exiting');
 }
 
-export { offlineJoin, checkOp, executeTemplate, parseAddress, TEMPLATES };
+export { offlineJoin, checkOp, executeTemplate, parseAddress, handleServerAuth, TEMPLATES };
 
 const isMain = process.argv[1] && process.argv[1].endsWith('runner.mjs');
 if (isMain) {

@@ -630,8 +630,9 @@ async function handleBotIdentity(db, env, body, request) {
     if (!username) { username = botUsernameFor(server.id); patch.bot_username = username; }
     if (email) patch.bot_email = email;
     if (password) {
+      if (!(await botCredKey(env))) return fail("CM-BOT-504", "Secure credential storage key is not configured yet.", 503);
       const enc = await encryptBotSecret(env, password);
-      if (!enc) return fail("CM-BOT-503", "Secure credential storage is not configured yet.", 503);
+      if (!enc) return fail("CM-BOT-504", "Secure credential storage key is not configured yet.", 503);
       patch.bot_password_enc = enc;
     }
     if (server.bot_verify_status !== "verified") patch.bot_verify_status = "waiting_server";
@@ -1485,7 +1486,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.1", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.2", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 

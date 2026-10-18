@@ -574,7 +574,7 @@ async function cloudFetch(path,opts){
   }
   return r;
 }
-async function cloudJson(path,opts){ const r=await cloudFetch(path,opts); if(!r.ok){ await r.text().catch(()=>{}); const e=new Error('CM-CLOUD-301'); e.supportCode='CM-CLOUD-301'; e.status=r.status; throw e; } const txt=await r.text(); return txt?JSON.parse(txt):null; }
+async function cloudJson(path,opts){ const r=await cloudFetch(path,opts); if(!r.ok){ const raw=await r.text().catch(()=> ''); let pg=null; try{ const d=JSON.parse(raw); pg={code:d.code||'',message:String(d.message||'').slice(0,140)}; }catch(_){ } const e=new Error('CM-CLOUD-301'); e.supportCode='CM-CLOUD-301'; e.status=r.status; e.pg=pg; throw e; } const txt=await r.text(); return txt?JSON.parse(txt):null; }
 function localServerFromCloud(x){
   return {id:x.id,ownerId:x.owner_id,name:x.name,address:x.address||'',host:x.host_provider,software:x.server_software||'Paper',version:x.mc_version||'1.21.4',status:x.status||'UNLINKED',method:x.link_method||'plugin',env:x.environment_snapshot&&Object.keys(x.environment_snapshot).length?x.environment_snapshot:null,settings:x.settings||undefined,linkedAt:x.linked_at||null,lastHeartbeat:x.last_heartbeat_at||null,controlEnabled:!!x.control_enabled,controlMode:x.control_mode||'off',controlExpiresAt:x.control_expires_at||null,connectorVersion:x.connector_version||null,botUsername:x.bot_username||null,botVerifyStatus:x.bot_verify_status||'none',botVerifiedAt:x.bot_verified_at||null,createdAt:x.created_at,source:'cloud'};
 }
@@ -1115,7 +1115,7 @@ async function createConnectionAccount(){
   const name=t('سيرفري','My Server');
   const s={id:newUuid(),ownerId:u.id,name,address:'',host:obHost,software:'Paper',version:'1.21.4',status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
   try{ const created=await cloudUpsertServer(s); if(created){ s.id=created.id; s.source='cloud'; } }
-  catch(e){ const st=e&&e.status?(' (HTTP '+e.status+')'):''; toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم ده: CM-SERVER-401'+st,'Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send this support code: CM-SERVER-401'+st); return; }
+  catch(e){ const st=e&&e.status?(' (HTTP '+e.status+(e.pg&&e.pg.code?(' / '+e.pg.code+' / '+e.pg.message):'')+')'):''; toastCoded('CM-SERVER-401','تعذر حفظ السيرفر في حسابك دلوقتي، فمش هنعرضه كأنه اتسجل. جرّب تاني، ولو استمرت المشكلة ابعت رمز الدعم ده: CM-SERVER-401'+st,'Could not save the server to your account, so we will not pretend it was registered. Retry, and if it continues send this support code: CM-SERVER-401'+st); return; }
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
   try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }

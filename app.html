@@ -490,7 +490,7 @@ const SUPABASE_ANON_KEY_DEFAULT = 'sb_publishable_LhGSZHXXOqaq_pC8rmIbSw_xjqLYM6
 const CONNECTOR_API_URL='https://craftmate-connector-api.craftmate-api-sayed.workers.dev';
 const ALLOW_NATIVE_SIGNUP_WITH_EMAIL_CONFIRMATION=false; // Production: set true only after owner configures Custom SMTP.
 const DB_KEY='craftmate_db_v2', SESSION_KEY='craftmate_session_v2';
-const APP_BUILD='2026.10.17-ux17';
+const APP_BUILD='2026.10.17-ux18';
 const PLANS={free:{servers:1,diagnoses:10,retention:7,label:'FREE'},pro:{servers:5,diagnoses:9999,retention:90,label:'PRO'},ultra:{servers:20,diagnoses:9999,retention:36500,label:'ULTRA'}};
 window.CM_SAMPLE="[12:00:03] [Server thread/ERROR]: Error occurred while enabling CraftTest v1.0 (Is it up to date?)\njava.lang.NoClassDefFoundError: org/bukkit/craftbukkit/libs/org/apache/commons/lang3/Validate\nCaused by: java.lang.ClassNotFoundException: org.bukkit.craftbukkit.libs.org.apache.commons.lang3.Validate\n[12:00:19] [Server thread/INFO]: Steve[/203.0.113.44:51234] logged in";
 
@@ -1110,7 +1110,7 @@ async function createConnectionAccount(){
   if(pw.length<8){ toast(t('⚠️ باسورد حساب الاتصال 8 أحرف على الأقل','⚠️ Connection password needs at least 8 characters')); return; }
   if(!isCloud()){ toast(t('⚠️ سجل دخولك بحسابك السحابي الأول عشان ننشئ حساب الاتصال','⚠️ Sign in with your cloud account first')); return; }
   const existing=myServers().find(x=>x.id===onboardServerId);
-  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); }catch(e){ toast('⚠️ '+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
+  if(existing){ try{ await connectorPost('/v1/bot/identity',{server_id:existing.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); }catch(e){ toast('⛔ '+t('تسجيل بيانات الحساب فشل. رمز الدعم: ','Saving the account credentials failed. Support code: ')+(e.message||'CM-BOT-503')); return; } setOnboardStep(3); return; }
   if(myServers().length>=plan().servers){ renderOnboard(); toast(t('وصلت لحد خطتك المجانية','You reached your Free plan limit')); return; }
   const name=t('سيرفري','My Server');
   const s={id:newUuid(),ownerId:u.id,name,address:'',host:obHost,software:'Paper',version:'1.21.4',status:'UNLINKED',method:'bot',env:null,linkedAt:null,lastHeartbeat:null,createdAt:new Date().toISOString()};
@@ -1119,7 +1119,7 @@ async function createConnectionAccount(){
   db.servers.push(s); saveDB(); audit('SERVER_CREATED',name);
   activeServerId=s.id; onboardServerId=s.id;
   try{ const d=await connectorPost('/v1/bot/identity',{server_id:s.id,email,password:pw,hosting_link:(document.getElementById('obHostLink')?.value||'').trim()}); s.botUsername=d.bot_username||null; }
-  catch(e){ toast('⚠️ '+t('اتعمل السيرفر بس إنشاء حساب الاتصال اتعطل. رمز الدعم: ','Server saved but connection account creation hiccuped. Support code: ')+(e.message||'CM-BOT-503')); }
+  catch(e){ toast('⛔ '+t('اتعمل السيرفر بس تسجيل بيانات حساب الاتصال فشل، فمش هنكمل قبل ما تتصلح. رمز الدعم: ','Server saved but saving the connection credentials failed; we will not continue until fixed. Support code: ')+(e.message||'CM-BOT-503')); renderAll(); return; }
   renderAll(); setOnboardStep(3);
   toast(t('✅ تم إنشاء حساب الاتصال — دلوقتي اختر اسم الحساب','✅ Connection account created — now choose its name'));
 }
@@ -1172,7 +1172,8 @@ async function requestBotVerify(serverId){
     if(st) st.innerHTML='⏳ '+t('الطلب اتبعت. أول مرة ممكن تاخد لحد دقيقتين لحد ما مشغّل الاتصال يصحى ويدخل سيرفرك…','Request sent. The first time can take up to two minutes while the connector wakes and joins…');
     pollBotVerify(serverId);
   }catch(e){
-    if(st) st.innerHTML='<span style="color:#ef4444">❌ '+t('تعذر طلب التحقق. رمز الدعم: ','Could not request verification. Support code: ')+(e.message||'CM-BOT-500')+'</span>';
+    const needCreds=String(e.message||'').includes('CM-BOT-422');
+    if(st) st.innerHTML='<span style="color:#ef4444">❌ '+(needCreds?t('بيانات حساب الاتصال مش متسجلة عندنا. ارجع لخطوة حساب الاتصال وادخل الإيميل والباسورد من جديد. رمز الدعم: ','Connection credentials are not saved. Go back to the connection-account step and re-enter the email and password. Support code: '):t('تعذر طلب التحقق. رمز الدعم: ','Could not request verification. Support code: '))+(e.message||'CM-BOT-500')+'</span>';
   }
 }
 function pollBotVerify(serverId){

@@ -681,6 +681,8 @@ async function handleBotStatus(db, env, body, request) {
     ok: true, server_id: server.id,
     bot_username: server.bot_username || null,
     bot_verify_status: server.bot_verify_status || "none",
+    has_credentials: !!(server.bot_email && server.bot_password_enc),
+    bot_email: server.bot_email || null,
     bot_verify_detail: server.bot_verify_detail || null,
     bot_verified_at: server.bot_verified_at || null,
     status: server.status,
@@ -1483,7 +1485,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
-      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.0", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
+      return json({ ok: true, service: "craftmate-connector-api", version: "0.12.1", auth_registration: true, configured: !!(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY), gemini_configured: !!(env.GEMINI_API_KEY && String(env.GEMINI_API_KEY).trim()) });
     }
     if (request.method !== "POST") return fail("NOT_FOUND", "Route not found.", 404);
 
